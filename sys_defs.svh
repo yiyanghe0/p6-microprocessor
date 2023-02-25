@@ -319,11 +319,16 @@ typedef struct packed {
 	logic [`XLEN-1:0] rob_entry_value_rs1;
 	logic [`XLEN-1:0] rob_entry_value_rs2;
 } ROB_RS_PACKET;
-
+/*
 typedef struct packed {
 	logic [$clog2(`ROB_SIZE)-1:0] cdb_tag;
 	logic [`XLEN-1:0] cdb_value;
 } CDB_RS_PACKET;
+*/
+typedef struct packed {
+	logic [$clog2(`ROB_SIZE)-1:0] rs1_tag;				// ROB number of rs1
+	logic [$clog2(`ROB_SIZE)-1:0] rs2_tag;				// ROB number of rs2
+} RS_ROB_PACKET;
 
 typedef struct packed {
 	logic [4:0] rs1_index;
