@@ -10,59 +10,26 @@
 `ifndef __SYS_DEFS_SVH__
 `define __SYS_DEFS_SVH__
 
-// NOTE: moved this into sys_defs.svh, don't add to any other files
-// have all files `include "sys_defs.svh" from now on (why weren't we doing this before?)
-`timescale 1ns/100ps
-
-// Synthesis testing definition for parameterized modules tested at multiple sizes
-// see lab 6 CAM for example usage
-`ifdef SYNTH_TEST
-`define INSTANCE(mod) mod``_svsim
-`else
-`define INSTANCE(mod) mod
-`endif
-
 //////////////////////////////////////////////
 //
 // Memory/testbench attribute definitions
 //
 //////////////////////////////////////////////
 
-// NOTE: the CLOCK_PERIOD definition has been moved to the Makefile
+`define NUM_MEM_TAGS           8
+`define MEM_LATENCY_IN_CYCLES  0
 
-// cache mode removes the byte-level interface from memory, so it always returns a double word
-// the original processor won't work with this defined
-// so your new processor will have to account for our changes to mem
-`define CACHE_MODE // MUST BE DEFINED FOR FINAL PROCESSOR
+`define MEM_SIZE_IN_BYTES      (64*1024)
+`define MEM_64BIT_LINES        (`MEM_SIZE_IN_BYTES/8)
 
-// you are not allowed to change this definition for your final processor
-`define MEM_LATENCY_IN_CYCLES (100.0/`CLOCK_PERIOD+0.49999)
-// the 0.49999 is to force ceiling(100/period). The default behavior for
-// float to integer conversion is rounding to nearest
-
-// the original p3 definition - can be useful for temporarily testing non-memory functionality
-// `define MEM_LATENCY_IN_CYCLES 0
-
-
-`define NUM_MEM_TAGS 15
-
-`define MEM_SIZE_IN_BYTES (64*1024)
-`define MEM_64BIT_LINES   (`MEM_SIZE_IN_BYTES/8)
+// you can change the clock period to whatever, 10 is just fine
+`define VERILOG_CLOCK_PERIOD   10.0
 
 typedef union packed {
-    logic [7:0][7:0]  byte_level;
+    logic [7:0][7:0] byte_level;
     logic [3:0][15:0] half_level;
     logic [1:0][31:0] word_level;
 } EXAMPLE_CACHE_BLOCK;
-
-`ifndef CACHE_MODE
-typedef enum logic [1:0] {
-	BYTE = 2'h0,
-	HALF = 2'h1,
-	WORD = 2'h2,
-	DOUBLE = 2'h3
-} MEM_SIZE;
-`endif
 
 //////////////////////////////////////////////
 // Exception codes
@@ -150,7 +117,8 @@ typedef enum logic [4:0] {
 //
 //////////////////////////////////////////////
 
-// standard delay - use after all non-blocking assignments
+// actually, you might have to change this if you change VERILOG_CLOCK_PERIOD
+// JK you don't ^^^
 `define SD #1
 
 // the RISCV register file zero register, any read of this register always
@@ -163,6 +131,15 @@ typedef enum logic [1:0] {
 	BUS_LOAD     = 2'h1,
 	BUS_STORE    = 2'h2
 } BUS_COMMAND;
+
+`ifndef CACHE_MODE
+typedef enum logic [1:0] {
+	BYTE = 2'h0,
+	HALF = 2'h1,
+	WORD = 2'h2,
+	DOUBLE = 2'h3
+} MEM_SIZE;
+`endif
 
 // useful boolean single-bit definitions
 `define FALSE  1'h0
@@ -290,52 +267,40 @@ typedef struct packed {
 	logic       illegal;       // is this instruction illegal?
 	logic       csr_op;        // is this a CSR operation? (we only used this as a cheap way to get return code)
 	logic       valid;         // is inst a valid instruction to be counted for CPI calculations?
-} ID_IS_PACKET;
-
-// Need to assign FU to each RS slot!!!
-typedef struct packed {
-	ID_IS_PACKET id_is_packet;
-
-	logic busy;											// is RS_SLOT busy?
-	// tag  = 0 -> value ready
-	// tag != 0 -> value not ready
-	logic [$clog2(`ROB_SIZE)-1:0] dest_tag;				// ROB number of dest reg
-	logic [$clog2(`ROB_SIZE)-1:0] rs1_tag;				// ROB number of rs1
-	logic [$clog2(`ROB_SIZE)-1:0] rs2_tag;				// ROB number of rs2
-	logic [`XLEN-1:0] rs1_value; 						// reg A value
-	logic [`XLEN-1:0] rs2_value; 						// reg B value
-	logic [$clog2(`ROB_SIZE)-1:0] rob_entry_number;		// ROB entry number used in retire
-} RS_SLOT;
+} ID_EX_PACKET;
 
 typedef struct packed {
-	logic [$clog2(`ROB_SIZE)-1:0] rs1_tag;				// ROB number of rs1
-	logic [$clog2(`ROB_SIZE)-1:0] rs2_tag;				// ROB number of rs2
-	logic rs1_tag_ready;                                // rs1 ready in ROB
-	logic rs2_tag_ready;								// rs2 ready in ROB
-} MT_RS_PACKET;
+	logic [`XLEN-1:0] alu_result;  // alu_result
+	logic [`XLEN-1:0] NPC;         // pc + 4
+	logic             take_branch; // is this a taken branch?
+	// pass-through from decode stage
+	logic [`XLEN-1:0] rs2_value;
+	logic             rd_mem, wr_mem;
+	logic [4:0]       dest_reg_idx;
+	logic             halt, illegal, csr_op, valid;
+	logic [2:0]       mem_size; // byte, half-word or word
+} EX_MEM_PACKET;
 
-typedef struct packed {
-	logic [$clog2(`ROB_SIZE)-1:0] rob_entry_in;
-	logic [`XLEN-1:0] rob_entry_value_rs1;
-	logic [`XLEN-1:0] rob_entry_value_rs2;
-} ROB_RS_PACKET;
-/*
-typedef struct packed {
-	logic [$clog2(`ROB_SIZE)-1:0] cdb_tag;
-	logic [`XLEN-1:0] cdb_value;
-} CDB_RS_PACKET;
-*/
-typedef struct packed {
-	logic [$clog2(`ROB_SIZE)-1:0] rs1_tag;				// ROB number of rs1
-	logic [$clog2(`ROB_SIZE)-1:0] rs2_tag;				// ROB number of rs2
-} RS_ROB_PACKET;
 
-typedef struct packed {
-	logic [4:0] rs1_index;
-	logic [4:0] rs2_index;
-	logic [4:0] dest_index;
-	logic [$clog2(`ROB_SIZE)-1:0] dest_tag;
-} RS_MT_PACKET;
+//////////////////////////////////////////////
+//
+// NEW Project4 Packets:
+// Packets used in Project4
+//
+//////////////////////////////////////////////
+
+`define INST_LEN 32
+`define REG_LEN $clog2(`INST_LEN)
+
+`define ROB_LEN 8
+`define RS_LEN 8
+
+//////////////////////////////////////////////
+//
+// ID_packet:
+// Data from decoder to RS in dispatch stage
+//
+//////////////////////////////////////////////
 
 typedef struct packed {
 	logic [`XLEN-1:0] NPC; // PC + 4
@@ -358,18 +323,104 @@ typedef struct packed {
 	logic       illegal;       // is this instruction illegal?
 	logic       csr_op;        // is this a CSR operation? (we only used this as a cheap way to get return code)
 	logic       valid;         // is inst a valid instruction to be counted for CPI calculations?
-} IS_EX_PACKET;
+} ID_PACKET;
+
+//////////////////////////////////////////////
+//
+// IS_packet:
+// Data after D_S pipeline
+//
+//////////////////////////////////////////////
 
 typedef struct packed {
-	logic [`XLEN-1:0] alu_result;  // alu_result
-	logic [`XLEN-1:0] NPC;         // pc + 4
-	logic             take_branch; // is this a taken branch?
-	// pass-through from decode stage
+	logic [`XLEN-1:0] NPC; // PC + 4
+	logic [`XLEN-1:0] PC;  // PC
+
+	logic [`XLEN-1:0] rs1_value; // reg A value
+	logic [`XLEN-1:0] rs2_value; // reg B value
+	
+	ALU_OPA_SELECT opa_select; // ALU opa mux select (ALU_OPA_xxx *)
+	ALU_OPB_SELECT opb_select; // ALU opb mux select (ALU_OPB_xxx *)
+	INST inst;                 // instruction
+	
+	logic [$clog2(`REG_LEN)-1:0] dest_reg_idx;  // destination (writeback) register rob entry number
+	ALU_FUNC    alu_func;      // ALU function select (ALU_xxx *)
+	logic       rd_mem;        // does inst read memory?
+	logic       wr_mem;        // does inst write memory?
+	logic       cond_branch;   // is inst a conditional branch?
+	logic       uncond_branch; // is inst an unconditional branch?
+	logic       halt;          // is this a halt?
+	logic       illegal;       // is this instruction illegal?
+	logic       csr_op;        // is this a CSR operation? (we only used this as a cheap way to get return code)
+	logic       valid;         // is inst a valid instruction to be counted for CPI calculations?
+} IS_PACKET;
+
+//////////////////////////////////////////////
+//
+// MT2RS_PACKET:
+// Data from Map Table to RS
+//
+//////////////////////////////////////////////
+
+typedef struct packed {
+	logic [$clog2(`ROB_LEN)-1:0] rs1_tag;
+	logic [$clog2(`ROB_LEN)-1:0] rs2_tag;
+	logic rs1_ready;
+	logic rs2_ready;
+} MT2RS_PACKET;
+
+//////////////////////////////////////////////
+//
+// RS2MT_PACKET:
+// Data from RS to Map Table
+//
+//////////////////////////////////////////////
+
+typedef struct packed {
+	logic [`REG_LEN-1:0] rs1_idx;
+	logic [`REG_LEN-1:0] rs2_idx;
+	logic [`REG_LEN-1:0] dest_reg_idx;
+	logic [$clog2(`ROB_LEN)-1:0] dest_reg_tag;
+} RS2MT_PACKET;
+
+//////////////////////////////////////////////
+//
+// CDB_PACKET:
+// Data broadcasted from CDB
+//
+//////////////////////////////////////////////
+
+typedef struct packed {
+	logic [$clog2(`ROB_LEN)-1:0] reg_tag;
+	logic [`XLEN-1:0] reg_value;
+} CDB_PACKET;
+
+//////////////////////////////////////////////
+//
+// ROB2RS_PACKET:
+// Data from ROB to RS
+//
+//////////////////////////////////////////////
+
+typedef struct packed {
+	logic [$clog2(`ROB_LEN)-1:0] rob_entry;
+	logic [$clog2(`ROB_LEN)-1:0] rob_head_idx;
+	logic [`XLEN-1:0] rs1_value;
 	logic [`XLEN-1:0] rs2_value;
-	logic             rd_mem, wr_mem;
-	logic [4:0]       dest_reg_idx;
-	logic             halt, illegal, csr_op, valid;
-	logic [2:0]       mem_size; // byte, half-word or word
-} EX_MEM_PACKET;
+} ROB2RS_PACKET;
+
+//////////////////////////////////////////////
+//
+// RS2ROB_PACKET:
+// Data from RS to ROB
+//
+//////////////////////////////////////////////
+
+typedef struct packed {
+	logic valid;
+	logic [$clog2(`ROB_LEN)-1:0] rs1_idx;
+	logic [$clog2(`ROB_LEN)-1:0] rs2_idx;
+} RS2ROB_PACKET;
+
 
 `endif // __SYS_DEFS_SVH__
