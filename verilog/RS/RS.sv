@@ -275,10 +275,10 @@ Output the index of the RS_entry that issued instruction
 
     IS_PACKET [`RS_LEN-1:0] rs_entry_packet_out;
 
-    logic [`SUPERSCALAR_LEN-1:0] valid; // if valid = 0, rs encountered structural hazard and has to stall
+    logic valid; // if valid = 0, rs encountered structural hazard and has to stall
 
-    logic [$clog2(`RS_LEN)-1:0] issue_candidate_rob_entry; // one-hot encoding of rs_entry_packet_out.dest_reg_idx
-    logic [$clog2(`RS_LEN)-1:0] issue_inst_rob_entry; // one-hot encoding of rob_entry of the inst issued
+    logic [RS_LEN-1:0] issue_candidate_rob_entry; // one-hot encoding of rs_entry_packet_out.dest_reg_idx
+    logic [`RS_LEN-1:0] issue_inst_rob_entry; // one-hot encoding of rob_entry of the inst issued
 
 
     // output packages
