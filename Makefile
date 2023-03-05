@@ -338,14 +338,16 @@ testbench_passed:
 
 # NOTE: we're able to write these filenames without directories due to the VPATH declaration above
 # Make will automatically expand these to their actual paths when used in recipes
-TESTBENCH = testbench.sv \
+#TESTBENCH = testbench.sv \
             mem.sv
-
+TESTBENCH = verilog/RS/RS_entry_testbench.sv
 # you could simplify this line with $(wildcard verilog/*.sv) - but the manual way is more explicit
-SIMFILES = pipeline.sv \
+#SIMFILES = pipeline.sv \
            regfile.sv \
            icache.sv \
            mult.sv
+
+SIMFILES = verilog/RS/RS.sv
 
 simv: $(HEADERS) $(TESTBENCH) $(SIMFILES)
 	@$(call PRINT_COLOR, 5, compiling $@)
