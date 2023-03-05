@@ -45,7 +45,7 @@ module RS_entry(
     input clear;
     input enable;
 
-    output IS_PACKET is_packet_out;
+    output IS_PACKET d_s_packet;
     output busy;
     output ready;
 );
@@ -74,7 +74,7 @@ Issue stage is the behavior or RS_entry for issue out instruction currently in t
 Note: packets to ROB, Map Table and selection of RS_entry, issued s_x_packet should be in RS 
 
 """
-    logic IS_PACKET d_s_packet;
+    logic IS_PACKET is_packet_out;
     logic [$clog2(`ROB_LEN)-1:0] rs1_tag;
     logic [$clog2(`ROB_LEN)-1:0] rs2_tag;
     logic [$clog2(`ROB_LEN)-1:0] next_rs1_tag;
@@ -95,25 +95,49 @@ Note: packets to ROB, Map Table and selection of RS_entry, issued s_x_packet sho
     assign d_s_packet.illegal          = enable ? id_packet_in.illegal        : is_packet_out.illegal;
     assign d_s_packet.csr_op           = enable ? id_packet_in.csr_op         : is_packet_out.csr_op;
     assign d_s_packet.valid            = enable ? id_packet_in.valid          : is_packet_out.valid;
-    assign d_s_packet.dest_reg_idx     = enable ? rob_entry                   : is_packet_out.dest_reg_idx; // changed 
+    assign d_s_packet.dest_reg_idx     = enable ? rob2rs_packet_in.rob_entry  : is_packet_out.dest_reg_idx; // changed 
+
+    // assign d_s_packet.NPC              = id_packet_in.NPC;
+    // assign d_s_packet.PC               = id_packet_in.PC;
+    // assign d_s_packet.opa_select       = id_packet_in.opa_select;
+    // assign d_s_packet.opb_select       = id_packet_in.opb_select;
+    // assign d_s_packet.inst             = id_packet_in.opa_inst;
+    // assign d_s_packet.alu_func         = id_packet_in.alu_func;
+    // assign d_s_packet.rd_mem           = id_packet_in.rd_mem;
+    // assign d_s_packet.wr_mem           = id_packet_in.wr_mem;
+    // assign d_s_packet.cond_branch      = id_packet_in.cond_branch;
+    // assign d_s_packet.uncond_branch    = id_packet_in.uncond_branch;
+    // assign d_s_packet.halt             = id_packet_in.halt;
+    // assign d_s_packet.illegal          = id_packet_in.illegal;
+    // assign d_s_packet.csr_op           = id_packet_in.csr_op;
+    // assign d_s_packet.valid            = id_packet_in.valid;
+    // assign d_s_packet.dest_reg_idx     = rob2rs_packet_in.rob_entry;
 
     // register values for rs1 and rs2 tags
     assign next_rs1_tag = enable ? (mt2rs_packet_in.rs1_ready ? 0 : mt2rs_packet_in.rs1_idx) :  // 0 if ready in MT
-                                   (busy & cdb_packet_in.reg_tag == rs1_tag ? 0 : rs1_tag);     // 0 if broadcasted by cdb
+                                   ((busy && (cdb_packet_in.reg_tag == rs1_tag)) ? 0 : rs1_tag);// 0 if broadcasted by cdb
                                                                                                 // rs1_tag by default
+    // always_comb begin
+    //     if (mt2rs_packet_in.rs1_ready)
+    //         next_rs1_tag = 0;
+    //     else if (busy && (cdb_packet_in.reg_tag == rs1_tag))
+    //         next_rs1_tag = 0;
+    //     else
+    //         next_rs1_tag = mt2rs_packet_in.rs1_idx;
+    // end
     assign next_rs2_tag = enable ? (mt2rs_packet_in.rs2_ready ? 0 : mt2rs_packet_in.rs2_idx) :  // 0 if ready in MT
-                                   (busy & cdb_packet_in.reg_tag == rs2_tag ? 0 : rs2_tag);     // 0 if broadcasted by cdb
+                                   ((busy && (cdb_packet_in.reg_tag == rs2_tag)) ? 0 : rs2_tag);// 0 if broadcasted by cdb
                                                                                                 // rs2_tag by default
 
     // register values for rs1 and rs2 values
     // !!! perhaps it is not good to use next_rs1_tag to determine next_rs1_value?
-    assign d_s_packet.rs1_value = enable ? (next_rs1_tag == 0 & mt2rs_packet_in.rs1_idx != 0 ? rob2rs_packet_in.rs1_value : id_packet_in.rs1_value) :
-                                            (busy & cdb_packet_in.reg_tag == rs1_tag ? cdb_packet_in.reg_value : is_packet_out.rs1_value);
-    assign d_s_packet.rs2_value = enable ? (next_rs2_tag == 0 & mt2rs_packet_in.rs2_idx != 0 ? rob2rs_packet_in.rs2_value : id_packet_in.rs2_value) :
-                                            (busy & cdb_packet_in.reg_tag == rs2_tag ? cdb_packet_in.reg_value : is_packet_out.rs2_value);
+    assign d_s_packet.rs1_value = enable ? ((next_rs1_tag == 0 && mt2rs_packet_in.rs1_tag != 0) ? rob2rs_packet_in.rs1_value : id_packet_in.rs1_value) :
+                                            (busy && cdb_packet_in.reg_tag == rs1_tag ? cdb_packet_in.reg_value : is_packet_out.rs1_value);
+    assign d_s_packet.rs2_value = enable ? ((next_rs2_tag == 0 && mt2rs_packet_in.rs2_tag != 0) ? rob2rs_packet_in.rs2_value : id_packet_in.rs2_value) :
+                                            (busy && cdb_packet_in.reg_tag == rs2_tag ? cdb_packet_in.reg_value : is_packet_out.rs2_value);
 
     // logic for Issue stage
-    assign ready = (rs1_tag == 0) & (rs2_tag == 0); // ready will be set one cc after the instruction is loaded into the RS_entry
+    assign ready = (!rs1_tag && !rs2_tag) ? 1 : 0; // ready will be set one cc after the instruction is loaded into the RS_entry
 
     // logic for registers
     // synopsys sync_set_reset "reset"
@@ -123,12 +147,14 @@ Note: packets to ROB, Map Table and selection of RS_entry, issued s_x_packet sho
         end
         else if (enable) begin
             busy <= `SD 1;
-            is_packet_out <= `SD d_s_packet; // this is the dispatch/issue pipeline
-            rs1_tag <= `SD next_rs1_tag;
-            rs2_tag <= `SD next_rs2_tag;
         end
         else if (clear) begin // do not clear if enable and clear is 1 at the same time
             busy <= `SD 0;
+        end
+        else begin
+            is_packet_out <= `SD d_s_packet; // this is the dispatch/issue pipeline
+            rs1_tag <= `SD next_rs1_tag;
+            rs2_tag <= `SD next_rs2_tag;
         end
     end
 
@@ -220,12 +246,12 @@ module RegisterStation(
     input ROB2RS_PACKET rob2rs_packet_in;
     input MT2RS_PACKET mt2rs_packet_in;
     input CDB_PACKET cdb_packet_in;
-    input [$clog2(`RS_LEN)-1:0] rs_entry_clear_idx;
+    input [`RS_LEN-1:0] rs_entry_clear_in;
     
     output RS2ROB_PACKET rs2rob_packet_out;
     output RS2MT_PACKET rs2mt_packet_out;
     output IS_PACKET is_packet_out;
-    output [$clog2(`RS_LEN)-1:0] rs_entry_issue_idx;
+    output [`RS_LEN-1:0] rs_entry_clear_out;
 );
 """
 What this module does:
@@ -242,7 +268,7 @@ Use rotational priority selector to select issued instruction
 Output the index of the RS_entry that issued instruction
 
 """
-    logic [`RS_LEN-1:0] rs_entry_clear;
+    // logic [`RS_LEN-1:0] rs_entry_clear;
     logic [`RS_LEN-1:0] rs_entry_enable; 
     logic [`RS_LEN-1:0] rs_entry_busy;
     logic [`RS_LEN-1:0] rs_entry_ready; 
@@ -251,8 +277,8 @@ Output the index of the RS_entry that issued instruction
 
     logic valid; // if valid = 0, rs encountered structural hazard and has to stall
 
-    logic [$clog2(`RS_LEN)-1:0] issue_candidate_rob_entry; // one-hot encoding of rs_entry_packet_out.dest_reg_idx
-    logic [$clog2(`RS_LEN)-1:0] issue_inst_rob_entry; // one-hot encoding of rob_entry of the inst issued
+    logic [RS_LEN-1:0] issue_candidate_rob_entry; // one-hot encoding of rs_entry_packet_out.dest_reg_idx
+    logic [`RS_LEN-1:0] issue_inst_rob_entry; // one-hot encoding of rob_entry of the inst issued
 
 
     // output packages
@@ -283,7 +309,7 @@ Output the index of the RS_entry that issued instruction
     );
 
     wire reserved_wire;
-    rps8 rps8_0(
+    rps8 rps8_0( // have two outputs
         .req(issue_candidate_rob_entry),
         .en(1), // always enabled
         .sel(rob2rs_packet_in.rob_head_idx),
@@ -291,6 +317,7 @@ Output the index of the RS_entry that issued instruction
         .req_up(reserved_wire) // some wire that has no use
     );
 
+    logic [`RS_LEN-1:0][`ROB_LEN-1:0] rs_entry_rob_entry;
     // Find issue_candidate_rob_entry
     always_comb begin
         issue_candidate_rob_entry = 0;
@@ -298,16 +325,20 @@ Output the index of the RS_entry that issued instruction
             for (int j = 0; j < `ROB_LEN; j++) begin
                 if (rs_entry_ready[i] & rs_entry_packet_out[i].dest_reg_idx == j)
                     issue_candidate_rob_entry[j] = 1;
+                    rs_entry_rob_entry[i][j] = 1;
             end
         end
     end
 
+
     // Issue according to issue_inst_rob_entry
+    // !!! two ouputs
     always_comb begin
         is_packet_out = 0; // or a nop instruction
         for (int i = 0; i < `RS_LEN; i++) begin
-            if (issue_candidate_rob_entry == rs_entry_packet_out[i].rob_entry) begin
+            if (issue_inst_rob_entry == rs_entry_rob_entry[i]) begin
                 is_packet_out = rs_entry_packet_out[i];
+                rs_entry_clear_out[1] = 1;
                 break;
             end
         end
@@ -315,6 +346,7 @@ Output the index of the RS_entry that issued instruction
 
     // loop to find which RS_entry to assign
     // can also use ps_RS_LEN (priority selector)
+    // !!! two ouptuts
     always_comb begin
         rs_entry_enable = 0; // default: all 0
         valid           = 0;
@@ -329,15 +361,15 @@ Output the index of the RS_entry that issued instruction
 
     // Find rs_entry that should be cleared
     // !!! a better way to do this?
-    always_comb begin
-        rs_entry_clear = 0;
-        for (int i = 0; i < `RS_LEN; i++) begin
-            if (rs_entry_clear_idx == i) begin
-                rs_entry_clear[i]   = 1; // clear this rs_entry 
-                break;
-            end
-        end
-    end
+    // always_comb begin
+    //     rs_entry_clear = 0;
+    //     for (int i = 0; i < `RS_LEN; i++) begin
+    //         if (rs_entry_clear_idx == i) begin
+    //             rs_entry_clear[i]   = 1; // clear this rs_entry 
+    //             break;
+    //         end
+    //     end
+    // end
 
     
 
