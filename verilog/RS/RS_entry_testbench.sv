@@ -331,7 +331,7 @@ module testbench_rs_entry;
         @(negedge clock);
         assert(busy == 0) else $display("@@@FAILED@@@");
 
-
+        $display("@@@PASSED@@@")
     end
 
 endmodule
