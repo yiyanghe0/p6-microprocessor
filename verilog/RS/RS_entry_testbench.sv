@@ -46,11 +46,11 @@ module testbench_rs_entry;
         //inst1 
         enable = 1;
         //id
-        id_packet_in.rs1_value = 1;
-        id_packet_in.rs2_value = 1;
+        id_packet_in.rs1_value = 1;  
+        id_packet_in.rs2_value = 1;  
         id_packet_in.dest_reg_idx = 1;
         //mt
-        mt2rs_packet_in.rs1_tag = 0;
+        mt2rs_packet_in.rs1_tag = 0; // reg file
         mt2rs_packet_in.rs2_tag = 0;
         mt2rs_packet_in.rs1_ready = 0;
         mt2rs_packet_in.rs2_ready = 0;
@@ -59,26 +59,62 @@ module testbench_rs_entry;
         cdb_packet_in.reg_value = 0;
         //rob
         rob2rs_packet_in.rob_entry = 1;
-        rob2rs_packet_in.rob_head_idx = 1;
         rob2rs_packet_in.rs1_value = 0;
         rob2rs_packet_in.rs2_value = 0;
         //clear
         clear = 0;
-
         @(negedge clock);
+        assert(busy == 1) else $display("@@@FAILED@@@");
+        assert(ready == 1) else $display("@@@FAILED@@@");
         enable = 0;
 
         @(negedge clock);
+        assert(busy == 1) else $display("@@@FAILED@@@");
         clear = 1;
-
         @(negedge clock);
-        //inst2
+        assert(busy == 0) else $display("@@@FAILED@@@");
+
+         //inst2
         enable = 1;
         //id
-        id_packet_in.rs1_value = 0;
-        id_packet_in.rs2_value = 1;
+        id_packet_in.rs1_value = 2;
+        id_packet_in.rs2_value = 2;
+        id_packet_in.dest_reg_idx = 2;
         //mt
-        mt2rs_packet_in.rs1_tag = 1;
+        mt2rs_packet_in.rs1_tag = 1;  // t1 t2 is blank, v1 v2 in rob
+        mt2rs_packet_in.rs2_tag = 1;
+        mt2rs_packet_in.rs1_ready = 1;
+        mt2rs_packet_in.rs2_ready = 1;
+        //cdb
+        cdb_packet_in.reg_tag = 0;
+        cdb_packet_in.reg_value = 0;
+        //rob
+        rob2rs_packet_in.rob_entry = 2;
+        rob2rs_packet_in.rs1_value = 0;
+        rob2rs_packet_in.rs2_value = 0;
+        //clear
+        clear = 0;
+        @(negedge clock);
+        assert(busy == 1) else $display("@@@FAILED@@@");
+        assert(ready == 1) else $display("@@@FAILED@@@");
+        enable = 0;
+
+        @(negedge clock);
+        assert(busy == 0) else $display("@@@FAILED@@@");
+        clear = 1;
+        @(negedge clock);
+        assert(busy == 0) else $display("@@@FAILED@@@");
+        @(negedge clock);
+
+
+        //inst3
+        enable = 1;
+        //id
+        id_packet_in.rs1_value = 3;
+        id_packet_in.rs2_value = 3;
+        id_packet_in.dest_reg_idx = 3;
+        //mt
+        mt2rs_packet_in.rs1_tag = 1;  // t1 t2 is waiting
         mt2rs_packet_in.rs2_tag = 1;
         mt2rs_packet_in.rs1_ready = 0;
         mt2rs_packet_in.rs2_ready = 0;
@@ -86,50 +122,216 @@ module testbench_rs_entry;
         cdb_packet_in.reg_tag = 0;
         cdb_packet_in.reg_value = 0;
         //rob
-        rob2rs_packet_in.rob_entry = 2;
-        rob2rs_packet_in.rob_head_idx = 2;
+        rob2rs_packet_in.rob_entry = 3;
         rob2rs_packet_in.rs1_value = 0;
         rob2rs_packet_in.rs2_value = 0;
         //clear
         clear = 0;
 
         @(negedge clock);
+        assert(busy == 1) else $display("@@@FAILED@@@");
+        assert(ready == 0) else $display("@@@FAILED@@@");
         enable = 0;
         cdb_packet_in.reg_tag = 1;
-        cdb_packet_in.reg_value = 10;
+        cdb_packet_in.reg_value = 1;
 
         @(negedge clock);
+        assert(busy == 1) else $display("@@@FAILED@@@");
+        assert(ready == 1) else $display("@@@FAILED@@@");
         clear = 1;
+        cdb_packet_in.reg_tag = 0;
+        cdb_packet_in.reg_value = 0;
 
         @(negedge clock);
-        //inst2
+        assert(busy == 0) else $display("@@@FAILED@@@");
+        @(negedge clock);
+
+
+        //inst4
         enable = 1;
         //id
-        id_packet_in.rs1_value = 0;
-        id_packet_in.rs2_value = 1;
+        id_packet_in.rs1_value = 3;
+        id_packet_in.rs2_value = 3;
+        id_packet_in.dest_reg_idx = 3;
         //mt
-        mt2rs_packet_in.rs1_tag = 2;
-        mt2rs_packet_in.rs2_tag = 2;
+        mt2rs_packet_in.rs1_tag = 1;  // t1 t2 is waiting
+        mt2rs_packet_in.rs2_tag = 1;
+        mt2rs_packet_in.rs1_ready = 0;
+        mt2rs_packet_in.rs2_ready = 0;
+        //cdb
+        cdb_packet_in.reg_tag = 0;
+        cdb_packet_in.reg_value = 0;
+        //rob
+        rob2rs_packet_in.rob_entry = 4;
+        rob2rs_packet_in.rs1_value = 0;
+        rob2rs_packet_in.rs2_value = 0;
+        //clear
+        clear = 0;
+
+        @(negedge clock);
+        assert(busy == 1) else $display("@@@FAILED@@@");
+        assert(ready == 0) else $display("@@@FAILED@@@");
+
+        @(negedge clock);
+        assert(busy == 1) else $display("@@@FAILED@@@");
+        assert(ready == 0) else $display("@@@FAILED@@@");
+        enable = 0;
+        cdb_packet_in.reg_tag = 1;
+        cdb_packet_in.reg_value = 1;
+
+        @(negedge clock);
+        assert(busy == 1) else $display("@@@FAILED@@@");
+        assert(ready == 1) else $display("@@@FAILED@@@");
+        clear = 1;
+        cdb_packet_in.reg_tag = 0;
+        cdb_packet_in.reg_value = 0;
+
+        @(negedge clock);
+        assert(busy == 0) else $display("@@@FAILED@@@");
+        @(negedge clock);
+
+
+        // tight test
+        //inst5 
+        enable = 1;
+        //id
+        id_packet_in.rs1_value = 1;  
+        id_packet_in.rs2_value = 1;  
+        id_packet_in.dest_reg_idx = 1;
+        //mt
+        mt2rs_packet_in.rs1_tag = 0; // reg file
+        mt2rs_packet_in.rs2_tag = 0;
+        mt2rs_packet_in.rs1_ready = 0;
+        mt2rs_packet_in.rs2_ready = 0;
+        //cdb
+        cdb_packet_in.reg_tag = 0;
+        cdb_packet_in.reg_value = 0;
+        //rob
+        rob2rs_packet_in.rob_entry = 5;
+        rob2rs_packet_in.rs1_value = 0;
+        rob2rs_packet_in.rs2_value = 0;
+        //clear
+        clear = 0;
+        @(negedge clock);
+        assert(busy == 1) else $display("@@@FAILED@@@");
+        assert(ready == 1) else $display("@@@FAILED@@@");
+        enable = 0;
+
+        @(negedge clock);
+        assert(busy == 1) else $display("@@@FAILED@@@");
+        clear = 1;
+
+        //inst6
+        enable = 1;
+        //id
+        id_packet_in.rs1_value = 2;
+        id_packet_in.rs2_value = 2;
+        id_packet_in.dest_reg_idx = 2;
+        //mt
+        mt2rs_packet_in.rs1_tag = 1;  // t1 t2 is blank, v1 v2 in rob
+        mt2rs_packet_in.rs2_tag = 1;
         mt2rs_packet_in.rs1_ready = 1;
         mt2rs_packet_in.rs2_ready = 1;
         //cdb
         cdb_packet_in.reg_tag = 0;
         cdb_packet_in.reg_value = 0;
         //rob
-        rob2rs_packet_in.rob_entry = 3;
-        rob2rs_packet_in.rob_head_idx = 3;
-        rob2rs_packet_in.rs1_value = 5;
-        rob2rs_packet_in.rs2_value = 5;
+        rob2rs_packet_in.rob_entry = 6;
+        rob2rs_packet_in.rs1_value = 0;
+        rob2rs_packet_in.rs2_value = 0;
         //clear
+        @(negedge clock);
+        assert(busy == 1) else $display("@@@FAILED@@@");
         clear = 0;
 
+        
         @(negedge clock);
+        assert(busy == 1) else $display("@@@FAILED@@@");
+        assert(ready == 1) else $display("@@@FAILED@@@");
         enable = 0;
-        cdb_packet_in.reg_tag = 1;
+
+        @(negedge clock);
+        assert(busy == 0) else $display("@@@FAILED@@@");
+        clear = 1;
+        @(negedge clock);
+        assert(busy == 0) else $display("@@@FAILED@@@");
+        @(negedge clock);
+
+
+        //inst7
+        enable = 1;
+        //id
+        id_packet_in.rs1_value = 1;  
+        id_packet_in.rs2_value = 1;  
+        id_packet_in.dest_reg_idx = 1;
+        //mt
+        mt2rs_packet_in.rs1_tag = 2; // one tag
+        mt2rs_packet_in.rs2_tag = 3;
+        mt2rs_packet_in.rs1_ready = 0;
+        mt2rs_packet_in.rs2_ready = 1;
+        //cdb
+        cdb_packet_in.reg_tag = 0;
+        cdb_packet_in.reg_value = 0;
+        //rob
+        rob2rs_packet_in.rob_entry = 7;
+        rob2rs_packet_in.rs1_value = 0;
+        rob2rs_packet_in.rs2_value = 0;
+        //clear
+        clear = 0;
+        @(negedge clock);
+        assert(busy == 1) else $display("@@@FAILED@@@");
+        assert(ready == 0) else $display("@@@FAILED@@@");
+        enable = 0;
+        @(negedge clock);
+        cdb_packet_in.reg_tag = 2;
         cdb_packet_in.reg_value = 10;
 
         @(negedge clock);
+        assert(busy == 1) else $display("@@@FAILED@@@");
+        assert(ready == 1) else $display("@@@FAILED@@@");
         clear = 1;
+        @(negedge clock);
+        assert(busy == 0) else $display("@@@FAILED@@@");
+
+         //inst8
+        enable = 1;
+        //id
+        id_packet_in.rs1_value = 2;
+        id_packet_in.rs2_value = 2;
+        id_packet_in.dest_reg_idx = 3;
+        //mt
+        mt2rs_packet_in.rs1_tag = 3;  // t1 t2 is blank, v1 v2 in rob
+        mt2rs_packet_in.rs2_tag = 4;
+        mt2rs_packet_in.rs1_ready = 0;
+        mt2rs_packet_in.rs2_ready = 0;
+        //cdb
+        cdb_packet_in.reg_tag = 0;
+        cdb_packet_in.reg_value = 0;
+        //rob
+        rob2rs_packet_in.rob_entry = 8;
+        rob2rs_packet_in.rs1_value = 0;
+        rob2rs_packet_in.rs2_value = 0;
+        //clear
+        clear = 0;
+        @(negedge clock);
+        assert(busy == 1) else $display("@@@FAILED@@@");
+        assert(ready == 0) else $display("@@@FAILED@@@");
+        enable = 0;
+        cdb_packet_in.reg_tag = 4;
+        cdb_packet_in.reg_value = 10;
+        @(negedge clock);
+        assert(busy == 1) else $display("@@@FAILED@@@");
+        assert(ready == 0) else $display("@@@FAILED@@@");
+        cdb_packet_in.reg_tag = 3;
+        cdb_packet_in.reg_value = 10;
+        @(negedge clock);
+        assert(busy == 1) else $display("@@@FAILED@@@");
+        assert(ready == 1) else $display("@@@FAILED@@@");
+        clear = 1;
+        @(negedge clock);
+        assert(busy == 0) else $display("@@@FAILED@@@");
+
+
     end
 
 endmodule
