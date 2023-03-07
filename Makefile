@@ -222,7 +222,7 @@ all: mult_no_lsq.out
 # delete this comment area when you want to
 # TODO TODO TODO TODO
 
-TESTED_MODULES = mult
+TESTED_MODULES = RS_entry
 
 # if a module includes other modules, add the dependencies explicitly here
 # this works due to the targets using the $^ automatic variable
@@ -234,7 +234,7 @@ TESTED_MODULES = mult
 
 # this make rule will generate <name>_simv targets from the TESTED_MODULES variable e.g. 'make rob_simv'
 # it expects a <name>_tb.sv file in the testbench folder
-$(TESTED_MODULES:=_simv): %_simv: $(HEADERS) %.sv testbench/%_tb.sv
+$(TESTED_MODULES:=_simv): %_simv: $(HEADERS) verilog/RS/%.sv testbench/%_tb.sv
 	@$(call PRINT_COLOR, 5, compiling testbench for the $* module)
 	@$(call PRINT_COLOR, 3, NOTE: if this is slow to startup: run '"module load vcs verdi"')
 	$(VCS) $^ -o $@
@@ -248,6 +248,25 @@ $(TESTED_MODULES:=.sim): %.sim: %_simv | output
 	@$(call PRINT_COLOR, 6, finished running $* testbench)
 	@$(call PRINT_COLOR, 2, output is in output/$(@F).out)
 .PHONY: %.sim
+
+# make sure that you copy-paste actual tab characters here, sometimes piazza turns them to spaces
+# around line 252 is a good location for this
+
+# it can be nice to have a separate executable for coverage computations
+# however you could just change the default VCS arguments and reuse <module>_simv below
+VCS_COVERAGE = -cm line+fsm+tgl+branch+assert
+$(TESTED_MODULES:=_coverage_simv): %_coverage_simv: $(HEADERS) verilog/RS/%.sv testbench/%_tb.sv
+	@$(call PRINT_COLOR, 5, compiling coverage testbench for the $* module)
+	@$(call PRINT_COLOR, 3, NOTE: if this is slow to startup: run '"module load vcs verdi"')
+	$(VCS) $(VCS_COVERAGE) $^ -o $@
+	@$(call PRINT_COLOR, 6, finished compiling $@)
+
+$(TESTED_MODULES:=.coverage): %.coverage: %_coverage_simv novas.rc verdi_dir | output
+	@$(call PRINT_COLOR, 5, running coverage testbench for the $* module)
+	./$< $(VCS_COVERAGE) | tee output/$*.coverage
+	@$(call PRINT_COLOR, 2, coverage output is in output/$*.coverage)
+	@$(call PRINT_COLOR, 5, running verdi in coverage mode for the $* testbench)
+	./$< -gui=verdi -cov -covdir $<.vdb
 
 # synthesis is a bit more complicated, as we have to first generate .vg files for each module
 # this is only set up to compile modules that only get instantiated at one parameter value
@@ -338,16 +357,16 @@ testbench_passed:
 
 # NOTE: we're able to write these filenames without directories due to the VPATH declaration above
 # Make will automatically expand these to their actual paths when used in recipes
-#TESTBENCH = testbench.sv \
+TESTBENCH = testbench.sv \
             mem.sv
-TESTBENCH = verilog/RS/RS_entry_testbench.sv
+#TESTBENCH = verilog/RS/RS_entry_testbench.sv
 # you could simplify this line with $(wildcard verilog/*.sv) - but the manual way is more explicit
-#SIMFILES = pipeline.sv \
+SIMFILES = pipeline.sv \
            regfile.sv \
            icache.sv \
            mult.sv
 
-SIMFILES = verilog/RS/RS_entry_unfinalized.sv
+#SIMFILES = verilog/RS/RS_entry_unfinalized.sv
 
 simv: $(HEADERS) $(TESTBENCH) $(SIMFILES)
 	@$(call PRINT_COLOR, 5, compiling $@)
