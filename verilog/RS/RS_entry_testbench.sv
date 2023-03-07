@@ -22,8 +22,8 @@ module testbench_rs_entry;
         .cdb_packet_in(cdb_packet_in),
         .rob2rs_packet_in(rob2rs_packet_in),
         .clear(clear),
-        .enable(enable),
-        .is_packet_out(is_packet_out),
+        .wr_en(enable),
+        .entry_packet(is_packet_out),
         .busy(busy),
         .ready(ready)
 
@@ -39,6 +39,7 @@ module testbench_rs_entry;
     //i3: add r3 r3 f3
 
     initial begin
+        $monitor("TIME:%4.0f busy:%b ready:%b rs1_tag:%h rs2_tag:%h", $time, busy, ready, DUT_rs_entry.next_entry_rs1_tag, DUT_rs_entry.next_entry_rs2_tag);
         clock = 0;
         reset = 1;
         @(negedge clock);
@@ -100,7 +101,7 @@ module testbench_rs_entry;
         enable = 0;
 
         @(negedge clock);
-        assert(busy == 0) else $display("@@@FAILED@@@");
+        assert(busy == 1) else $display("@@@FAILED@@@");
         clear = 1;
         @(negedge clock);
         assert(busy == 0) else $display("@@@FAILED@@@");
@@ -251,7 +252,7 @@ module testbench_rs_entry;
         enable = 0;
 
         @(negedge clock);
-        assert(busy == 0) else $display("@@@FAILED@@@");
+        assert(busy == 1) else $display("@@@FAILED@@@");
         clear = 1;
         @(negedge clock);
         assert(busy == 0) else $display("@@@FAILED@@@");
@@ -331,7 +332,8 @@ module testbench_rs_entry;
         @(negedge clock);
         assert(busy == 0) else $display("@@@FAILED@@@");
 
-        $display("@@@PASSED@@@")
+        $display("@@@PASSED@@@");
+        $finish;
     end
 
 endmodule

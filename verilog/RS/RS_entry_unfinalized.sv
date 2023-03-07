@@ -5,21 +5,21 @@
 
 // RS_entry is the dispatch stage
 module RS_entry(
-    input clock;
-    input reset;
-    input ID_PACKET id_packet_in; // invalid if wr_en = 0
-    input MT2RS_PACKET mt2rs_packet_in; // invalid if wr_en = 0
-    input CDB_PACKET cdb_packet_in; 
-    input ROB2RS_PACKET rob2rs_packet_in; // invalid if wr_en = 0
-    input clear;
-    input wr_en;
+    input clock,
+    input reset,
+    input ID_PACKET id_packet_in, // invalid if wr_en = 0
+    input MT2RS_PACKET mt2rs_packet_in, // invalid if wr_en = 0
+    input CDB_PACKET cdb_packet_in, 
+    input ROB2RS_PACKET rob2rs_packet_in, // invalid if wr_en = 0
+    input clear,
+    input wr_en,
 
-    output IS_PACKET entry_packet; // this is the output of the dispatch stage and input of issue stage
-    output busy;
-    output ready;
+    output IS_PACKET entry_packet, // this is the output of the dispatch stage and input of issue stage
+    output logic busy,
+    output logic ready
 );
 
-"""
+/*
 What this module does:
 splited into Dispatch and Issue stages 
 Dispatch stage is the behavior of RS_entry for reading instruction to this RS_entry from Decoder
@@ -42,8 +42,8 @@ Issue stage is the behavior or RS_entry for issue out instruction currently in t
 
 Note: packets to ROB, Map Table and selection of RS_entry, issued s_x_packet should be in RS 
 
-"""
-    logic IS_PACKET next_entry_packet;
+*/
+    IS_PACKET next_entry_packet;
 
     logic [$clog2(`ROB_LEN)-1:0] entry_rs1_tag;
     logic [$clog2(`ROB_LEN)-1:0] next_entry_rs1_tag;
@@ -58,7 +58,7 @@ Note: packets to ROB, Map Table and selection of RS_entry, issued s_x_packet sho
     assign next_entry_packet.PC               = wr_en ? id_packet_in.PC             : entry_packet.PC;
     assign next_entry_packet.opa_select       = wr_en ? id_packet_in.opa_select     : entry_packet.opa_select;
     assign next_entry_packet.opb_select       = wr_en ? id_packet_in.opb_select     : entry_packet.opb_select;
-    assign next_entry_packet.inst             = wr_en ? id_packet_in.opa_inst       : entry_packet.opa_inst;
+    assign next_entry_packet.inst             = wr_en ? id_packet_in.inst           : entry_packet.inst;
     assign next_entry_packet.alu_func         = wr_en ? id_packet_in.alu_func       : entry_packet.alu_func;
     assign next_entry_packet.rd_mem           = wr_en ? id_packet_in.rd_mem         : entry_packet.rd_mem;
     assign next_entry_packet.wr_mem           = wr_en ? id_packet_in.wr_mem         : entry_packet.wr_mem;
@@ -82,7 +82,7 @@ Note: packets to ROB, Map Table and selection of RS_entry, issued s_x_packet sho
     
         if (wr_en) begin
             if (!mt2rs_packet_in.rs1_ready)
-                next_entry_rs1_tag = mt2rs_packet_in.rs1_idx;
+                next_entry_rs1_tag = mt2rs_packet_in.rs1_tag;
         end
         else if (!(busy && (cdb_packet_in.reg_tag == entry_rs1_tag)))
             next_entry_rs1_tag = entry_rs1_tag;
@@ -99,7 +99,7 @@ Note: packets to ROB, Map Table and selection of RS_entry, issued s_x_packet sho
     
         if (wr_en) begin
             if (!mt2rs_packet_in.rs2_ready)
-                next_entry_rs2_tag = mt2rs_packet_in.rs2_idx;
+                next_entry_rs2_tag = mt2rs_packet_in.rs2_tag;
         end
         else if (!(busy && (cdb_packet_in.reg_tag == entry_rs2_tag)))
             next_entry_rs2_tag = entry_rs2_tag;
@@ -147,7 +147,7 @@ Note: packets to ROB, Map Table and selection of RS_entry, issued s_x_packet sho
 
     // busy
     always_comb begin
-        next_busy = 0;
+        next_busy = busy;
 
         if (wr_en)
             next_busy = 1;
@@ -190,3 +190,5 @@ Note: packets to ROB, Map Table and selection of RS_entry, issued s_x_packet sho
     end
 
 endmodule // module RS_entry
+
+`endif // __RS_ENTRY__SV

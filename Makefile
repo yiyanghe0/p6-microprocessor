@@ -347,7 +347,7 @@ TESTBENCH = verilog/RS/RS_entry_testbench.sv
            icache.sv \
            mult.sv
 
-SIMFILES = verilog/RS/RS.sv
+SIMFILES = verilog/RS/RS_entry_unfinalized.sv
 
 simv: $(HEADERS) $(TESTBENCH) $(SIMFILES)
 	@$(call PRINT_COLOR, 5, compiling $@)
