@@ -276,7 +276,7 @@ $(TESTED_MODULES:=.coverage): %.coverage: %_coverage_simv novas.rc verdi_dir | o
 MODULE_TCL_SCRIPT = module.tcl
 
 # use the module.tcl script to synthesize each module into .vg files e.g. 'make rob.vg'
-$(TESTED_MODULES:%=synth/%.vg): synth/%.vg: %.sv | $(MODULE_TCL_SCRIPT) $(HEADERS)
+$(TESTED_MODULES:%=synth/%.vg): synth/%.vg: verilog/RS/%.sv | $(MODULE_TCL_SCRIPT) $(HEADERS)
 	@$(call PRINT_COLOR, 5, synthesizing vg file for $* testbench)
 	@$(call PRINT_COLOR, 3, this might take a while...)
 	@$(call PRINT_COLOR, 3, NOTE: if this is slow to startup: run '"module load synopsys-synth"')
