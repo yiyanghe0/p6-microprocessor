@@ -15,7 +15,7 @@
 
 // It is quite ridiculous that the Dispatch/Issue pipeline is actually inside the RS_entry
 // But this is how the lecture slides indicated
-
+/*
 """
 Inputs for RS_entry module: 
 1. D_S_PACKET from ID/IS pipeline, which includes signals from decoder
@@ -159,12 +159,12 @@ Note: packets to ROB, Map Table and selection of RS_entry, issued s_x_packet sho
     end
 
 endmodule // module RS_entry
+*/
 
-
-"""
+/*
 Rotational 2-bit Priority Selector from Project1
 Detailed explanation can be found in Project1 Description
-"""
+*/
 module rps2(
     input [1:0] req,
     input en,
@@ -178,10 +178,10 @@ module rps2(
     assign gnt[1] = en ? (sel ? (req[1] ? 1 : 0) : (gnt[0] ? 0 : (req[1] ? 1 : 0))) : 0; 
 endmodule
 
-"""
+/*
 Rotational 4-bit Priority Selector modified from Project1
 Graph can be seen on Project1 Description
-"""
+*/
 module rps4(
     input [3:0] req,
     input en,
@@ -197,11 +197,11 @@ module rps4(
     rps2 top(.req(req_up2req[1:0]), .en(en), .sel(sel[1]), .gnt(gnt2en[1:0]), .req_up(req_up));
 endmodule
 
-"""
+/*
 Rotational 8-bit Priority Selector
 Use two 4-bit and one 2-bit Priority Selector
 Similar to the design of rps4 
-"""
+*/
 module rps8(
     input [7:0] req,
     input en,
@@ -217,12 +217,12 @@ module rps8(
     rps2 top(.req(req_up2req[1:0]), .en(en), .sel(sel[2]), .gnt(gnt2en[1:0]), .req_up(req_up));
 endmodule
 
-"""
+/*
 Add rps16 if necessary
 Bits of rps should equal `ROB_LEN
-"""
+*/
 
-"""
+/*
 Inputs for RegisterStation:
 1. ID_PACKET from decoder, same as RS_entry
 2. ROB2RS_PACKET from ROB, same as RS_entry
@@ -238,22 +238,22 @@ Outputs for RegisterStation
 3. IS_PACKET to S_X pipeline
 4. rs_entry_issue_idx, the index of the rs_entry issued in this clock cycle
 
-"""
+*/
 module RegisterStation(
-    input clock;
-    input reset;
-    input ID_PACKET id_packet_in;
-    input ROB2RS_PACKET rob2rs_packet_in;
-    input MT2RS_PACKET mt2rs_packet_in;
-    input CDB_PACKET cdb_packet_in;
-    input [`RS_LEN-1:0] rs_entry_clear_in;
+    input clock,
+    input reset,
+    input ID_PACKET id_packet_in,
+    input ROB2RS_PACKET rob2rs_packet_in,
+    input MT2RS_PACKET mt2rs_packet_in,
+    input CDB_PACKET cdb_packet_in,
+    input [`RS_LEN-1:0] rs_entry_clear_in,
     
-    output RS2ROB_PACKET rs2rob_packet_out;
-    output RS2MT_PACKET rs2mt_packet_out;
-    output IS_PACKET is_packet_out;
-    output [`RS_LEN-1:0] rs_entry_clear_out;
+    output RS2ROB_PACKET rs2rob_packet_out,
+    output RS2MT_PACKET rs2mt_packet_out,
+    output IS_PACKET is_packet_out,
+    output [`RS_LEN-1:0] rs_entry_clear_out
 );
-"""
+/*
 What this module does:
 This module covers dispatch stage and issue stage
 
@@ -267,7 +267,7 @@ Issue Stage:
 Use rotational priority selector to select issued instruction
 Output the index of the RS_entry that issued instruction
 
-"""
+*/
     // logic [`RS_LEN-1:0] rs_entry_clear;
     logic [`RS_LEN-1:0] rs_entry_enable; 
     logic [`RS_LEN-1:0] rs_entry_busy;
@@ -301,9 +301,9 @@ Output the index of the RS_entry that issued instruction
         .rob2rs_packet_in({`RS_LEN-1{rob2rs_packet_in}}),
         // different rs_entry has different clear and enable
         .clear(rs_entry_clear),
-        .enable(rs_entry_enable),
+        .wr_en(rs_entry_enable),
 
-        .is_packet_out(rs_entry_packet_out),
+        .entry_packet(rs_entry_packet_out),
         .busy(rs_entry_busy),
         .ready(rs_entry_ready)
     );
