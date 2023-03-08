@@ -359,14 +359,15 @@ testbench_passed:
 # Make will automatically expand these to their actual paths when used in recipes
 TESTBENCH = testbench.sv \
             mem.sv
-#TESTBENCH = verilog/RS/RS_entry_testbench.sv
+TESTBENCH = RS_tb.sv
 # you could simplify this line with $(wildcard verilog/*.sv) - but the manual way is more explicit
 SIMFILES = pipeline.sv \
            regfile.sv \
            icache.sv \
-           mult.sv
+           mult.sv 
+		   
 
-#SIMFILES = verilog/RS/RS_entry_unfinalized.sv
+SIMFILES = verilog/RS/RS_entry.sv
 
 simv: $(HEADERS) $(TESTBENCH) $(SIMFILES)
 	@$(call PRINT_COLOR, 5, compiling $@)
