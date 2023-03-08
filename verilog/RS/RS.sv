@@ -277,13 +277,13 @@ Output the index of the RS_entry that issued instruction
 
     logic valid; // if valid = 0, rs encountered structural hazard and has to stall
 
-    logic [RS_LEN-1:0] issue_candidate_rob_entry; // one-hot encoding of rs_entry_packet_out.dest_reg_idx
+    logic [`RS_LEN-1:0] issue_candidate_rob_entry; // one-hot encoding of rs_entry_packet_out.dest_reg_idx
     logic [`RS_LEN-1:0] issue_inst_rob_entry; // one-hot encoding of rob_entry of the inst issued
 
 
     // output packages
-    assign rs2mt_packet_out.rs1_idx         = id_packet_in.inst.rs1_idx;
-    assign rs2mt_packet_out.rs2_idx         = id_packet_in.inst.rs2_idx;
+    assign rs2mt_packet_out.rs1_idx         = id_packet_in.rs1_value;
+    assign rs2mt_packet_out.rs2_idx         = id_packet_in.rs2_value;
     assign rs2mt_packet_out.dest_reg_idx    = id_packet_in.dest_reg_idx;
     assign rs2mt_packet_out.dest_reg_tag    = rob2rs_packet_in.rob_entry;
 
@@ -300,7 +300,7 @@ Output the index of the RS_entry that issued instruction
         .cdb_packet_in({`RS_LEN-1{cdb_packet_in}}),
         .rob2rs_packet_in({`RS_LEN-1{rob2rs_packet_in}}),
         // different rs_entry has different clear and enable
-        .clear(rs_entry_clear),
+        .clear(rs_entry_clear_in),
         .wr_en(rs_entry_enable),
 
         .entry_packet(rs_entry_packet_out),
@@ -338,7 +338,7 @@ Output the index of the RS_entry that issued instruction
         for (int i = 0; i < `RS_LEN; i++) begin
             if (issue_inst_rob_entry == rs_entry_rob_entry[i]) begin
                 is_packet_out = rs_entry_packet_out[i];
-                rs_entry_clear_out[1] = 1;
+                rs_entry_clear_out[i] = 1;
                 break;
             end
         end

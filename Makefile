@@ -83,7 +83,7 @@ VPATH = synth:testbench:test_progs:verilog:output
 ###############################################
 
 # these are various build flags for different parts of the makefile, VCS and LIB should be
-# familiar, but there are new variables for supporting the compilation of assembly and C
+# familiar, but there 2are new variables for supporting the compilation of assembly and C
 # source programs into riscv machine code files to be loaded into the processor's memory
 
 # don't be afraid of changing these, but be diligent about testing changes (and make git commits often!)
@@ -222,7 +222,7 @@ all: mult_no_lsq.out
 # delete this comment area when you want to
 # TODO TODO TODO TODO
 
-TESTED_MODULES = RS_entry
+TESTED_MODULES = RS
 
 # if a module includes other modules, add the dependencies explicitly here
 # this works due to the targets using the $^ automatic variable
