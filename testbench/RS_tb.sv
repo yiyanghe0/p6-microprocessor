@@ -87,26 +87,26 @@ module testbench_RegisterStation;
          
         //clear
    //     clear = 0;
-        //assert(Big_RS.rs_entry_busy[0] == 0) else $display ("@@@FAILED@@@");
-        //assert(Big_RS.rs_entry_enable[0] == 1) else $display ("@@@FAILED@@@");
+        assert(Big_RS.rs_entry_busy[0] == 0) else $display ("@@@FAILED@@@");
+        assert(Big_RS.rs_entry_enable[0] == 1) else $display ("@@@FAILED@@@");
         @(negedge clock);
 
-        //assert(Big_RS.rs_entry_enable[0] == 0) else $display ("@@@FAILED@@@");
-        //assert(Big_RS.rs_entry_busy[0] == 1) else $display ("@@@FAILED@@@");
-        //assert(Big_RS.rs_entry_ready[0] == 1) else $display ("@@@FAILED@@@");
+        assert(Big_RS.rs_entry_enable[0] == 0) else $display ("@@@FAILED@@@");
+        assert(Big_RS.rs_entry_busy[0] == 1) else $display ("@@@FAILED@@@");
+        assert(Big_RS.rs_entry_ready[0] == 1) else $display ("@@@FAILED@@@");
 
         //[1] or [0]???
-        //assert(rs2mt_packet_out.dest_reg_tag == rob2rs_packet_in.rob_entry) else $display ("@@@FAILED@@@");
-        //assert(is_packet_out.inst.inst == 32'hABCDEF12) else $display ("@@@FAILED@@@");
+        assert(rs2mt_packet_out.dest_reg_tag == rob2rs_packet_in.rob_entry) else $display ("@@@FAILED@@@");
+        assert(is_packet_out.inst.inst == 32'hABCDEF12) else $display ("@@@FAILED@@@");
 
         @(negedge clock);
-        Big_RS.rs_entry_clear_in[0] = 1;
+        rs_entry_clear_in[0] = 1;
 
 
 
 //2
         //clear
-        Big_RS.rs_entry_clear_in[1] = 0;
+        rs_entry_clear_in[1] = 0;
         //test INST
         id_packet_in.inst.inst = 32'hABC45F12;
 
@@ -127,24 +127,24 @@ module testbench_RegisterStation;
         rob2rs_packet_in.rs2_value = 0;
         //clear
 
-        //assert(Big_RS.rs_entry_busy[1] == 1) else $display ("@@@FAILED@@@");
-        //assert(Big_RS.rs_entry_enable[1] == 1) else $display ("@@@FAILED@@@");
+        assert(Big_RS.rs_entry_busy[1] == 1) else $display ("@@@FAILED@@@");
+        assert(Big_RS.rs_entry_enable[1] == 1) else $display ("@@@FAILED@@@");
 
         @(negedge clock);
-        //assert(rs2mt_packet_out.dest_reg_tag == rob2rs_packet_in.rob_entry) else $display ("@@@FAILED@@@");
-        //assert(Big_RS.rs_entry_enable[1] == 0) else $display ("@@@FAILED@@@");
-        //assert(Big_RS.rs_entry_busy[1] == 1) else $display ("@@@FAILED@@@");
-        //assert(Big_RS.rs_entry_ready[1] == 1) else $display ("@@@FAILED@@@");
-        //assert(is_packet_out.inst.inst == 32'hABC45F12) else $display ("@@@FAILED@@@");
+        assert(rs2mt_packet_out.dest_reg_tag == rob2rs_packet_in.rob_entry) else $display ("@@@FAILED@@@");
+        assert(Big_RS.rs_entry_enable[1] == 0) else $display ("@@@FAILED@@@");
+        assert(Big_RS.rs_entry_busy[1] == 1) else $display ("@@@FAILED@@@");
+        assert(Big_RS.rs_entry_ready[1] == 1) else $display ("@@@FAILED@@@");
+        assert(is_packet_out.inst.inst == 32'hABC45F12) else $display ("@@@FAILED@@@");
 
 
 
         @(negedge clock);
-         Big_RS.rs_entry_clear_in[1] = 1;
+         rs_entry_clear_in[1] = 1;
 
 //inst3
         //clear
-        Big_RS.rs_entry_clear_in[2] = 0;
+        rs_entry_clear_in[2] = 0;
 
         //test inst
         id_packet_in.inst.inst = 32'hab489F12;
@@ -165,16 +165,16 @@ module testbench_RegisterStation;
         rob2rs_packet_in.rs1_value = 0;
         rob2rs_packet_in.rs2_value = 0;
 
-        //assert(Big_RS.rs_entry_busy[2] == 1) else $display ("@@@FAILED@@@");
-        //assert(Big_RS.rs_entry_enable[2] == 1) else $display ("@@@FAILED@@@");
+        assert(Big_RS.rs_entry_busy[2] == 1) else $display ("@@@FAILED@@@");
+        assert(Big_RS.rs_entry_enable[2] == 1) else $display ("@@@FAILED@@@");
 
         @(negedge clock);
-        //assert(rs2mt_packet_out.dest_reg_tag == rob2rs_packet_in.rob_entry) else $display ("@@@FAILED@@@");
+        assert(rs2mt_packet_out.dest_reg_tag == rob2rs_packet_in.rob_entry) else $display ("@@@FAILED@@@");
         //test enable
-        //assert(Big_RS.rs_entry_enable[2] == 0) else $display ("@@@FAILED@@@");
-        //assert(Big_RS.rs_entry_busy[2] == 1) else $display ("@@@FAILED@@@");
-        //assert(Big_RS.rs_entry_ready[2] == 1) else $display ("@@@FAILED@@@");
-        //assert(is_packet_out.inst.inst == 32'hab489F12) else $display ("@@@FAILED@@@");
+        assert(Big_RS.rs_entry_enable[2] == 0) else $display ("@@@FAILED@@@");
+        assert(Big_RS.rs_entry_busy[2] == 1) else $display ("@@@FAILED@@@");
+        assert(Big_RS.rs_entry_ready[2] == 1) else $display ("@@@FAILED@@@");
+        assert(is_packet_out.inst.inst == 32'hab489F12) else $display ("@@@FAILED@@@");
 
         cdb_packet_in.reg_tag = 1;
         cdb_packet_in.reg_value = 1;
@@ -196,7 +196,7 @@ module testbench_RegisterStation;
 //inst4
 
          //clear
-        Big_RS.rs_entry_clear_in[3] = 0;
+        rs_entry_clear_in[3] = 0;
 
         //id
         //test inst
@@ -255,7 +255,7 @@ module testbench_RegisterStation;
         //very tight test
 //inst5 
         //clear
-        Big_RS.rs_entry_clear_in[4] = 0;
+        rs_entry_clear_in[4] = 0;
         //id
         //test inst
         id_packet_in.inst.inst = 32'habaacF12;
@@ -292,7 +292,7 @@ module testbench_RegisterStation;
 
 //inst6
         //clear
-        Big_RS.rs_entry_clear_in[5] = 0;
+        rs_entry_clear_in[5] = 0;
         
         //test inst
         id_packet_in.inst.inst = 32'hab22cF12;
@@ -340,7 +340,7 @@ module testbench_RegisterStation;
 
 //inst7
         //clear
-        Big_RS.rs_entry_clear_in[6] = 0;
+        rs_entry_clear_in[6] = 0;
 
         //id
         //test inst
@@ -386,7 +386,7 @@ module testbench_RegisterStation;
 
 //inst8
         //clear
-        Big_RS.rs_entry_clear_in[7] = 0;
+        rs_entry_clear_in[7] = 0;
         //id
         //test inst
         id_packet_in.inst.inst = 32'h222ccF12;
