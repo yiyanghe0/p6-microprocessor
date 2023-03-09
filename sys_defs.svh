@@ -407,6 +407,7 @@ typedef struct packed {
 	logic [$clog2(`ROB_LEN)-1:0] rob_head_idx;
 	logic [`XLEN-1:0] rs1_value;
 	logic [`XLEN-1:0] rs2_value;
+	//logic RS_enable;
 } ROB2RS_PACKET;
 
 //////////////////////////////////////////////

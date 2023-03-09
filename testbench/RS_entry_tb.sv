@@ -50,6 +50,7 @@ module testbench_rs_entry;
         id_packet_in.rs1_value = 1;  
         id_packet_in.rs2_value = 1;  
         id_packet_in.dest_reg_idx = 1;
+        id_packet_in.inst.inst = 32'hABCDEF12;
         //mt
         mt2rs_packet_in.rs1_tag = 0; // reg file
         mt2rs_packet_in.rs2_tag = 0;
@@ -67,10 +68,12 @@ module testbench_rs_entry;
         @(negedge clock);
         assert(busy == 1) else $display("@@@FAILED@@@");
         assert(ready == 1) else $display("@@@FAILED@@@");
+        assert(is_packet_out.inst.inst == 32'hABCDEF12) else $display("@@@FAILED@@@");
         enable = 0;
 
         @(negedge clock);
         assert(busy == 1) else $display("@@@FAILED@@@");
+        assert(is_packet_out.inst.inst == 32'hABCDEF12) else $display("@@@FAILED@@@");
         clear = 1;
         @(negedge clock);
         assert(busy == 0) else $display("@@@FAILED@@@");

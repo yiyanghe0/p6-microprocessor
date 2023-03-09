@@ -143,7 +143,7 @@ Note: packets to ROB, Map Table and selection of RS_entry, issued s_x_packet sho
     end
 
     // ready
-    assign ready = ((entry_rs1_tag == 0) && (entry_rs2_tag == 0)) ? 1 : 0; // ready will be set one cc after the instruction is loaded into the RS_entry
+    assign ready = busy ? (((entry_rs1_tag == 0) && (entry_rs2_tag == 0)) ? 1 : 0) : 0; // ready will be set one cc after the instruction is loaded into the RS_entry
 
     // busy
     always_comb begin
