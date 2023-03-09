@@ -1,4 +1,12 @@
 
+.fsm.sch.verilog.xml
+vdCovLog/*.log
+vdCovLog/*.rc
+vdCovLog/*.bat
+vdCovLog/*.ses
+vdCovLog/*.cmd
+vcdplus.vpd
+
 *simv
 *.daidir
 csrc
