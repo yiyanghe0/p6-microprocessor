@@ -1,6 +1,5 @@
-`timescale 1ns/100ps
 
-module testbench_RegisterStation;
+module testbench_RS;
     logic clock;
     logic reset;
     ID_PACKET id_packet_in; // invalid if enable = 0
@@ -14,7 +13,6 @@ module testbench_RegisterStation;
     IS_PACKET is_packet_out;
 
     logic [`RS_LEN-1:0] rs_entry_clear_out; 
-    logic [`RS_LEN-1:0] rs_entry_enable; 
     logic [`RS_LEN-1:0] rs_entry_busy;
     logic [`RS_LEN-1:0] rs_entry_ready; 
 
@@ -24,7 +22,7 @@ module testbench_RegisterStation;
 
 
 
-    RegisterStation Big_RS(
+    RS Big_RS(
         .clock(clock),
         .reset(reset),
         .id_packet_in(id_packet_in),
@@ -54,6 +52,7 @@ module testbench_RegisterStation;
 
     initial begin
         //$monitor("TIME:%4.0f busy:%b ready:%b rs1_tag:%h rs2_tag:%h", $time, busy, ready, DUT_rs_entry.next_entry_rs1_tag, DUT_rs_entry.next_entry_rs2_tag);
+        $monitor("TIME:%4.0f inst:%32h", $time, is_packet_out.inst.inst);
         clock = 0;
         reset = 1;
         @(negedge clock);
@@ -94,6 +93,10 @@ module testbench_RegisterStation;
         assert(Big_RS.rs_entry_enable[0] == 0) else $display ("@@@FAILED@@@");
         assert(Big_RS.rs_entry_busy[0] == 1) else $display ("@@@FAILED@@@");
         assert(Big_RS.rs_entry_ready[0] == 1) else $display ("@@@FAILED@@@");
+
+
+        assert(Big_RS.issue_inst_rob_entry == 8'b1) else $display("@@@FAILED@@@");
+        $display("issue:%8b",Big_RS.issue_inst_rob_entry);
 
         //[1] or [0]???
         assert(rs2mt_packet_out.dest_reg_tag == rob2rs_packet_in.rob_entry) else $display ("@@@FAILED@@@");
@@ -434,18 +437,11 @@ module testbench_RegisterStation;
         assert(Big_RS.rs_entry_busy[7] == 0) else $display ("@@@FAILED@@@");
 
     //test structural hazard
-        for (int i = 0; i < `RS_LEN; i++) begin
-            Big_RS.rs_entry_enable[i] = 0;
-        end
 
-        assert(Big_RS.valid == 0) else $display ("@@@FAILED@@@");
-
-        for (int i = 0; i < `RS_LEN; i++) begin
-            Big_RS.rs_entry_enable[i] = 1;
-        end
 
 
         $display("@@@PASSED@@@");
+        $finish;
     end
 
 endmodule

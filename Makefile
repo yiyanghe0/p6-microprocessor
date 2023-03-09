@@ -76,7 +76,7 @@
 
 # this is a built-in Make variable that lets Make search folders to find dependencies and targets
 # it can greatly simplify make rules and increase readability
-VPATH = synth:testbench:test_progs:verilog:output
+VPATH = synth:testbench:test_progs:verilog:output:verilog/RS
 
 ###############################################
 # ---- Compilation Commands and Variables ----
@@ -222,7 +222,7 @@ all: mult_no_lsq.out
 # delete this comment area when you want to
 # TODO TODO TODO TODO
 
-TESTED_MODULES = RS
+TESTED_MODULES = RS RS_entry
 
 # if a module includes other modules, add the dependencies explicitly here
 # this works due to the targets using the $^ automatic variable
@@ -231,10 +231,14 @@ TESTED_MODULES = RS
 #   synth/execute_stage.vg: mult.sv
 # must do for both .vg and _simv targets (_syn_simv gets it implicitly through the .vg file)
 
+RS_simv: RS_entry.sv
+RS_coverage_simv: RS_entry.sv
+synth/RS.vg: RS_entry.sv
+
 
 # this make rule will generate <name>_simv targets from the TESTED_MODULES variable e.g. 'make rob_simv'
 # it expects a <name>_tb.sv file in the testbench folder
-$(TESTED_MODULES:=_simv): %_simv: $(HEADERS) verilog/RS/%.sv testbench/%_tb.sv
+$(TESTED_MODULES:=_simv): %_simv: $(HEADERS) %.sv testbench/%_tb.sv
 	@$(call PRINT_COLOR, 5, compiling testbench for the $* module)
 	@$(call PRINT_COLOR, 3, NOTE: if this is slow to startup: run '"module load vcs verdi"')
 	$(VCS) $^ -o $@
@@ -255,7 +259,7 @@ $(TESTED_MODULES:=.sim): %.sim: %_simv | output
 # it can be nice to have a separate executable for coverage computations
 # however you could just change the default VCS arguments and reuse <module>_simv below
 VCS_COVERAGE = -cm line+fsm+tgl+branch+assert
-$(TESTED_MODULES:=_coverage_simv): %_coverage_simv: $(HEADERS) verilog/RS/%.sv testbench/%_tb.sv
+$(TESTED_MODULES:=_coverage_simv): %_coverage_simv: $(HEADERS) %.sv testbench/%_tb.sv
 	@$(call PRINT_COLOR, 5, compiling coverage testbench for the $* module)
 	@$(call PRINT_COLOR, 3, NOTE: if this is slow to startup: run '"module load vcs verdi"')
 	$(VCS) $(VCS_COVERAGE) $^ -o $@
@@ -276,7 +280,7 @@ $(TESTED_MODULES:=.coverage): %.coverage: %_coverage_simv novas.rc verdi_dir | o
 MODULE_TCL_SCRIPT = module.tcl
 
 # use the module.tcl script to synthesize each module into .vg files e.g. 'make rob.vg'
-$(TESTED_MODULES:%=synth/%.vg): synth/%.vg: verilog/RS/%.sv | $(MODULE_TCL_SCRIPT) $(HEADERS)
+$(TESTED_MODULES:%=synth/%.vg): synth/%.vg: %.sv | $(MODULE_TCL_SCRIPT) $(HEADERS)
 	@$(call PRINT_COLOR, 5, synthesizing vg file for $* testbench)
 	@$(call PRINT_COLOR, 3, this might take a while...)
 	@$(call PRINT_COLOR, 3, NOTE: if this is slow to startup: run '"module load synopsys-synth"')
@@ -288,7 +292,7 @@ $(TESTED_MODULES:%=synth/%.vg): synth/%.vg: verilog/RS/%.sv | $(MODULE_TCL_SCRIP
 # it expects a <name>_tb.sv file in the testbench folder
 $(TESTED_MODULES:=_syn_simv): %_syn_simv: $(HEADERS) synth/%.vg testbench/%_tb.sv
 	@$(call PRINT_COLOR, 5, compiling synth testbench for the $* module)
-	$(VCS) $^ $(LIB) -o $@
+	$(VCS) +define+SYNTH_TEST+ $^ $(LIB) -o $@
 	@$(call PRINT_COLOR, 6, finished compiling $@ synth testbench)
 # NOTE: LIB has to come after the other sources as it doesn't define a timescale, and must inherit it from a previous module
 
@@ -367,7 +371,7 @@ SIMFILES = pipeline.sv \
            mult.sv 
 		   
 
-SIMFILES = verilog/RS/RS_entry.sv
+SIMFILES = RS_entry.sv
 
 simv: $(HEADERS) $(TESTBENCH) $(SIMFILES)
 	@$(call PRINT_COLOR, 5, compiling $@)

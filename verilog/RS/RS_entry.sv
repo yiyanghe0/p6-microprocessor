@@ -1,7 +1,7 @@
 `ifndef __RS_ENTRY_SV__
 `define __RS_ENTRY_SV__
 
-`timescale 1ns/100ps
+`include "sys_defs.svh"
 
 // RS_entry is the dispatch stage
 module RS_entry(

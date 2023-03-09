@@ -1,4 +1,4 @@
-`timescale 1ns/100ps
+
 
 module testbench_rs_entry;
     logic clock;
@@ -39,7 +39,7 @@ module testbench_rs_entry;
     //i3: add r3 r3 f3
 
     initial begin
-        $monitor("TIME:%4.0f busy:%b ready:%b rs1_tag:%h rs2_tag:%h", $time, busy, ready, DUT_rs_entry.next_entry_rs1_tag, DUT_rs_entry.next_entry_rs2_tag);
+        $monitor("TIME:%4.0f busy:%b ready:%b", $time, busy, ready);
         clock = 0;
         reset = 1;
         @(negedge clock);
@@ -114,6 +114,7 @@ module testbench_rs_entry;
         id_packet_in.rs1_value = 3;
         id_packet_in.rs2_value = 3;
         id_packet_in.dest_reg_idx = 3;
+        id_packet_in.inst.inst = 32'hABCDEF12;
         //mt
         mt2rs_packet_in.rs1_tag = 1;  // t1 t2 is waiting
         mt2rs_packet_in.rs2_tag = 1;
@@ -139,6 +140,7 @@ module testbench_rs_entry;
         @(negedge clock);
         assert(busy == 1) else $display("@@@FAILED@@@");
         assert(ready == 1) else $display("@@@FAILED@@@");
+        assert(is_packet_out.inst.inst == 32'hABCDEF12) else $display("@@@FAILED@@@");
         clear = 1;
         cdb_packet_in.reg_tag = 0;
         cdb_packet_in.reg_value = 0;
