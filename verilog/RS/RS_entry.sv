@@ -160,6 +160,7 @@ Note: packets to ROB, Map Table and selection of RS_entry, issued s_x_packet sho
     always_ff @(posedge clock) begin
         if (reset) begin
             busy <= `SD 0;
+            
             entry_packet <= `SD '{{`XLEN{1'b0}},
 				{`XLEN{1'b0}},
 				{`XLEN{1'b0}},
