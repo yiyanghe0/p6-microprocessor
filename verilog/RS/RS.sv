@@ -179,11 +179,13 @@ Output the index of the RS_entry that issued instruction
     // Find issue_candidate_rob_entry
     always_comb begin
         issue_candidate_rob_entry = 0;
+        rs_entry_rob_entry = 0;
         for (int i = 0; i < `RS_LEN; i++) begin
             for (int j = 0; j < `ROB_LEN; j++) begin
-                if (rs_entry_ready[i] && rs_entry_packet_out[i].dest_reg_idx == j)
+                if (rs_entry_ready[i] && rs_entry_packet_out[i].dest_reg_idx == j) begin
                     issue_candidate_rob_entry[j] = 1;
                     rs_entry_rob_entry[i][j] = 1;
+                end
             end
         end
     end
