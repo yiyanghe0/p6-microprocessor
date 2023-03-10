@@ -5,6 +5,7 @@ vdCovLog/*.rc
 vdCovLog/*.bat
 vdCovLog/*.ses
 vdCovLog/*.cmd
+vdCovLog/*.bak
 vcdplus.vpd
 
 *simv

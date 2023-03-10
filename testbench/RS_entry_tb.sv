@@ -10,7 +10,7 @@ module testbench_rs_entry;
     logic clear;
     logic enable;
 
-    IS_PACKET is_packet_out;
+    IS_PACKET entry_packet;
     logic busy;
     logic ready;
 
@@ -23,7 +23,7 @@ module testbench_rs_entry;
         .rob2rs_packet_in(rob2rs_packet_in),
         .clear(clear),
         .wr_en(enable),
-        .entry_packet(is_packet_out),
+        .entry_packet(entry_packet),
         .busy(busy),
         .ready(ready)
 
@@ -34,12 +34,46 @@ module testbench_rs_entry;
         clock = ~clock;
     end
 
+    task give_id_message;
+        begin
+            id_packet_in.NPC = $random(32);
+            id_packet_in.PC = $random(32);
+            id_packet_in.rs1_value = $random(32);
+            id_packet_in.rs2_value = $random(32);
+            id_packet_in.opa_select = $random(2);
+            id_packet_in.opb_select = $random(4);
+            id_packet_in.dest_reg_idx = $random(4);
+            id_packet_in.alu_func = $random(5);
+            id_packet_in.rd_mem = $random(1);
+            id_packet_in.wr_mem = $random(1);
+            id_packet_in.cond_branch = $random(1);
+            id_packet_in.halt = $random(1);
+            id_packet_in.illegal = $random(1);
+        end
+    endtask
+
+
+    task exit_on_error;
+        input correct_busy, correct_ready;
+        begin
+            $display("@@@ Incorrect at time %4.0f", $time);
+            $display("@@@ Time:%4.0f enable:%b busy:%b ready:%b INST:%8h", $time, enable, busy, ready, entry_packet.inst.inst);
+            $display("@@@ expected busy: %b, expected ready: %b", correct_busy, correct_ready);
+        end
+    endtask
+
+    task check_id_packet;
+        begin 
+            //assert(id_packet)
+        end
+    endtask
+
     //i1: add r1 r1 f1
     //i2: add r2 r2 f2
     //i3: add r3 r3 f3
 
     initial begin
-        $monitor("TIME:%4.0f busy:%b ready:%b", $time, busy, ready);
+        //$monitor("TIME:%4.0f busy:%b ready:%b", $time, busy, ready);
         clock = 0;
         reset = 1;
         @(negedge clock);
@@ -68,12 +102,12 @@ module testbench_rs_entry;
         @(negedge clock);
         assert(busy == 1) else $display("@@@FAILED@@@");
         assert(ready == 1) else $display("@@@FAILED@@@");
-        assert(is_packet_out.inst.inst == 32'hABCDEF12) else $display("@@@FAILED@@@");
+        assert(entry_packet.inst.inst == 32'hABCDEF12) else $display("@@@FAILED@@@");
         enable = 0;
 
         @(negedge clock);
         assert(busy == 1) else $display("@@@FAILED@@@");
-        assert(is_packet_out.inst.inst == 32'hABCDEF12) else $display("@@@FAILED@@@");
+        assert(entry_packet.inst.inst == 32'hABCDEF12) else $display("@@@FAILED@@@");
         clear = 1;
         @(negedge clock);
         assert(busy == 0) else $display("@@@FAILED@@@");
@@ -143,7 +177,7 @@ module testbench_rs_entry;
         @(negedge clock);
         assert(busy == 1) else $display("@@@FAILED@@@");
         assert(ready == 1) else $display("@@@FAILED@@@");
-        assert(is_packet_out.inst.inst == 32'hABCDEF12) else $display("@@@FAILED@@@");
+        assert(entry_packet.inst.inst == 32'hABCDEF12) else $display("@@@FAILED@@@");
         clear = 1;
         cdb_packet_in.reg_tag = 0;
         cdb_packet_in.reg_value = 0;

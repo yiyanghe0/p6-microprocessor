@@ -113,7 +113,9 @@ Note: packets to ROB, Map Table and selection of RS_entry, issued s_x_packet sho
         next_entry_packet.rs1_value = 0; // Arbitrary value for not ready rs1
     
         if (wr_en) begin
-            if (next_entry_rs1_tag == 0)
+            if (mt2rs_packet_in.rs1_ready && mt2rs_packet_in.rs1_tag != 0)
+                next_entry_packet.rs1_value = rob2rs_packet_in.rs1_value;
+            else
                 next_entry_packet.rs1_value = id_packet_in.rs1_value;  
         end
         else begin
@@ -131,7 +133,9 @@ Note: packets to ROB, Map Table and selection of RS_entry, issued s_x_packet sho
         next_entry_packet.rs2_value = 0; // Arbitrary value for not ready rs1
     
         if (wr_en) begin
-            if (next_entry_rs2_tag == 0)
+            if (mt2rs_packet_in.rs2_ready && mt2rs_packet_in.rs2_tag != 0)
+                next_entry_packet.rs2_value = rob2rs_packet_in.rs2_value;
+            else
                 next_entry_packet.rs2_value = id_packet_in.rs2_value;  
         end
         else begin
