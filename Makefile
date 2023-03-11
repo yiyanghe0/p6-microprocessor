@@ -363,7 +363,7 @@ testbench_passed:
 # Make will automatically expand these to their actual paths when used in recipes
 TESTBENCH = testbench.sv \
             mem.sv
-TESTBENCH = RS_tb2.sv
+
 # you could simplify this line with $(wildcard verilog/*.sv) - but the manual way is more explicit
 SIMFILES = pipeline.sv \
            regfile.sv \
