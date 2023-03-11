@@ -343,7 +343,7 @@ typedef struct packed {
 	ALU_OPB_SELECT opb_select; // ALU opb mux select (ALU_OPB_xxx *)
 	INST inst;                 // instruction
 	
-	logic [$clog2(`REG_LEN)-1:0] dest_reg_idx;  // destination (writeback) register rob entry number
+	logic [$clog2(`ROB_LEN)-1:0] dest_reg_idx;  // destination (writeback) register rob entry number
 	ALU_FUNC    alu_func;      // ALU function select (ALU_xxx *)
 	logic       rd_mem;        // does inst read memory?
 	logic       wr_mem;        // does inst write memory?
