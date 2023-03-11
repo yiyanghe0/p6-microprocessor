@@ -182,13 +182,15 @@ Output the index of the RS_entry that issued instruction
         rs_entry_rob_entry = 0;
         for (int i = 0; i < `RS_LEN; i++) begin
             for (int j = 0; j < `ROB_LEN; j++) begin
-                if (rs_entry_ready[i] && rs_entry_packet_out[i].dest_reg_idx == j)
+                if (rs_entry_ready[i] && rs_entry_packet_out[i].dest_reg_idx == j) begin
                     issue_candidate_rob_entry[j] = 1;
                     rs_entry_rob_entry[i][j] = 1;
+                end
             end
         end
     end
 
+    logic [$clog2(`RS_LEN)-1:0] issue_inst_rs_entry;
 
     // Issue according to issue_inst_rob_entry
     // !!! two ouputs
@@ -212,11 +214,13 @@ Output the index of the RS_entry that issued instruction
 				1'b0  // valid
 			}; // or a nop instruction
         rs_entry_clear_out = 0;
+        issue_inst_rs_entry = 0;
 
         for (int i = 0; i < `RS_LEN; i++) begin
-            if (issue_inst_rob_entry == rs_entry_rob_entry[i]) begin
+            if ((issue_inst_rob_entry == rs_entry_rob_entry[i]) && (issue_inst_rob_entry != 0)) begin
                 is_packet_out = rs_entry_packet_out[i];
                 rs_entry_clear_out[i] = 1;
+                issue_inst_rs_entry = i;
                 break;
             end
         end
@@ -229,7 +233,7 @@ Output the index of the RS_entry that issued instruction
         rs_entry_enable = 0; // default: all 0
         valid           = 0;
         for (int i = 0; i < `RS_LEN; i++) begin
-            if (~rs_entry_busy[i]) begin
+            if (~rs_entry_busy[i] || ((issue_inst_rs_entry == i) && rs_entry_ready[i])) begin
                 rs_entry_enable[i]  = 1; // set this rs_entry to load instruction
                 valid               = 1;
                 break;

@@ -37,6 +37,25 @@ module testbench_RS;
         .is_packet_out(is_packet_out),
         .rs_entry_clear_out(rs_entry_clear_out)
     );
+
+    RS2ROB_PACKET rs2rob_packet;
+    RS2MT_PACKET rs2mt_packet;
+    IS_PACKET is_packet;
+
+    always_ff @(posedge clock) begin
+        if (reset) begin
+            rs2rob_packet <= `SD 0;
+            rs2mt_packet <= `SD 0;
+            is_packet <= `SD 0;
+            rs_entry_clear_in <= `SD 0;
+        end
+        else begin
+            rs2rob_packet <= `SD rs2rob_packet_out;
+            rs2mt_packet <= `SD rs2mt_packet_out;
+            is_packet <= `SD is_packet_out;
+            rs_entry_clear_in <= `SD rs_entry_clear_out;
+        end
+    end
     
 
     always begin
@@ -52,13 +71,13 @@ module testbench_RS;
 
     initial begin
         //$monitor("TIME:%4.0f busy:%b ready:%b rs1_tag:%h rs2_tag:%h", $time, busy, ready, DUT_rs_entry.next_entry_rs1_tag, DUT_rs_entry.next_entry_rs2_tag);
+        $monitor("TIME:%4.0f busy:%8b ready:%8b enable:%8b clear_in:%8b issue_inst:%8b", $time, Big_RS.rs_entry_busy, Big_RS.rs_entry_ready, Big_RS.rs_entry_enable, Big_RS.rs_entry_clear_in, Big_RS.issue_inst_rob_entry);
         clock = 0;
         reset = 1;
         @(negedge clock);
         reset = 0;
 
-
-        rs_entry_clear_in[0] = 1'b0;
+        // rs_entry_clear_in[0] = 1'b0;
         //inst1 
         //id
         id_packet_in.inst.inst = 32'hABCDEF12;
@@ -82,29 +101,11 @@ module testbench_RS;
         rob2rs_packet_in.rs2_value = 0;
         rob2rs_packet_in.rob_head_idx = 1;
 
+        $display("clear_out:%8b", rs_entry_clear_out);
+        $display("1st instr inputted");
         @(negedge clock);
-     //   $display("if correct: %8h",Big_RS.issue_inst_rob_entry);
-      //  $display("if correct entry: %8h",Big_RS.issue_candidate_rob_entry);
-
-        assert(is_packet_out.inst.inst == 32'hABCDEF12) else $display ("@@@FAILED@@@");
-        rs_entry_clear_in[0] = 1;
-     //   $display("if correct: %8h",Big_RS.issue_inst_rob_entry);
-     //   $display("if correct: %8h",Big_RS.rs_entry_rob_entry[0]);
-    //    $display("if correct: %8h",Big_RS.rs_entry_rob_entry[1]);
-
-    //    $display("is_packet_out.inst.inst: %h",is_packet_out.inst.inst);
-    //    $display("is_packet_IN.inst.inst: %h",id_packet_in.inst.inst);
-       // $display("ready: %h",Big_RS.rs_entry_ready[0]);
-
-        @(negedge clock);
-        rs_entry_clear_in[0] = 0;
-        $display("busy: %h",Big_RS.rs_entry_busy[0]);
-        $display("enable: %h",Big_RS.rs_entry_enable[0]);
-
-
-//#2
-        @(negedge clock);
-        //test INST
+        assert(is_packet_out.inst.inst == 32'hABCDEF12) else $display ("@@@FAILED@@@"); //test #1
+//#2    
         id_packet_in.inst.inst = 32'hABC45F12;
 
         id_packet_in.rs1_value = 2;
@@ -124,17 +125,74 @@ module testbench_RS;
         rob2rs_packet_in.rs1_value = 0;
         rob2rs_packet_in.rs2_value = 0;
 
-        $display("busy: %h",Big_RS.rs_entry_busy[0]);
+        $display("clear_out:%8b", rs_entry_clear_out);
+        $display("2nd instr inputted");
+        @(negedge clock);
+        assert(is_packet_out.inst.inst == 32'hABC45F12) else $display ("@@@FAILED@@@");  //test #2
+//#3 case: not ready(need one cycle to handle)
+        id_packet_in.inst.inst = 32'hab489F12;
 
-      //  assert(Big_RS.rs_entry_enable[0] == 1) else $display ("@@@FAILED@@@");
+        id_packet_in.rs1_value = 3;
+        id_packet_in.rs2_value = 3;
+        id_packet_in.dest_reg_idx = 3;
+        //mt
+        mt2rs_packet_in.rs1_tag = 1;  // t1 t2 is waiting
+        mt2rs_packet_in.rs2_tag = 1;
+        mt2rs_packet_in.rs1_ready = 0;
+        mt2rs_packet_in.rs2_ready = 0;
+        //cdb
+        cdb_packet_in.reg_tag = 0;
+        cdb_packet_in.reg_value = 0;
+        //rob
+        rob2rs_packet_in.rob_head_idx = 1;
+        rob2rs_packet_in.rob_entry = 3;
+        rob2rs_packet_in.rs1_value = 0;
+        rob2rs_packet_in.rs2_value = 0;
+
+        // $display("TIME:%4.0f busy:%8b ready:%8b enable:%8b clear_in:%8b", $time, Big_RS.rs_entry_busy, Big_RS.rs_entry_ready, Big_RS.rs_entry_enable, Big_RS.rs_entry_clear_in);
+        $display("clear_out:%8b", rs_entry_clear_out);
+        $display("3rd instr inputted");
+
+        @(negedge clock);
+
+//waiting inst #4
+
+        id_packet_in.inst.inst = 32'h00000000;
+
+        id_packet_in.rs1_value = 3;
+        id_packet_in.rs2_value = 3;
+        id_packet_in.dest_reg_idx = 4;
+        //mt
+        mt2rs_packet_in.rs1_tag = 3;
+        mt2rs_packet_in.rs2_tag = 3;
+        mt2rs_packet_in.rs1_ready = 1;
+        mt2rs_packet_in.rs2_ready = 1;
+        //cdb
+        cdb_packet_in.reg_tag = 1;
+        cdb_packet_in.reg_value = 20;
+        //rob
+        rob2rs_packet_in.rob_head_idx = 1;
+        rob2rs_packet_in.rob_entry = 3;
+        rob2rs_packet_in.rs1_value = 0;
+        rob2rs_packet_in.rs2_value = 0;
+
+        $display("clear_out:%8b", rs_entry_clear_out);
 
         @(negedge clock);
 
 
-        assert(is_packet_out.inst.inst == 32'hABC45F12) else $display ("@@@FAILED@@@");
-         $display("is_packet_out.inst.inst: %h",is_packet_out.inst.inst);
+        assert(is_packet_out.inst.inst == 32'hab489F12) else $display ("@@@FAILED@@@");  //test #3
+
+        @(negedge clock);
+        assert(is_packet_out.inst.inst == 32'h00000000) else $display ("@@@FAILED@@@");  //wait for inst #4
+
+
+
+
+
 
         $display("@@@PASSED@@@");
+        $finish;
     end
 
 endmodule
