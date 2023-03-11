@@ -16,7 +16,9 @@ module RS_entry(
 
     output IS_PACKET entry_packet, // this is the output of the dispatch stage and input of issue stage
     output logic busy,
-    output logic ready
+    output logic ready,
+
+    output FLAG flag // when cdb write through, corresponding flag will be raised
 );
 
 /*
@@ -147,7 +149,30 @@ Note: packets to ROB, Map Table and selection of RS_entry, issued s_x_packet sho
     end
 
     // ready
-    assign ready = busy ? (((entry_rs1_tag == 0) && (entry_rs2_tag == 0)) ? 1 : 0) : 0; // ready will be set one cc after the instruction is loaded into the RS_entry
+    always_comb begin
+        ready = 0;
+        flag = TAGTAG;
+
+        if (busy) begin
+            if ((entry_rs1_tag == 0) && (entry_rs2_tag == 0)) begin
+                ready = 1;
+                flag = TAGTAG;
+            end
+            else if ((entry_rs1_tag == 0) && (cdb_packet_in.reg_tag == entry_rs2_tag) && (cdb_packet_in.reg_tag != 0)) begin
+                ready = 1;
+                flag = TAGCDB;
+            end    
+            else if ((entry_rs2_tag == 0) && (cdb_packet_in.reg_tag == entry_rs1_tag) && (cdb_packet_in.reg_tag != 0)) begin
+                ready = 1;
+                flag = CDBTAG;
+            end
+            else if ((cdb_packet_in.reg_tag == entry_rs1_tag) && (cdb_packet_in.reg_tag != 0) && (cdb_packet_in.reg_tag == entry_rs2_tag)) begin
+                ready = 1;
+                flag = CDBCDB;
+            end
+        end
+    end
+    // assign ready = (busy && (entry_rs1_tag == 0) && (entry_rs2_tag == 0)) ? 1 : 0; // ready will be set one cc after the instruction is loaded into the RS_entry
 
     // busy
     always_comb begin

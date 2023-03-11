@@ -129,7 +129,8 @@ Output the index of the RS_entry that issued instruction
     // logic [`RS_LEN-1:0] rs_entry_clear;
     logic [`RS_LEN-1:0] rs_entry_enable; 
     logic [`RS_LEN-1:0] rs_entry_busy;
-    logic [`RS_LEN-1:0] rs_entry_ready; 
+    logic [`RS_LEN-1:0] rs_entry_ready;
+    FLAG [`RS_LEN-1:0] rs_flags;
 
     IS_PACKET [`RS_LEN-1:0] rs_entry_packet_out;
 
@@ -163,7 +164,9 @@ Output the index of the RS_entry that issued instruction
 
         .entry_packet(rs_entry_packet_out),
         .busy(rs_entry_busy),
-        .ready(rs_entry_ready)
+        .ready(rs_entry_ready),
+
+        .flag(rs_flags)
     );
 
     wire reserved_wire;
@@ -219,6 +222,12 @@ Output the index of the RS_entry that issued instruction
         for (int i = 0; i < `RS_LEN; i++) begin
             if ((issue_inst_rob_entry == rs_entry_rob_entry[i]) && (issue_inst_rob_entry != 0)) begin
                 is_packet_out = rs_entry_packet_out[i];
+                if ((rs_flags == CDBTAG) || (rs_flags == CDBCDB))
+                    is_packet_out.rs1_value = cdb_packet_in.reg_value;
+                
+                if ((rs_flags == TAGCDB) || (rs_flags == CDBCDB))
+                    is_packet_out.rs2_value = cdb_packet_in.reg_value;
+                
                 rs_entry_clear_out[i] = 1;
                 issue_inst_rs_entry = i;
                 break;
