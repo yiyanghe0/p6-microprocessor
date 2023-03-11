@@ -30,10 +30,19 @@ module rps2(
     output logic [1:0] gnt,
     output logic req_up
 );
-    logic [1:0] temp;
-    assign req_up = req[0] | req[1];
-    assign gnt[0] = en ? (sel ? (gnt[1] ? 0 : (req[0] ? 1 : 0)) : (req[0] ? 1 : 0)) : 0;
-    assign gnt[1] = en ? (sel ? (req[1] ? 1 : 0) : (gnt[0] ? 0 : (req[1] ? 1 : 0))) : 0; 
+    always_comb begin
+        case (sel)
+            1'b1:  begin 
+                gnt[0] = en & (!req[1]) & (req[0]);
+                gnt[1] = en & (req[1]);
+                end
+            1'b0:  begin
+                gnt[0] = en & (req[0]);
+                gnt[1] = en & (!req[0]) & (req[1]);
+                end
+            endcase
+        req_up = req[0] | req[1];
+    end
 endmodule
 
 /*
@@ -169,14 +178,32 @@ Output the index of the RS_entry that issued instruction
         .flag(rs_flags)
     );
 
-    wire reserved_wire;
-    rps8 rps8_0( // have two outputs
-        .req(issue_candidate_rob_entry),
-        .en(1'b1), // always enabled
-        .sel(rob2rs_packet_in.rob_head_idx),
-        .gnt(issue_inst_rob_entry),
-        .req_up(reserved_wire) // some wire that has no use
-    );
+    // wire reserved_wire;
+    // rps8 rps8_0( // have two outputs
+    //     .req(issue_candidate_rob_entry),
+    //     .en(1'b1), // always enabled
+    //     .sel(rob2rs_packet_in.rob_head_idx),
+    //     .gnt(issue_inst_rob_entry),
+    //     .req_up(reserved_wire) // some wire that has no use
+    // );
+    integer available_assignment = `SUPERSCALER_LEN;
+    always_comb begin
+        integer i;
+        available_assignment = `SUPERSCALER_LEN; //2
+        issue_inst_rob_entry = 0;
+        for (i = 0; i < `ROB_LEN; i++) begin
+            integer curr_rob_entry = i;
+            for (int j = 0; j < `ROB_LEN; j++) begin
+                if (j == rob2rs_packet_in.rob_head_idx) curr_rob_entry = i + j;
+            end
+            if (curr_rob_entry >= `ROB_LEN) curr_rob_entry = curr_rob_entry - `ROB_LEN;
+            if (issue_candidate_rob_entry[curr_rob_entry] == 1) begin
+                issue_inst_rob_entry[curr_rob_entry] = 1;
+                available_assignment = available_assignment - 1;
+                if (available_assignment == 0) break;
+            end
+        end
+    end
 
     logic [`RS_LEN-1:0][`ROB_LEN-1:0] rs_entry_rob_entry;
     // Find issue_candidate_rob_entry

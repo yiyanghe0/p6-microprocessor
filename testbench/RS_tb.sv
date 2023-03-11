@@ -245,7 +245,7 @@ module testbench_RS;
         //mt
         mt2rs_packet_in.rs1_tag = 2; // one tag
         mt2rs_packet_in.rs2_tag = 3;
-        mt2rs_packet_in.rs1_ready = 0;
+        mt2rs_packet_in.rs1_ready = 1;
         mt2rs_packet_in.rs2_ready = 1;
         //cdb
         cdb_packet_in.reg_tag = 2;
@@ -257,9 +257,9 @@ module testbench_RS;
         rob2rs_packet_in.rs2_value = 0;
 
         #1 assert(is_packet_out.inst.inst == 32'hab22cF12) else $display ("@@@FAILED@@@");  //test inst5
-        $display("Correct inst:%32h", Big_RS.is_packet_out.inst.inst);
-        $display("Correct issue_inst_rob_entry:%8b", Big_RS.issue_inst_rob_entry);
-        $display("Correct issue_candidate_rob_entry:%8b", Big_RS.issue_candidate_rob_entry);
+        $display("Current inst:%32h", Big_RS.is_packet_out.inst.inst);
+        $display("Current issue_inst_rob_entry:%8b", Big_RS.issue_inst_rob_entry);
+        $display("Current issue_candidate_rob_entry:%8b", Big_RS.issue_candidate_rob_entry);
         @(negedge clock);
 
         id_packet_in.inst.inst = 32'h00000000;
@@ -282,12 +282,15 @@ module testbench_RS;
         rob2rs_packet_in.rs2_value = 0;
 
         assert(is_packet_out.inst.inst == 32'ha12acF12) else $display ("@@@FAILED@@@"); 
-        $display("Correct inst:%32h", Big_RS.is_packet_out.inst.inst);
-        $display("Correct issue_inst_rob_entry:%8b", Big_RS.issue_inst_rob_entry);
-        $display("Correct issue_candidate_rob_entry:%8b", Big_RS.issue_candidate_rob_entry);
+        $display("Current inst:%32h", Big_RS.is_packet_out.inst.inst);
+        $display("Current issue_inst_rob_entry:%8b", Big_RS.issue_inst_rob_entry);
+        $display("Current issue_candidate_rob_entry:%8b", Big_RS.issue_candidate_rob_entry);
 
         @(negedge clock);
         #1 assert(is_packet_out.inst.inst == 32'hab2ccF12) else $display ("@@@FAILED@@@");  //test inst7
+        $display("Current inst:%32h", Big_RS.is_packet_out.inst.inst);
+        $display("Current issue_inst_rob_entry:%8b", Big_RS.issue_inst_rob_entry);
+        $display("Current issue_candidate_rob_entry:%8b", Big_RS.issue_candidate_rob_entry);
 
         //rest and do the mass test
         reset = 1;

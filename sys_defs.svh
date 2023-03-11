@@ -294,6 +294,7 @@ typedef struct packed {
 
 `define ROB_LEN 8
 `define RS_LEN 8
+`define SUPERSCALER_LEN 1
 
 // flags for cdb write through
 typedef enum logic [1:0] {TAGTAG, TAGCDB, CDBTAG, CDBCDB} FLAG;
