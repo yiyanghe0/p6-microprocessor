@@ -38,24 +38,26 @@ module testbench_RS;
         .rs_entry_clear_out(rs_entry_clear_out)
     );
 
-    RS2ROB_PACKET rs2rob_packet;
-    RS2MT_PACKET rs2mt_packet;
-    IS_PACKET is_packet;
+    // RS2ROB_PACKET rs2rob_packet;
+    // RS2MT_PACKET rs2mt_packet;
+    // IS_PACKET is_packet;
 
-    always_ff @(posedge clock) begin
-        if (reset) begin
-            rs2rob_packet <= `SD 0;
-            rs2mt_packet <= `SD 0;
-            is_packet <= `SD 0;
-            rs_entry_clear_in <= `SD 0;
-        end
-        else begin
-            rs2rob_packet <= `SD rs2rob_packet_out;
-            rs2mt_packet <= `SD rs2mt_packet_out;
-            is_packet <= `SD is_packet_out;
-            rs_entry_clear_in <= `SD rs_entry_clear_out;
-        end
-    end
+    // always_ff @(posedge clock) begin
+    //     if (reset) begin
+    //         rs2rob_packet <= `SD 0;
+    //         rs2mt_packet <= `SD 0;
+    //         is_packet <= `SD 0;
+    //         rs_entry_clear_in <= `SD 0;
+    //     end
+    //     else begin
+    //         rs2rob_packet <= `SD rs2rob_packet_out;
+    //         rs2mt_packet <= `SD rs2mt_packet_out;
+    //         is_packet <= `SD is_packet_out;
+    //         rs_entry_clear_in <= `SD rs_entry_clear_out;
+    //     end
+    // end
+
+    assign rs_entry_clear_in = rs_entry_clear_out;
     
 
     always begin
