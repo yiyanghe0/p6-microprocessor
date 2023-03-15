@@ -427,5 +427,22 @@ typedef struct packed {
 	logic [$clog2(`ROB_LEN)-1:0] rs2_idx;
 } RS2ROB_PACKET;
 
+//////////////////////////////////////////////
+//
+// ROB_entry_PACKET:
+// Data from ROB_entry to ROB
+//
+//////////////////////////////////////////////
+
+typedef struct packed {
+	logic [$clog2(`ROB_LEN)-1:0] dest_reg_value;  //data
+	logic [$clog2(`ROB_LEN)-1:0] dest_reg_idx;    //address
+	logic                        valid;
+} ROB_entry_PACKET;
+
+typedef struct packed {
+	logic [$clog2(`ROB_LEN)-1:0] tag;   //ROB entry number
+	logic 						 valid; //valid bit (e.g. tag = 0 + valid = 1 => ROB#0, tag = 0 + valid = 0 => tag is empty)
+} TAG_PACKET;
 
 `endif // __SYS_DEFS_SVH__
