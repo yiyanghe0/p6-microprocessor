@@ -10,7 +10,7 @@
 
 `ifndef __RS_SV__
 `define __RS_SV__
-
+`define DEBUG
 
 `include "sys_defs.svh"
 
@@ -113,12 +113,25 @@ module RS(
     input ROB2RS_PACKET rob2rs_packet_in,
     input MT2RS_PACKET mt2rs_packet_in,
     input CDB_PACKET cdb_packet_in,
-    input [`RS_LEN-1:0] rs_entry_clear_in,
     
+    
+
+    `ifdef DEBUG
+    output logic [`RS_LEN-1:0] rs_entry_enable, 
+    output logic [`RS_LEN-1:0] rs_entry_busy,
+    output logic [`RS_LEN-1:0] rs_entry_ready,
+    output logic [$clog2(`RS_LEN)-1:0] issue_inst_rs_entry,
+    output logic [`ROB_LEN-1:0] issue_candidate_rob_entry, // one-hot encoding of rs_entry_packet_out.dest_reg_idx
+    output logic [`ROB_LEN-1:0] issue_inst_rob_entry, // one-hot encoding of rob_entry of the inst issued
+    output logic [`RS_LEN-1:0][`ROB_LEN-1:0] rs_entry_rob_entry,
+    `endif
+
     output RS2ROB_PACKET rs2rob_packet_out,
     output RS2MT_PACKET rs2mt_packet_out,
-    output IS_PACKET is_packet_out,
-    output logic [`RS_LEN-1:0] rs_entry_clear_out
+    output IS_PACKET is_packet_out
+    
+
+    
 );
 /*
 What this module does:
@@ -136,18 +149,23 @@ Output the index of the RS_entry that issued instruction
 
 */
     // logic [`RS_LEN-1:0] rs_entry_clear;
+    `ifndef DEBUG
     logic [`RS_LEN-1:0] rs_entry_enable; 
     logic [`RS_LEN-1:0] rs_entry_busy;
     logic [`RS_LEN-1:0] rs_entry_ready;
-    FLAG [`RS_LEN-1:0] rs_flags;
-
-    IS_PACKET [`RS_LEN-1:0] rs_entry_packet_out;
-
-    logic valid; // if valid = 0, rs encountered structural hazard and has to stall
-
+    logic [$clog2(`RS_LEN)-1:0] issue_inst_rs_entry;
     logic [`ROB_LEN-1:0] issue_candidate_rob_entry; // one-hot encoding of rs_entry_packet_out.dest_reg_idx
     logic [`ROB_LEN-1:0] issue_inst_rob_entry; // one-hot encoding of rob_entry of the inst issued
+    logic [`RS_LEN-1:0][`ROB_LEN-1:0] rs_entry_rob_entry;
+    `endif
 
+    FLAG [`RS_LEN-1:0] rs_flags;
+    IS_PACKET [`RS_LEN-1:0] rs_entry_packet_out;
+    logic valid; // if valid = 0, rs encountered structural hazard and has to stall
+
+    logic [`RS_LEN-1:0] rs_entry_clear_in;
+    logic [`RS_LEN-1:0] rs_entry_clear_out;
+    assign rs_entry_clear_in = rs_entry_clear_out;
 
     // output packages
     assign rs2mt_packet_out.rs1_idx         = id_packet_in.inst.r.rs1;
@@ -205,7 +223,7 @@ Output the index of the RS_entry that issued instruction
         end
     end
 
-    logic [`RS_LEN-1:0][`ROB_LEN-1:0] rs_entry_rob_entry;
+    
     // Find issue_candidate_rob_entry
     always_comb begin
         issue_candidate_rob_entry = 0;
@@ -220,7 +238,7 @@ Output the index of the RS_entry that issued instruction
         end
     end
 
-    logic [$clog2(`RS_LEN)-1:0] issue_inst_rs_entry;
+    //logic [$clog2(`RS_LEN)-1:0] issue_inst_rs_entry;
 
     // Issue according to issue_inst_rob_entry
     // !!! two ouputs

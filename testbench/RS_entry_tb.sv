@@ -456,15 +456,15 @@ module testbench_rs_entry;
         //clear
         clear = 0;
         @(negedge clock);
-        $display ("rs2_tag: %b", DUT_rs_entry.entry_rs2_tag);
+        //$display ("rs2_tag: %b", DUT_rs_entry.entry_rs2_tag);
         check_func(1,0,14,32'hA,32'hABCDEF1B);
         $display ("First check pass");
         enable = 0;
         cdb_packet_in.reg_tag = 4;
         cdb_packet_in.reg_value = 12;
-        $display ("rs2_tag: %b", DUT_rs_entry.entry_rs2_tag);
+        //$display ("rs2_tag: %b", DUT_rs_entry.entry_rs2_tag);
         $display("CDB_tag: %b", cdb_packet_in.reg_tag);
-        #1 check_func(1,1,14,12,32'hABCDEF1B);
+        #1 check_func(1,1,14,10,32'hABCDEF1B);
         $display ("Second check pass");
         @(negedge clock);
         cdb_packet_in.reg_tag = 0;

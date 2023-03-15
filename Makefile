@@ -138,7 +138,7 @@ endif
 # although these numbers are vague ideas, and you should base them on *your* processor's performance
 # and don't worry about getting the absolute minimum clock period possible, but do minimize it somewhat
 # its also good to target values that are below a cutoff for num memory cycles: 5:20, 6:16.67, 7:14.29
-CLOCK_PERIOD = 30.0
+CLOCK_PERIOD = 10.0
 # NOTE: synthesis will target this value, but doesn't go farther; you can have 0.0 slack and still decrease
 # however, pushing this to the limit will make synthesis take longer (as the synthesizer does more work)
 # so start high, then decrease as you begin testing changes that will impact the clock period
