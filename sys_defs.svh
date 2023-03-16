@@ -395,7 +395,7 @@ typedef struct packed {
 //////////////////////////////////////////////
 
 typedef struct packed {
-	logic [$clog2(`ROB_LEN)-1:0] reg_tag;
+	TAG_PACKET        reg_tag;
 	logic [`XLEN-1:0] reg_value;
 } CDB_PACKET;
 
