@@ -51,7 +51,7 @@ module testbench_RS;
         .is_packet_out(is_packet_out)
         //.rs_entry_clear_out(rs_entry_clear_out)
     );
-
+/*
     task exit_on_error;
         input correct_busy, correct_ready;
         input [31:0] correct_inst;
@@ -90,7 +90,7 @@ module testbench_RS;
             assert (id_packet_in.valid == entry_packet.valid)               else exit_on_error(correct_busy,correct_ready, correct_inst);
         end
     endtask
-
+*/
     always begin
         #5;
         clock = ~clock;
@@ -294,6 +294,17 @@ module testbench_RS;
         #1 assert(is_packet_out.inst.inst == 32'hab22cF12) else $display ("@@@FAILED@@@");  //test inst5
         assert(is_packet_out.rs1_value == 50) else $display ("@@@FAILED@@@");
         assert(is_packet_out.rs2_value == 60) else $display ("@@@FAILED@@@");
+
+        $display("ready_0: %1b,",rs_entry_ready[0]);
+        $display("ready_1: %1b,",rs_entry_ready[1]);
+        $display("ready_2: %1b,",rs_entry_ready[2]);
+        $display("ready_3: %1b,",rs_entry_ready[3]);
+        $display("ready_4: %1b,",rs_entry_ready[4]);
+        $display("ready_5: %1b,",rs_entry_ready[5]);
+        $display("ready_6: %1b,",rs_entry_ready[6]);
+        $display("ready_7: %1b,",rs_entry_ready[7]);
+        
+        
         //$display("Current inst:%32h", is_packet_out.inst.inst);
         //$display("Current issue_inst_rob_entry:%8b", issue_inst_rob_entry);
         //$display("Current issue_candidate_rob_entry:%8b", issue_candidate_rob_entry);
@@ -318,9 +329,34 @@ module testbench_RS;
         rob2rs_packet_in.rs1_value = 0;
         rob2rs_packet_in.rs2_value = 0;
 
-        assert(is_packet_out.inst.inst == 32'ha12acF12) else $display ("@@@FAILED@@@");
+        #1 assert(is_packet_out.inst.inst == 32'ha12acF12) else $display ("@@@FAILED@@@");
         assert(is_packet_out.rs1_value == 1) else $display ("@@@FAILED@@@");
+
+        $display("rs1-value_322: %32h", is_packet_out.rs1_value);
         assert(is_packet_out.rs2_value == 1) else $display ("@@@FAILED@@@"); 
+        $display("ROB_one_hot_bit_32'ha12acF12: %8b,",issue_candidate_rob_entry);
+        $display("ready_0: %1b,",rs_entry_ready[0]);
+        $display("ready_1: %1b,",rs_entry_ready[1]);
+        $display("ready_2: %1b,",rs_entry_ready[2]);
+        $display("ready_3: %1b,",rs_entry_ready[3]);
+        $display("ready_4: %1b,",rs_entry_ready[4]);
+        $display("ready_5: %1b,",rs_entry_ready[5]);
+        $display("ready_6: %1b,",rs_entry_ready[6]);
+        $display("ready_7: %1b,",rs_entry_ready[7]);
+        
+        
+
+        //$display("Current inst:%32h", is_packet_out.inst.inst);
+        //$display("Current issue_inst_rob_entry:%8b", issue_inst_rob_entry);
+        //$display("Current issue_candidate_rob_entry:%8b", issue_candidate_rob_entry);
+
+        @(negedge clock);
+        #1 assert(is_packet_out.inst.inst == 32'hab2ccF12) else $display ("@@@FAILED@@@");  //test inst7
+        $display("inst_330: %32h", is_packet_out.inst.inst);
+        assert(is_packet_out.rs1_value == 60) else $display ("@@@FAILED@@@");
+        $display("rs1-value_322: %32h", is_packet_out.rs1_value);
+        assert(is_packet_out.rs2_value == 0) else $display ("@@@FAILED@@@");
+        $display("ROB_one_hot_bit_32'hab2ccF12: %8b,",issue_candidate_rob_entry);
         //$display("Current inst:%32h", is_packet_out.inst.inst);
         //$display("Current issue_inst_rob_entry:%8b", issue_inst_rob_entry);
         //$display("Current issue_candidate_rob_entry:%8b", issue_candidate_rob_entry);
@@ -329,9 +365,10 @@ module testbench_RS;
         #1 assert(is_packet_out.inst.inst == 32'hab2ccF12) else $display ("@@@FAILED@@@");  //test inst7
         assert(is_packet_out.rs1_value == 60) else $display ("@@@FAILED@@@");
         assert(is_packet_out.rs2_value == 0) else $display ("@@@FAILED@@@");
-        //$display("Current inst:%32h", is_packet_out.inst.inst);
-        //$display("Current issue_inst_rob_entry:%8b", issue_inst_rob_entry);
-        //$display("Current issue_candidate_rob_entry:%8b", issue_candidate_rob_entry);
+        $display("ROB_one_hot_bit_last: %8b,",issue_candidate_rob_entry);
+        
+
+
 
         //rest and do the mass test
         reset = 1;
@@ -360,6 +397,7 @@ module testbench_RS;
         rob2rs_packet_in.rs2_value = 0;
 
         @(negedge clock);
+
 
         //mass inst2
     
@@ -515,9 +553,11 @@ module testbench_RS;
 
 
         #1 assert(is_packet_out.inst.inst == 32'h11111111) else $display ("@@@FAILED@@@");  //test inst1
+        assert(is_packet_out.rs1_value == 20) else $display ("@@@FAILED@@@");
+        assert(is_packet_out.rs2_value == 0) else $display ("@@@FAILED@@@");
 
         @(negedge clock);
-
+//inst0
         id_packet_in.inst.inst = 32'h00000000;
 
         id_packet_in.rs1_value = 3;
@@ -538,9 +578,12 @@ module testbench_RS;
         rob2rs_packet_in.rs2_value = 0;
 
         assert(is_packet_out.inst.inst == 32'h22222222) else $display ("@@@FAILED@@@");  //test inst2
+        assert(is_packet_out.rs1_value == 20) else $display ("@@@FAILED@@@");
+        assert(is_packet_out.rs2_value == 0) else $display ("@@@FAILED@@@");
+
 
         @(negedge clock);
-
+//inst0
         id_packet_in.inst.inst = 32'h00000000;
 
         id_packet_in.rs1_value = 3;
@@ -563,6 +606,193 @@ module testbench_RS;
 
 
         assert(is_packet_out.inst.inst == 32'h00000000) else $display ("@@@FAILED@@@");  //test inst0
+        assert(is_packet_out.rs1_value == 0) else $display ("@@@FAILED@@@");
+        assert(is_packet_out.rs2_value == 0) else $display ("@@@FAILED@@@");
+
+        //reset 
+        //start to test strutural hazard
+
+        reset = 1;
+        @(negedge clock);
+        reset = 0;
+
+    //stru inst1
+        id_packet_in.inst.inst = 32'ha1111111;
+
+        id_packet_in.rs1_value = 0;
+        id_packet_in.rs2_value = 0;
+        id_packet_in.dest_reg_idx = 1;
+        //mt
+        mt2rs_packet_in.rs1_tag = 1;
+        mt2rs_packet_in.rs2_tag = 2;
+        mt2rs_packet_in.rs1_ready = 0;
+        mt2rs_packet_in.rs2_ready = 0;
+        //cdb
+        cdb_packet_in.reg_tag = 0;
+        cdb_packet_in.reg_value = 0;
+        //rob
+        rob2rs_packet_in.rob_head_idx = 1;
+        rob2rs_packet_in.rob_entry = 1;
+        rob2rs_packet_in.rs1_value = 0;
+        rob2rs_packet_in.rs2_value = 0;
+
+        @(negedge clock);
+
+    //stru inst2
+        id_packet_in.inst.inst = 32'ha2222222;
+
+        id_packet_in.rs1_value = 0;
+        id_packet_in.rs2_value = 0;
+        id_packet_in.dest_reg_idx = 2;
+        //mt
+        mt2rs_packet_in.rs1_tag = 2;
+        mt2rs_packet_in.rs2_tag = 3;
+        mt2rs_packet_in.rs1_ready = 0;
+        mt2rs_packet_in.rs2_ready = 0;
+        //cdb
+        cdb_packet_in.reg_tag = 0;
+        cdb_packet_in.reg_value = 0;
+        //rob
+        rob2rs_packet_in.rob_head_idx = 1;
+        rob2rs_packet_in.rob_entry = 2;
+        rob2rs_packet_in.rs1_value = 0;
+        rob2rs_packet_in.rs2_value = 0;
+
+        @(negedge clock);
+    
+    //stru inst3
+        id_packet_in.inst.inst = 32'ha3333333;
+
+        id_packet_in.rs1_value = 0;
+        id_packet_in.rs2_value = 0;
+        id_packet_in.dest_reg_idx = 3;
+        //mt
+        mt2rs_packet_in.rs1_tag = 3;
+        mt2rs_packet_in.rs2_tag = 4;
+        mt2rs_packet_in.rs1_ready = 0;
+        mt2rs_packet_in.rs2_ready = 0;
+        //cdb
+        cdb_packet_in.reg_tag = 0;
+        cdb_packet_in.reg_value = 0;
+        //rob
+        rob2rs_packet_in.rob_head_idx = 1;
+        rob2rs_packet_in.rob_entry = 3;
+        rob2rs_packet_in.rs1_value = 0;
+        rob2rs_packet_in.rs2_value = 0;
+
+        @(negedge clock);
+
+    //stru inst4
+        id_packet_in.inst.inst = 32'ha4444444;
+
+        id_packet_in.rs1_value = 0;
+        id_packet_in.rs2_value = 0;
+        id_packet_in.dest_reg_idx = 4;
+        //mt
+        mt2rs_packet_in.rs1_tag = 4;
+        mt2rs_packet_in.rs2_tag = 5;
+        mt2rs_packet_in.rs1_ready = 0;
+        mt2rs_packet_in.rs2_ready = 0;
+        //cdb
+        cdb_packet_in.reg_tag = 0;
+        cdb_packet_in.reg_value = 0;
+        //rob
+        rob2rs_packet_in.rob_head_idx = 1;
+        rob2rs_packet_in.rob_entry = 4;
+        rob2rs_packet_in.rs1_value = 0;
+        rob2rs_packet_in.rs2_value = 0;
+
+        @(negedge clock);
+
+    //stru inst5
+        id_packet_in.inst.inst = 32'ha5555555;
+
+        id_packet_in.rs1_value = 0;
+        id_packet_in.rs2_value = 0;
+        id_packet_in.dest_reg_idx = 5;
+        //mt
+        mt2rs_packet_in.rs1_tag = 5;
+        mt2rs_packet_in.rs2_tag = 6;
+        mt2rs_packet_in.rs1_ready = 0;
+        mt2rs_packet_in.rs2_ready = 0;
+        //cdb
+        cdb_packet_in.reg_tag = 0;
+        cdb_packet_in.reg_value = 0;
+        //rob
+        rob2rs_packet_in.rob_head_idx = 1;
+        rob2rs_packet_in.rob_entry = 5;
+        rob2rs_packet_in.rs1_value = 0;
+        rob2rs_packet_in.rs2_value = 0;
+
+        @(negedge clock);
+    //stru inst6
+        id_packet_in.inst.inst = 32'ha6666666;
+
+        id_packet_in.rs1_value = 0;
+        id_packet_in.rs2_value = 0;
+        id_packet_in.dest_reg_idx = 6;
+        //mt
+        mt2rs_packet_in.rs1_tag = 6;
+        mt2rs_packet_in.rs2_tag = 7;
+        mt2rs_packet_in.rs1_ready = 0;
+        mt2rs_packet_in.rs2_ready = 0;
+        //cdb
+        cdb_packet_in.reg_tag = 0;
+        cdb_packet_in.reg_value = 0;
+        //rob
+        rob2rs_packet_in.rob_head_idx = 1;
+        rob2rs_packet_in.rob_entry = 6;
+        rob2rs_packet_in.rs1_value = 0;
+        rob2rs_packet_in.rs2_value = 0;
+
+        @(negedge clock);
+
+    //stru inst7
+        id_packet_in.inst.inst = 32'ha7777777;
+
+        id_packet_in.rs1_value = 0;
+        id_packet_in.rs2_value = 0;
+        id_packet_in.dest_reg_idx = 7;
+        //mt
+        mt2rs_packet_in.rs1_tag = 7;
+        mt2rs_packet_in.rs2_tag = 8;
+        mt2rs_packet_in.rs1_ready = 0;
+        mt2rs_packet_in.rs2_ready = 0;
+        //cdb
+        cdb_packet_in.reg_tag = 0;
+        cdb_packet_in.reg_value = 0;
+        //rob
+        rob2rs_packet_in.rob_head_idx = 1;
+        rob2rs_packet_in.rob_entry = 7;
+        rob2rs_packet_in.rs1_value = 0;
+        rob2rs_packet_in.rs2_value = 0;
+
+        @(negedge clock);
+    //stru inst8
+
+        id_packet_in.inst.inst = 32'ha8888888;
+
+        id_packet_in.rs1_value = 0;
+        id_packet_in.rs2_value = 0;
+        id_packet_in.dest_reg_idx = 8;
+        //mt
+        mt2rs_packet_in.rs1_tag = 8;
+        mt2rs_packet_in.rs2_tag = 8;
+        mt2rs_packet_in.rs1_ready = 0;
+        mt2rs_packet_in.rs2_ready = 0;
+        //cdb
+        cdb_packet_in.reg_tag = 0;
+        cdb_packet_in.reg_value = 0;
+        //rob
+        rob2rs_packet_in.rob_head_idx = 1;
+        rob2rs_packet_in.rob_entry = 0;
+        rob2rs_packet_in.rs1_value = 0;
+        rob2rs_packet_in.rs2_value = 0;
+
+        @(negedge clock);
+
+        assert(Big_RS.valid == 0) else $display("@@@FAILED@@@"); //test structural hazard
+
         $display("@@@PASSED@@@");
         $finish;
     end
