@@ -47,26 +47,27 @@ module RS(
     input ID_PACKET id_packet_in,
     input ROB2RS_PACKET rob2rs_packet_in,
     input MT2RS_PACKET mt2rs_packet_in,
-    input CDB_PACKET cdb_packet_in,
-    
-    
+    input CDB_PACKET cdb_packet_in,    
 
     `ifdef DEBUG
     output logic [`RS_LEN-1:0] rs_entry_enable, 
     output logic [`RS_LEN-1:0] rs_entry_busy,
     output logic [`RS_LEN-1:0] rs_entry_ready,
+
     output logic [$clog2(`RS_LEN)-1:0] issue_inst_rs_entry,
     output logic [`ROB_LEN-1:0] issue_candidate_rob_entry, // one-hot encoding of rs_entry_packet_out.dest_reg_idx
     output logic [`ROB_LEN-1:0] issue_inst_rob_entry, // one-hot encoding of rob_entry of the inst issued
+
     output logic [`RS_LEN-1:0][`ROB_LEN-1:0] rs_entry_rob_entry,
+
+    output IS_PACKET [`RS_LEN-1:0] rs_entry_packet_out,
+    
+    output logic [`RS_LEN-1:0] rs_entry_clear,
     `endif
 
     output RS2ROB_PACKET rs2rob_packet_out,
     output RS2MT_PACKET rs2mt_packet_out,
-    output IS_PACKET is_packet_out
-    
-
-    
+    output IS_PACKET is_packet_out    
 );
 /*
 What this module does:
@@ -88,19 +89,25 @@ Output the index of the RS_entry that issued instruction
     logic [`RS_LEN-1:0] rs_entry_enable; 
     logic [`RS_LEN-1:0] rs_entry_busy;
     logic [`RS_LEN-1:0] rs_entry_ready;
+
     logic [$clog2(`RS_LEN)-1:0] issue_inst_rs_entry;
     logic [`ROB_LEN-1:0] issue_candidate_rob_entry; // one-hot encoding of rs_entry_packet_out.dest_reg_idx
     logic [`ROB_LEN-1:0] issue_inst_rob_entry; // one-hot encoding of rob_entry of the inst issued
+
     logic [`RS_LEN-1:0][`ROB_LEN-1:0] rs_entry_rob_entry;
+
+    IS_PACKET [`RS_LEN-1:0] rs_entry_packet_out;
     `endif
 
     FLAG [`RS_LEN-1:0] rs_flags;
-    IS_PACKET [`RS_LEN-1:0] rs_entry_packet_out;
     logic valid; // if valid = 0, rs encountered structural hazard and has to stall
 
     logic [`RS_LEN-1:0] rs_entry_clear_in;
     logic [`RS_LEN-1:0] rs_entry_clear_out;
     assign rs_entry_clear_in = rs_entry_clear_out;
+    `ifdef DEBUG
+        assign rs_entry_clear = rs_entry_clear_in;
+    `endif
 
     // output packages
     assign rs2mt_packet_out.rs1_idx         = id_packet_in.inst.r.rs1;
@@ -241,9 +248,6 @@ Output the index of the RS_entry that issued instruction
     //         end
     //     end
     // end
-
-    
-
 
 endmodule // module RS
 

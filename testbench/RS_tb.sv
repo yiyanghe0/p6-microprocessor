@@ -6,26 +6,26 @@ module testbench_RS;
     MT2RS_PACKET mt2rs_packet_in;
     CDB_PACKET cdb_packet_in; 
     ROB2RS_PACKET rob2rs_packet_in; // invalid if enable = 0
-    logic [`RS_LEN-1:0] rs_entry_clear_in;
     
     RS2ROB_PACKET rs2rob_packet_out;
     RS2MT_PACKET rs2mt_packet_out;
     IS_PACKET is_packet_out;
 
-    logic [`RS_LEN-1:0] rs_entry_clear_out; 
+    logic [`RS_LEN-1:0] rs_entry_clear;
+
     logic [`RS_LEN-1:0] rs_entry_enable; 
     logic [`RS_LEN-1:0] rs_entry_busy;
-    logic [`RS_LEN-1:0] rs_entry_ready; 
+    logic [`RS_LEN-1:0] rs_entry_ready;
+
     logic [$clog2(`RS_LEN)-1:0] issue_inst_rs_entry;
     logic [`ROB_LEN-1:0] issue_candidate_rob_entry; // one-hot encoding of rs_entry_packet_out.dest_reg_idx
     logic [`ROB_LEN-1:0] issue_inst_rob_entry; // one-hot encoding of rob_entry of the inst issued
+
     logic [`RS_LEN-1:0][`ROB_LEN-1:0] rs_entry_rob_entry;
 
     IS_PACKET [`RS_LEN-1:0] rs_entry_packet_out;
 
     logic valid; // if valid = 0, rs encountered structural hazard and has to stall
-
-
 
     RS Big_RS(
         .clock(clock),
@@ -34,69 +34,68 @@ module testbench_RS;
         .rob2rs_packet_in(rob2rs_packet_in),
         .mt2rs_packet_in(mt2rs_packet_in),
         .cdb_packet_in(cdb_packet_in),
-        //.rs_entry_clear_in(rs_entry_clear_in),
         
         `ifdef DEBUG
         .rs_entry_enable(rs_entry_enable),
         .rs_entry_busy(rs_entry_busy),
         .rs_entry_ready(rs_entry_ready),
+
         .issue_inst_rs_entry(issue_inst_rs_entry),
         .issue_candidate_rob_entry(issue_candidate_rob_entry), // one-hot encoding of rs_entry_packet_out.dest_reg_idx
         .issue_inst_rob_entry(issue_inst_rob_entry), // one-hot encoding of rob_entry of the inst issued
+
         .rs_entry_rob_entry(rs_entry_rob_entry),
+
+        .rs_entry_packet_out(rs_entry_packet_out),
+
+        .rs_entry_clear(rs_entry_clear),
         `endif 
 
         .rs2rob_packet_out(rs2rob_packet_out),
         .rs2mt_packet_out(rs2mt_packet_out),
         .is_packet_out(is_packet_out)
-        //.rs_entry_clear_out(rs_entry_clear_out)
     );
-/*
+
     task exit_on_error;
-        input correct_busy, correct_ready;
-        input [31:0] correct_inst;
+        input [`XLEN-1:0] correct_inst;
+        input [`XLEN-1:0] correct_rs1_value;
+        input [`XLEN-1:0] correct_rs2_value;
+
         begin
             $display("@@@ Incorrect at time %4.0f", $time);
-            $display("@@@ Time:%4.0f enable:%b busy:%b ready:%b INST:%8h", $time, enable, busy, ready, entry_packet.inst.inst);
-            $display("@@@ expected busy: %b, expected ready: %b, expected inst: %h", correct_busy, correct_ready, correct_inst);
+            $display("@@@ Expected inst: %h; Actual issued inst: %h", correct_inst, is_packet_out.inst.inst);
+            $display("@@@ Expected rs1 value: %d; Actual rs1 value: %d", correct_rs1_value, is_packet_out.rs1_value);
+            $display("@@@ Expected rs2 value: %d; Actual rs2 value: %d", correct_rs2_value, is_packet_out.rs2_value);
+            $display("@@@ ----------------------------------------- @@@");
+            $display("@@@ Current RS status:");
+            $display("@@@ | RS Index | Wr_en | Busy |   Inst   | Ready | Clear |");
+
+            for (int i = 0; i < `RS_LEN; i++) begin
+                $display("@@@ |   [%1d]    |   %b   |  %b   | %h |   %b   |   %b   |",
+                         i, rs_entry_enable[i], rs_entry_busy[i], rs_entry_packet_out[i].inst.inst, rs_entry_ready[i], rs_entry_clear[i]);
+            end
+
             $display("@@@failed");
             $finish;
         end
     endtask
 
     task check_func;
-        input correct_busy, correct_ready;
-        input [31:0] correct_rs1;
-        input [31:0] correct_rs2;
-        input [31:0] correct_inst;
+        input [`XLEN-1:0] correct_inst;
+        input [`XLEN-1:0] correct_rs1_value;
+        input [`XLEN-1:0] correct_rs2_value;
 
         begin 
-            assert (busy == correct_busy)                                   else exit_on_error(correct_busy,correct_ready, correct_inst);
-            assert (ready == correct_ready)                                 else exit_on_error(correct_busy,correct_ready, correct_inst);
-            assert (entry_packet.inst.inst == correct_inst)                 else exit_on_error(correct_busy,correct_ready, correct_inst);
-            assert (id_packet_in.NPC == entry_packet.NPC)                   else exit_on_error(correct_busy,correct_ready, correct_inst);
-            assert (id_packet_in.PC == entry_packet.PC)                     else exit_on_error(correct_busy,correct_ready, correct_inst);
-            assert (entry_packet.rs1_value == correct_rs1)                  else exit_on_error(correct_busy,correct_ready, correct_inst);
-            assert (entry_packet.rs2_value == correct_rs2)                  else exit_on_error(correct_busy,correct_ready, correct_inst);
-            assert (id_packet_in.opa_select == entry_packet.opa_select)     else exit_on_error(correct_busy,correct_ready, correct_inst);
-            assert (id_packet_in.opb_select == entry_packet.opb_select)     else exit_on_error(correct_busy,correct_ready, correct_inst);
-            assert (id_packet_in.alu_func == entry_packet.alu_func)         else exit_on_error(correct_busy,correct_ready, correct_inst);
-            assert (id_packet_in.rd_mem == entry_packet.rd_mem)             else exit_on_error(correct_busy,correct_ready, correct_inst);
-            assert (id_packet_in.wr_mem == entry_packet.wr_mem)             else exit_on_error(correct_busy,correct_ready, correct_inst);
-            assert (id_packet_in.cond_branch == entry_packet.cond_branch)   else exit_on_error(correct_busy,correct_ready, correct_inst);
-            assert (id_packet_in.halt == entry_packet.halt)                 else exit_on_error(correct_busy,correct_ready, correct_inst);
-            assert (id_packet_in.illegal == entry_packet.illegal)           else exit_on_error(correct_busy,correct_ready, correct_inst);
-            assert (id_packet_in.csr_op == entry_packet.csr_op)             else exit_on_error(correct_busy,correct_ready, correct_inst);
-            assert (id_packet_in.valid == entry_packet.valid)               else exit_on_error(correct_busy,correct_ready, correct_inst);
+            assert (is_packet_out.inst.inst == correct_inst)                else exit_on_error(correct_inst,correct_rs1_value, correct_rs2_value);
+            assert (is_packet_out.rs1_value == correct_rs1_value)           else exit_on_error(correct_inst,correct_rs1_value, correct_rs2_value);
+            assert (is_packet_out.rs2_value == correct_rs2_value)           else exit_on_error(correct_inst,correct_rs1_value, correct_rs2_value);
         end
     endtask
-*/
+
     always begin
         #5;
         clock = ~clock;
     end
-
-//1
 
     initial begin
         //$monitor("TIME:%4.0f busy:%b ready:%b rs1_tag:%h rs2_tag:%h", $time, busy, ready, DUT_rs_entry.next_entry_rs1_tag, DUT_rs_entry.next_entry_rs2_tag);
@@ -106,9 +105,7 @@ module testbench_RS;
         @(negedge clock);
         reset = 0;
 
-        // rs_entry_clear_in[0] = 1'b0;
-        //inst1 
-        //id
+// #1 case: ready - both in reg file
         id_packet_in.inst.inst = 32'hABCDEF12;
         id_packet_in.rs1_value = 1;  
         id_packet_in.rs2_value = 1;  
@@ -130,13 +127,16 @@ module testbench_RS;
         rob2rs_packet_in.rs2_value = 0;
         rob2rs_packet_in.rob_head_idx = 1;
 
-        $display("clear_out:%8b", rs_entry_clear_out);
-        $display("1st instr inputted");
+        #1 $display("1st instr inputted");
+
+        $display("@@@ | RS Index | Wr_en | Busy |   Inst   | Ready | Clear |");
+        for (int i = 0; i < `RS_LEN; i++) begin
+            $display("@@@ |   [%1d]    |   %b   |  %b   | %h |   %b   |   %b   |",
+                     i, rs_entry_enable[i], rs_entry_busy[i], rs_entry_packet_out[i].inst.inst, rs_entry_ready[i], rs_entry_clear[i]);
+        end
+
         @(negedge clock);
-        assert(is_packet_out.inst.inst == 32'hABCDEF12) else $display ("@@@FAILED@@@"); //test #1
-        assert(is_packet_out.rs1_value == 1) else $display ("@@@FAILED@@@");
-        assert(is_packet_out.rs2_value == 1) else $display ("@@@FAILED@@@");
-//#2    
+// #2 case: ready - both in rob
         id_packet_in.inst.inst = 32'hABC45F12;
 
         id_packet_in.rs1_value = 2;
@@ -156,14 +156,21 @@ module testbench_RS;
         rob2rs_packet_in.rs1_value = 0;
         rob2rs_packet_in.rs2_value = 0;
 
-        $display("clear_out:%8b", rs_entry_clear_out);
-        $display("2nd instr inputted");
+        #1 $display("2nd instr inputted");
+
+        $display("@@@ | RS Index | Wr_en | Busy |   Inst   | Ready | Clear |");
+        for (int i = 0; i < `RS_LEN; i++) begin
+            $display("@@@ |   [%1d]    |   %b   |  %b   | %h |   %b   |   %b   |",
+                     i, rs_entry_enable[i], rs_entry_busy[i], rs_entry_packet_out[i].inst.inst, rs_entry_ready[i], rs_entry_clear[i]);
+        end
+
+        check_func(32'hABCDEF12, 1, 1); // #1
+        // assert(is_packet_out.inst.inst == 32'hABCDEF12) else $display ("@@@FAILED@@@"); //test #1
+        // assert(is_packet_out.rs1_value == 1) else $display ("@@@FAILED@@@");
+        // assert(is_packet_out.rs2_value == 1) else $display ("@@@FAILED@@@");
 
         @(negedge clock);
-        assert(is_packet_out.inst.inst == 32'hABC45F12) else $display ("@@@FAILED@@@");  //test #2
-        assert(is_packet_out.rs1_value == 0) else $display ("@@@FAILED@@@");
-        assert(is_packet_out.rs2_value == 0) else $display ("@@@FAILED@@@");
-//#3 case: not ready(need one cycle to handle)
+// #3 case: not ready - both with tag 1
         id_packet_in.inst.inst = 32'hab489F12;
 
         id_packet_in.rs1_value = 3;
@@ -183,11 +190,22 @@ module testbench_RS;
         rob2rs_packet_in.rs1_value = 0;
         rob2rs_packet_in.rs2_value = 0;
 
-        // $display("TIME:%4.0f busy:%8b ready:%8b enable:%8b clear_in:%8b", $time, rs_entry_busy, rs_entry_ready, rs_entry_enable, rs_entry_clear_in);
-        $display("clear_out:%8b", rs_entry_clear_out);
-        $display("3rd instr inputted");
+        #1 $display("3rd instr inputted");
+
+        $display("@@@ | RS Index | Wr_en | Busy |   Inst   | Ready | Clear |");
+        for (int i = 0; i < `RS_LEN; i++) begin
+            $display("@@@ |   [%1d]    |   %b   |  %b   | %h |   %b   |   %b   |",
+                     i, rs_entry_enable[i], rs_entry_busy[i], rs_entry_packet_out[i].inst.inst, rs_entry_ready[i], rs_entry_clear[i]);
+        end
+
+        check_func(32'hABC45F12, 0, 0); // #2
+        // assert(is_packet_out.inst.inst == 32'hABC45F12) else $display ("@@@FAILED@@@");  //test #2
+        // assert(is_packet_out.rs1_value == 0) else $display ("@@@FAILED@@@");
+        // assert(is_packet_out.rs2_value == 0) else $display ("@@@FAILED@@@");
 
         @(negedge clock);
+// #4 case: ready - both in rob
+// tag 1 ready with cdb broadcast -> #3 ready
         id_packet_in.inst.inst = 32'h00000000;
 
         id_packet_in.rs1_value = 3;
@@ -207,23 +225,21 @@ module testbench_RS;
         rob2rs_packet_in.rs1_value = 0;
         rob2rs_packet_in.rs2_value = 0;
 
-    //assert (inst3)
-        #1 assert(is_packet_out.inst.inst == 32'hab489F12) else $display ("@@@FAILED@@@");  //test #3
-        assert(is_packet_out.rs1_value == 20) else $display ("@@@FAILED@@@");
-        assert(is_packet_out.rs2_value == 20) else $display ("@@@FAILED@@@");
+        #1 $display("4th instr inputted");
 
-//waiting inst #4
-        
-        $display("clear_out:%8b", rs_entry_clear_out);
+        $display("@@@ | RS Index | Wr_en | Busy |   Inst   | Ready | Clear |");
+        for (int i = 0; i < `RS_LEN; i++) begin
+            $display("@@@ |   [%1d]    |   %b   |  %b   | %h |   %b   |   %b   |",
+                     i, rs_entry_enable[i], rs_entry_busy[i], rs_entry_packet_out[i].inst.inst, rs_entry_ready[i], rs_entry_clear[i]);
+        end
 
-        @(negedge clock);
-    //assert (inst4)
-        assert(is_packet_out.inst.inst == 32'h00000000) else $display ("@@@FAILED@@@");  //wait for inst #4
-        assert(is_packet_out.rs1_value == 0) else $display ("@@@FAILED@@@");
-        assert(is_packet_out.rs2_value == 0) else $display ("@@@FAILED@@@");
-        
-    
-//insert inst5
+        check_func(32'hab489F12, 20, 20); // #3
+        // assert(is_packet_out.inst.inst == 32'hab489F12) else $display ("@@@FAILED@@@");  //test #3
+        // assert(is_packet_out.rs1_value == 20) else $display ("@@@FAILED@@@");
+        // assert(is_packet_out.rs2_value == 20) else $display ("@@@FAILED@@@");
+
+        @(negedge clock);    
+// #5 case: not ready - rs1 with tag3, rs2 with tag2
         //test inst
         id_packet_in.inst.inst = 32'hab22cF12;
         //id
@@ -244,11 +260,22 @@ module testbench_RS;
         rob2rs_packet_in.rs1_value = 0;
         rob2rs_packet_in.rs2_value = 0;
 
+        #1 $display("5th instr inputted");
+
+        $display("@@@ | RS Index | Wr_en | Busy |   Inst   | Ready | Clear |");
+        for (int i = 0; i < `RS_LEN; i++) begin
+            $display("@@@ |   [%1d]    |   %b   |  %b   | %h |   %b   |   %b   |",
+                     i, rs_entry_enable[i], rs_entry_busy[i], rs_entry_packet_out[i].inst.inst, rs_entry_ready[i], rs_entry_clear[i]);
+        end
+
+        check_func(32'h00000000, 0, 0); // #4
+        // assert(is_packet_out.inst.inst == 32'h00000000) else $display ("@@@FAILED@@@");  //wait for inst #4
+        // assert(is_packet_out.rs1_value == 0) else $display ("@@@FAILED@@@");
+        // assert(is_packet_out.rs2_value == 0) else $display ("@@@FAILED@@@");
+
         @(negedge clock);
-
-        
-
-    //insert inst6
+// #6 case: ready - both in reg file
+// tag 3 ready with cdb broadcast
         //test inst
         id_packet_in.inst.inst = 32'ha12acF12;
         id_packet_in.rs1_value = 1;  
@@ -267,12 +294,18 @@ module testbench_RS;
         rob2rs_packet_in.rob_entry = 5;
         rob2rs_packet_in.rs1_value = 0;
         rob2rs_packet_in.rs2_value = 0;
+
+        #1 $display("6th instr inputted");
+
+        $display("@@@ | RS Index | Wr_en | Busy |   Inst   | Ready | Clear |");
+        for (int i = 0; i < `RS_LEN; i++) begin
+            $display("@@@ |   [%1d]    |   %b   |  %b   | %h |   %b   |   %b   |",
+                     i, rs_entry_enable[i], rs_entry_busy[i], rs_entry_packet_out[i].inst.inst, rs_entry_ready[i], rs_entry_clear[i]);
+        end
         
         @(negedge clock);
-
-        //test inst 6
-
-    //insert inst7
+// #7 case: ready - rs1 in cdb, rs2 in rob
+// tag 2 ready with cdb broadcast -> #5 ready
         id_packet_in.inst.inst = 32'hab2ccF12;
         id_packet_in.rs1_value = 1;  
         id_packet_in.rs2_value = 1;  
@@ -291,25 +324,21 @@ module testbench_RS;
         rob2rs_packet_in.rs1_value = 0;
         rob2rs_packet_in.rs2_value = 0;
 
-        #1 assert(is_packet_out.inst.inst == 32'hab22cF12) else $display ("@@@FAILED@@@");  //test inst5
-        assert(is_packet_out.rs1_value == 50) else $display ("@@@FAILED@@@");
-        assert(is_packet_out.rs2_value == 60) else $display ("@@@FAILED@@@");
+        #1 $display("7th instr inputted");
 
-        $display("ready_0: %1b,",rs_entry_ready[0]);
-        $display("ready_1: %1b,",rs_entry_ready[1]);
-        $display("ready_2: %1b,",rs_entry_ready[2]);
-        $display("ready_3: %1b,",rs_entry_ready[3]);
-        $display("ready_4: %1b,",rs_entry_ready[4]);
-        $display("ready_5: %1b,",rs_entry_ready[5]);
-        $display("ready_6: %1b,",rs_entry_ready[6]);
-        $display("ready_7: %1b,",rs_entry_ready[7]);
-        
-        
-        //$display("Current inst:%32h", is_packet_out.inst.inst);
-        //$display("Current issue_inst_rob_entry:%8b", issue_inst_rob_entry);
-        //$display("Current issue_candidate_rob_entry:%8b", issue_candidate_rob_entry);
+        $display("@@@ | RS Index | Wr_en | Busy |   Inst   | Ready | Clear |");
+        for (int i = 0; i < `RS_LEN; i++) begin
+            $display("@@@ |   [%1d]    |   %b   |  %b   | %h |   %b   |   %b   |",
+                     i, rs_entry_enable[i], rs_entry_busy[i], rs_entry_packet_out[i].inst.inst, rs_entry_ready[i], rs_entry_clear[i]);
+        end
+
+        check_func(32'hab22cF12, 50, 60); // #5
+        // assert(is_packet_out.inst.inst == 32'hab22cF12) else $display ("@@@FAILED@@@");  //test inst5
+        // assert(is_packet_out.rs1_value == 50) else $display ("@@@FAILED@@@");
+        // assert(is_packet_out.rs2_value == 60) else $display ("@@@FAILED@@@");
+
         @(negedge clock);
-
+// #8 case: ready - both in rob
         id_packet_in.inst.inst = 32'h00000000;
 
         id_packet_in.rs1_value = 3;
@@ -329,47 +358,27 @@ module testbench_RS;
         rob2rs_packet_in.rs1_value = 0;
         rob2rs_packet_in.rs2_value = 0;
 
-        #1 assert(is_packet_out.inst.inst == 32'ha12acF12) else $display ("@@@FAILED@@@");
-        assert(is_packet_out.rs1_value == 1) else $display ("@@@FAILED@@@");
+        #1 $display("8th instr inputted");
 
-        $display("rs1-value_322: %32h", is_packet_out.rs1_value);
-        assert(is_packet_out.rs2_value == 1) else $display ("@@@FAILED@@@"); 
-        $display("ROB_one_hot_bit_32'ha12acF12: %8b,",issue_candidate_rob_entry);
-        $display("ready_0: %1b,",rs_entry_ready[0]);
-        $display("ready_1: %1b,",rs_entry_ready[1]);
-        $display("ready_2: %1b,",rs_entry_ready[2]);
-        $display("ready_3: %1b,",rs_entry_ready[3]);
-        $display("ready_4: %1b,",rs_entry_ready[4]);
-        $display("ready_5: %1b,",rs_entry_ready[5]);
-        $display("ready_6: %1b,",rs_entry_ready[6]);
-        $display("ready_7: %1b,",rs_entry_ready[7]);
-        
-        
+        $display("@@@ | RS Index | Wr_en | Busy |   Inst   | Ready | Clear |");
+        for (int i = 0; i < `RS_LEN; i++) begin
+            $display("@@@ |   [%1d]    |   %b   |  %b   | %h |   %b   |   %b   |",
+                     i, rs_entry_enable[i], rs_entry_busy[i], rs_entry_packet_out[i].inst.inst, rs_entry_ready[i], rs_entry_clear[i]);
+        end
 
-        //$display("Current inst:%32h", is_packet_out.inst.inst);
-        //$display("Current issue_inst_rob_entry:%8b", issue_inst_rob_entry);
-        //$display("Current issue_candidate_rob_entry:%8b", issue_candidate_rob_entry);
+        check_func(32'ha12acF12, 1, 1); // #6
+        // assert(is_packet_out.inst.inst == 32'ha12acF12) else $display ("@@@FAILED@@@");
+        // assert(is_packet_out.rs1_value == 1) else $display ("@@@FAILED@@@");
+        // assert(is_packet_out.rs2_value == 1) else $display ("@@@FAILED@@@"); 
 
         @(negedge clock);
-        #1 assert(is_packet_out.inst.inst == 32'hab2ccF12) else $display ("@@@FAILED@@@");  //test inst7
-        $display("inst_330: %32h", is_packet_out.inst.inst);
-        assert(is_packet_out.rs1_value == 60) else $display ("@@@FAILED@@@");
-        $display("rs1-value_322: %32h", is_packet_out.rs1_value);
-        assert(is_packet_out.rs2_value == 0) else $display ("@@@FAILED@@@");
-        $display("ROB_one_hot_bit_32'hab2ccF12: %8b,",issue_candidate_rob_entry);
-        //$display("Current inst:%32h", is_packet_out.inst.inst);
-        //$display("Current issue_inst_rob_entry:%8b", issue_inst_rob_entry);
-        //$display("Current issue_candidate_rob_entry:%8b", issue_candidate_rob_entry);
+        #1 $display("Here");
+        check_func(32'hab2ccF12, 60, 0); // #7
+        // assert(is_packet_out.inst.inst == 32'hab2ccF12) else $display ("@@@FAILED@@@");
+        // assert(is_packet_out.rs1_value == 60) else $display ("@@@FAILED@@@");
+        // assert(is_packet_out.rs2_value == 0) else $display ("@@@FAILED@@@");
 
         @(negedge clock);
-        #1 assert(is_packet_out.inst.inst == 32'hab2ccF12) else $display ("@@@FAILED@@@");  //test inst7
-        assert(is_packet_out.rs1_value == 60) else $display ("@@@FAILED@@@");
-        assert(is_packet_out.rs2_value == 0) else $display ("@@@FAILED@@@");
-        $display("ROB_one_hot_bit_last: %8b,",issue_candidate_rob_entry);
-        
-
-
-
         //rest and do the mass test
         reset = 1;
 

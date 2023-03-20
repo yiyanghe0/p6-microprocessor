@@ -80,14 +80,21 @@ Note: packets to ROB, Map Table and selection of RS_entry, issued s_x_packet sho
     //                                                                                                                 // entry_rs1_tag by default
 
     always_comb begin
-        next_entry_rs1_tag = 0;
-    
         if (wr_en) begin
-            if (!mt2rs_packet_in.rs1_ready)
+            if (mt2rs_packet_in.rs1_ready)
+                next_entry_rs1_tag = 0;
+            // Map table not ready until next cycle when cdb broadcasts
+            else if ((cdb_packet_in.reg_tag == entry_rs1_tag) && (cdb_packet_in.reg_tag != 0))
+                next_entry_rs1_tag = 0;
+            else
                 next_entry_rs1_tag = mt2rs_packet_in.rs1_tag;
         end
-        else if (!(busy && (cdb_packet_in.reg_tag == entry_rs1_tag) && (cdb_packet_in.reg_tag != 0)))
-            next_entry_rs1_tag = entry_rs1_tag;
+        else begin
+            if (busy && (cdb_packet_in.reg_tag == entry_rs1_tag) && (cdb_packet_in.reg_tag != 0))
+                next_entry_rs1_tag = 0;
+            else
+                next_entry_rs1_tag = entry_rs1_tag;
+        end
     end
 
     // assign next_entry_rs2_tag = wr_en ? (mt2rs_packet_in.rs2_ready ? 0 :
@@ -97,14 +104,21 @@ Note: packets to ROB, Map Table and selection of RS_entry, issued s_x_packet sho
     //                                                                                                                 // entry_rs2_tag by default
 
     always_comb begin
-        next_entry_rs2_tag = 0;
-    
         if (wr_en) begin
-            if (!mt2rs_packet_in.rs2_ready)
+            if (mt2rs_packet_in.rs2_ready)
+                next_entry_rs2_tag = 0;
+            // Map table not ready until next cycle when cdb broadcasts
+            else if ((cdb_packet_in.reg_tag == entry_rs2_tag) && (cdb_packet_in.reg_tag != 0))
+                next_entry_rs2_tag = 0;
+            else
                 next_entry_rs2_tag = mt2rs_packet_in.rs2_tag;
         end
-        else if (!(busy && (cdb_packet_in.reg_tag == entry_rs2_tag) && (cdb_packet_in.reg_tag != 0)))
-            next_entry_rs2_tag = entry_rs2_tag;
+        else begin
+            if (busy && (cdb_packet_in.reg_tag == entry_rs2_tag) && (cdb_packet_in.reg_tag != 0))
+                next_entry_rs2_tag = 0;
+            else
+                next_entry_rs2_tag = entry_rs2_tag;
+        end
     end
 
     // register values for next rs1 and rs2 values
@@ -117,6 +131,8 @@ Note: packets to ROB, Map Table and selection of RS_entry, issued s_x_packet sho
         if (wr_en) begin
             if (mt2rs_packet_in.rs1_ready && mt2rs_packet_in.rs1_tag != 0)
                 next_entry_packet.rs1_value = rob2rs_packet_in.rs1_value;
+            else if (!mt2rs_packet_in.rs1_ready && (cdb_packet_in.reg_tag == entry_rs1_tag) && (cdb_packet_in.reg_tag != 0))
+                next_entry_packet.rs1_value = cdb_packet_in.reg_value;
             else
                 next_entry_packet.rs1_value = id_packet_in.rs1_value;  
         end
@@ -137,6 +153,8 @@ Note: packets to ROB, Map Table and selection of RS_entry, issued s_x_packet sho
         if (wr_en) begin
             if (mt2rs_packet_in.rs2_ready && mt2rs_packet_in.rs2_tag != 0)
                 next_entry_packet.rs2_value = rob2rs_packet_in.rs2_value;
+            else if (!mt2rs_packet_in.rs2_ready && (cdb_packet_in.reg_tag == entry_rs2_tag) && (cdb_packet_in.reg_tag != 0))
+                next_entry_packet.rs2_value = cdb_packet_in.reg_value;
             else
                 next_entry_packet.rs2_value = id_packet_in.rs2_value;  
         end
