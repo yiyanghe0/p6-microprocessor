@@ -300,6 +300,12 @@ typedef struct packed {
 // flags for cdb write through
 typedef enum logic [1:0] {TAGTAG, TAGCDB, CDBTAG, CDBCDB} FLAG;
 
+// packet of tag
+typedef struct packed {
+	logic [$clog2(`ROB_LEN)-1:0] tag;   //ROB entry number
+	logic 						 valid; //valid bit (e.g. tag = 0 && valid = 1 => ROB#0, tag = 0 && valid = 0 => tag is empty)
+} TAG_PACKET;
+
 //////////////////////////////////////////////
 //
 // ID_packet:
@@ -390,6 +396,18 @@ typedef struct packed {
 
 //////////////////////////////////////////////
 //
+// ROB2MT_PACKET:
+// Data from ROB to Map Table
+//
+//////////////////////////////////////////////
+
+typedef struct packed {
+	logic retire;
+	logic [$clog2(`ROB_LEN)-1:0] head_idx;
+} ROB2MT_PACKET;
+
+//////////////////////////////////////////////
+//
 // CDB_PACKET:
 // Data broadcasted from CDB
 //
@@ -440,11 +458,6 @@ typedef struct packed {
 	logic [$clog2(`ROB_LEN)-1:0] dest_reg_idx;    //address
 	logic                        valid;
 } ROB_entry_PACKET;
-
-typedef struct packed {
-	logic [$clog2(`ROB_LEN)-1:0] tag;   //ROB entry number
-	logic 						 valid; //valid bit (e.g. tag = 0 && valid = 1 => ROB#0, tag = 0 && valid = 0 => tag is empty)
-} TAG_PACKET;
 
 typedef struct packed {
 	logic [`XLEN-1:0] alu_result;  // alu_result

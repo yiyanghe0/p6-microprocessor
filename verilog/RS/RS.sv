@@ -63,11 +63,16 @@ module RS(
     output IS_PACKET [`RS_LEN-1:0] rs_entry_packet_out,
     
     output logic [`RS_LEN-1:0] rs_entry_clear,
+
+    output TAG_PACKET [`RS_LEN-1:0] entry_rs1_tags,
+    output TAG_PACKET [`RS_LEN-1:0] entry_rs2_tags,
     `endif
 
     output RS2ROB_PACKET rs2rob_packet_out,
     output RS2MT_PACKET rs2mt_packet_out,
-    output IS_PACKET is_packet_out    
+    output IS_PACKET is_packet_out,
+    
+    output logic valid // if valid = 0, rs encountered structural hazard and has to stall
 );
 /*
 What this module does:
@@ -100,24 +105,26 @@ Output the index of the RS_entry that issued instruction
     `endif
 
     FLAG [`RS_LEN-1:0] rs_flags;
-    logic valid; // if valid = 0, rs encountered structural hazard and has to stall
 
     logic [`RS_LEN-1:0] rs_entry_clear_in;
     logic [`RS_LEN-1:0] rs_entry_clear_out;
+
     assign rs_entry_clear_in = rs_entry_clear_out;
+
     `ifdef DEBUG
         assign rs_entry_clear = rs_entry_clear_in;
     `endif
 
     // output packages
-    assign rs2mt_packet_out.rs1_idx         = id_packet_in.inst.r.rs1;
-    assign rs2mt_packet_out.rs2_idx         = id_packet_in.inst.r.rs2;
-    assign rs2mt_packet_out.dest_reg_idx    = id_packet_in.dest_reg_idx;
-    assign rs2mt_packet_out.dest_reg_tag    = rob2rs_packet_in.rob_entry;
+    assign rs2mt_packet_out.rs1_idx            = id_packet_in.inst.r.rs1;
+    assign rs2mt_packet_out.rs2_idx            = id_packet_in.inst.r.rs2;
+    assign rs2mt_packet_out.dest_reg_idx       = id_packet_in.dest_reg_idx;
+    assign rs2mt_packet_out.dest_reg_tag.tag   = rob2rs_packet_in.rob_entry;
+    assign rs2mt_packet_out.dest_reg_tag.valid = 1;
 
     assign rs2rob_packet_out.valid          = valid;
-    assign rs2rob_packet_out.rs1_idx        = mt2rs_packet_in.rs1_tag;
-    assign rs2rob_packet_out.rs2_idx        = mt2rs_packet_in.rs2_tag;
+    assign rs2rob_packet_out.rs1_idx        = mt2rs_packet_in.rs1_tag.tag;
+    assign rs2rob_packet_out.rs2_idx        = mt2rs_packet_in.rs2_tag.tag;
 
     RS_entry rs_entry [`RS_LEN-1:0] (
         // all rs_entry share the same input packets
@@ -134,6 +141,11 @@ Output the index of the RS_entry that issued instruction
         .entry_packet(rs_entry_packet_out),
         .busy(rs_entry_busy),
         .ready(rs_entry_ready),
+
+        `ifdef DEBUG
+        .entry_rs1_tag(entry_rs1_tags),
+        .entry_rs2_tag(entry_rs2_tags),
+        `endif
 
         .flag(rs_flags)
     );
@@ -209,10 +221,10 @@ Output the index of the RS_entry that issued instruction
         for (int i = 0; i < `RS_LEN; i++) begin
             if ((issue_inst_rob_entry == rs_entry_rob_entry[i]) && (issue_inst_rob_entry != 0)) begin
                 is_packet_out = rs_entry_packet_out[i];
-                if ((rs_flags == CDBTAG) || (rs_flags == CDBCDB))
+                if ((rs_flags[i] == CDBTAG) || (rs_flags[i] == CDBCDB))
                     is_packet_out.rs1_value = cdb_packet_in.reg_value;
                 
-                if ((rs_flags == TAGCDB) || (rs_flags == CDBCDB))
+                if ((rs_flags[i] == TAGCDB) || (rs_flags[i] == CDBCDB))
                     is_packet_out.rs2_value = cdb_packet_in.reg_value;
                 
                 rs_entry_clear_out[i] = 1;
