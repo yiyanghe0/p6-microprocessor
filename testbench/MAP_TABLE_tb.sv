@@ -6,6 +6,7 @@ module testbench_map_table;
     RS2MT_PACKET rs2mt_packet_in;
     CDB_PACKET cdb_packet_in;
     MT2RS_PACKET mt2rs_packet_out;
+    ROB2MT_PACKET rob2mt_packet_in;
     logic [10:0] instr;
 
     MAP_TABLE DUT_map_table(
@@ -14,6 +15,7 @@ module testbench_map_table;
         .wr_en(wr_en),
         .rs2mt_packet_in(rs2mt_packet_in),
         .cdb_packet_in(cdb_packet_in),
+        .rob2mt_packet_in(rob2mt_packet_in),
         .mt2rs_packet_out(mt2rs_packet_out)
     );
 
@@ -45,6 +47,15 @@ module testbench_map_table;
             cdb_packet_in.reg_tag.tag = cdb_tag;
             cdb_packet_in.reg_tag.valid = cdb_valid;
             cdb_packet_in.reg_value = cdb_value;
+        end
+    endtask
+
+    task generate_rob_package;
+        input clear;
+        input [$clog2(`ROB_LEN)-1:0] rob_entry;
+        begin
+            rob2mt_packet_in.retire = clear;
+            rob2mt_packet_in.head_idx = rob_entry;
         end
     endtask
 
@@ -120,6 +131,7 @@ module testbench_map_table;
         instr = 1;
         generate_rs_package(1,2,1,0,1); // f1 f2 f1
         generate_cdb_package(0,0,0);
+        generate_rob_package(0,0);
         #1
         check_rs1(0,0,0); //no tag not valid not ready
         check_rs2(0,0,0); 
@@ -332,9 +344,74 @@ module testbench_map_table;
         instr = 15;
         generate_rs_package(0,2,0,13,0);
         generate_cdb_package(0,0,0);
+        generate_rob_package(1,7);
         #1
         check_rs1(5,1,0);
         check_rs2(7,1,1);
+
+        @(negedge clock);
+        // instr 16 f0 f2 f4
+        // 0:5.
+        // 1:11.
+        // 2:0
+        // 3:4+
+        // 4:8.
+        // 5:10.
+        instr = 16;
+        generate_rs_package(0,2,4,13,1);
+        generate_cdb_package(11,1,6);
+        generate_rob_package(1,4);
+        #1
+        check_rs1(5,1,0);
+        check_rs2(0,0,0);
+
+        @(negedge clock);
+        // instr 17 f0 f3 f4
+        // 0:5.
+        // 1:11+
+        // 2:0
+        // 3:0
+        // 4:13.
+        // 5:10.
+        instr = 17;
+        generate_rs_package(0,3,4,14,1);
+        generate_cdb_package(10,1,7);
+        generate_rob_package(1,3);
+        #1
+        check_rs1(5,1,0);
+        check_rs2(0,0,0);
+
+        @(negedge clock);
+        // instr 18 f0 f3 f4
+        // 0:5.
+        // 1:11+
+        // 2:0
+        // 3:0
+        // 4:14.
+        // 5:10+
+        instr = 18;
+        generate_rs_package(0,3,1,15,1);
+        generate_cdb_package(14,1,6);
+        generate_rob_package(1,11);
+        #1
+        check_rs1(5,1,0);
+        check_rs2(0,0,0);
+
+        @(negedge clock);
+        // instr 19 f0 f1 f4
+        // 0:5.
+        // 1:15.
+        // 2:0
+        // 3:0
+        // 4:14+
+        // 5:10+
+        instr = 19;
+        generate_rs_package(0,1,4,16,0);
+        generate_cdb_package(0,0,0);
+        generate_rob_package(0,0);
+        #1
+        check_rs1(5,1,0);
+        check_rs2(15,1,0);
 
         @(negedge clock);
         reset = 1;

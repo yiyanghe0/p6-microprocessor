@@ -396,6 +396,18 @@ typedef struct packed {
 
 //////////////////////////////////////////////
 //
+// ROB2MT_PACKET:
+// Data from ROB to Map Table
+//
+//////////////////////////////////////////////
+
+typedef struct packed {
+	logic retire;
+	logic [$clog2(`ROB_LEN)-1:0] head_idx;
+} ROB2MT_PACKET;
+
+//////////////////////////////////////////////
+//
 // CDB_PACKET:
 // Data broadcasted from CDB
 //
