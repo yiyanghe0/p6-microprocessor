@@ -27,8 +27,8 @@ module testbench_RS;
 
     logic valid; // if valid = 0, rs encountered structural hazard and has to stall
 
-    logic [`RS_LEN-1:0][$clog2(`ROB_LEN)-1:0] entry_rs1_tags;
-    logic [`RS_LEN-1:0][$clog2(`ROB_LEN)-1:0] entry_rs2_tags;
+    TAG_PACKET [`RS_LEN-1:0] entry_rs1_tags;
+    TAG_PACKET [`RS_LEN-1:0] entry_rs2_tags;
 
     logic rs_valid;
 
@@ -82,7 +82,7 @@ module testbench_RS;
 
             for (int i = 0; i < `RS_LEN; i++) begin
                 $display("@@@ |   [%1d]    |   %b   |  %b   | %h |   %b   |   %b   | %b  | %b  |",
-                         i, rs_entry_enable[i], rs_entry_busy[i], rs_entry_packet_out[i].inst.inst, rs_entry_ready[i], rs_entry_clear[i], entry_rs1_tags[i], entry_rs2_tags[i]);
+                         i, rs_entry_enable[i], rs_entry_busy[i], rs_entry_packet_out[i].inst.inst, rs_entry_ready[i], rs_entry_clear[i], entry_rs1_tags[i].tag, entry_rs2_tags[i].tag);
             end
 
             $display("@@@failed");
@@ -122,13 +122,16 @@ module testbench_RS;
         id_packet_in.dest_reg_idx = 1;
 
         //mt
-        mt2rs_packet_in.rs1_tag = 0; // reg file
-        mt2rs_packet_in.rs2_tag = 0;
+        mt2rs_packet_in.rs1_tag.tag = 0; // reg file
+        mt2rs_packet_in.rs2_tag.tag = 0;
+        mt2rs_packet_in.rs1_tag.valid = 0; // reg file
+        mt2rs_packet_in.rs2_tag.valid = 0;
         mt2rs_packet_in.rs1_ready = 0;
         mt2rs_packet_in.rs2_ready = 0;
 
         //cdb
-        cdb_packet_in.reg_tag = 0;
+        cdb_packet_in.reg_tag.tag = 0;
+        cdb_packet_in.reg_tag.valid = 0;
         cdb_packet_in.reg_value = 0;
 
         //rob
@@ -153,12 +156,15 @@ module testbench_RS;
         id_packet_in.rs2_value = 2;
         id_packet_in.dest_reg_idx = 2;
         //mt
-        mt2rs_packet_in.rs1_tag = 1;  // t1 t2 is blank, v1 v2 in rob
-        mt2rs_packet_in.rs2_tag = 1;
+        mt2rs_packet_in.rs1_tag.tag = 1;  // t1 t2 is blank, v1 v2 in rob
+        mt2rs_packet_in.rs2_tag.tag = 1;
+        mt2rs_packet_in.rs1_tag.valid = 1;  // t1 t2 is blank, v1 v2 in rob
+        mt2rs_packet_in.rs2_tag.valid = 1;
         mt2rs_packet_in.rs1_ready = 1;
         mt2rs_packet_in.rs2_ready = 1;
         //cdb
-        cdb_packet_in.reg_tag = 0;
+        cdb_packet_in.reg_tag.tag = 0;
+        cdb_packet_in.reg_tag.valid = 0;
         cdb_packet_in.reg_value = 0;
         //rob
         rob2rs_packet_in.rob_head_idx = 1;
@@ -187,12 +193,15 @@ module testbench_RS;
         id_packet_in.rs2_value = 3;
         id_packet_in.dest_reg_idx = 3;
         //mt
-        mt2rs_packet_in.rs1_tag = 1;  // t1 t2 is waiting
-        mt2rs_packet_in.rs2_tag = 1;
+        mt2rs_packet_in.rs1_tag.tag = 1;  // t1 t2 is waiting
+        mt2rs_packet_in.rs2_tag.tag = 1;
+        mt2rs_packet_in.rs1_tag.valid = 1;  // t1 t2 is waiting
+        mt2rs_packet_in.rs2_tag.valid = 1;
         mt2rs_packet_in.rs1_ready = 0;
         mt2rs_packet_in.rs2_ready = 0;
         //cdb
-        cdb_packet_in.reg_tag = 0;
+        cdb_packet_in.reg_tag.tag = 0;
+        cdb_packet_in.reg_tag.valid = 0;
         cdb_packet_in.reg_value = 0;
         //rob
         rob2rs_packet_in.rob_head_idx = 1;
@@ -222,12 +231,15 @@ module testbench_RS;
         id_packet_in.rs2_value = 3;
         id_packet_in.dest_reg_idx = 4;
         //mt
-        mt2rs_packet_in.rs1_tag = 3;
-        mt2rs_packet_in.rs2_tag = 3;
+        mt2rs_packet_in.rs1_tag.tag = 3;
+        mt2rs_packet_in.rs2_tag.tag = 3;
+        mt2rs_packet_in.rs1_tag.valid = 1;
+        mt2rs_packet_in.rs2_tag.valid = 1;
         mt2rs_packet_in.rs1_ready = 1;
         mt2rs_packet_in.rs2_ready = 1;
         //cdb
-        cdb_packet_in.reg_tag = 1;
+        cdb_packet_in.reg_tag.tag = 1;
+        cdb_packet_in.reg_tag.valid = 1;
         cdb_packet_in.reg_value = 20;
         //rob
         rob2rs_packet_in.rob_head_idx = 1;
@@ -257,12 +269,15 @@ module testbench_RS;
         id_packet_in.rs2_value = 2;
         id_packet_in.dest_reg_idx = 2;
         //mt
-        mt2rs_packet_in.rs1_tag = 3;  // t1 t2 is blank, v1 v2 in rob
-        mt2rs_packet_in.rs2_tag = 2;
+        mt2rs_packet_in.rs1_tag.tag = 3;  // t1 t2 is blank, v1 v2 in rob
+        mt2rs_packet_in.rs2_tag.tag = 2;
+        mt2rs_packet_in.rs1_tag.valid = 1;  // t1 t2 is blank, v1 v2 in rob
+        mt2rs_packet_in.rs2_tag.valid = 1;
         mt2rs_packet_in.rs1_ready = 0;
         mt2rs_packet_in.rs2_ready = 0;
         //cdb
-        cdb_packet_in.reg_tag = 0;
+        cdb_packet_in.reg_tag.tag = 0;
+        cdb_packet_in.reg_tag.valid = 0;
         cdb_packet_in.reg_value = 0;
         //rob
         rob2rs_packet_in.rob_head_idx = 1;
@@ -292,12 +307,15 @@ module testbench_RS;
         id_packet_in.rs2_value = 1;  
         id_packet_in.dest_reg_idx = 1;
         //mt
-        mt2rs_packet_in.rs1_tag = 0; // reg file
-        mt2rs_packet_in.rs2_tag = 0;
+        mt2rs_packet_in.rs1_tag.tag = 0; // reg file
+        mt2rs_packet_in.rs2_tag.tag = 0;
+        mt2rs_packet_in.rs1_tag.valid = 0; // reg file
+        mt2rs_packet_in.rs2_tag.valid = 0;
         mt2rs_packet_in.rs1_ready = 0;
         mt2rs_packet_in.rs2_ready = 0;
         //cdb
-        cdb_packet_in.reg_tag = 3;   //broadcast reg1
+        cdb_packet_in.reg_tag.tag = 3;   //broadcast reg1
+        cdb_packet_in.reg_tag.valid = 1;
         cdb_packet_in.reg_value = 50;
         //rob
         rob2rs_packet_in.rob_head_idx = 1;
@@ -321,12 +339,15 @@ module testbench_RS;
         id_packet_in.rs2_value = 1;  
         id_packet_in.dest_reg_idx = 1;
         //mt
-        mt2rs_packet_in.rs1_tag = 2; // one tag
-        mt2rs_packet_in.rs2_tag = 3;
+        mt2rs_packet_in.rs1_tag.tag = 2; // one tag
+        mt2rs_packet_in.rs2_tag.tag = 3;
+        mt2rs_packet_in.rs1_tag.valid = 1; // one tag
+        mt2rs_packet_in.rs2_tag.valid = 1;
         mt2rs_packet_in.rs1_ready = 0;
         mt2rs_packet_in.rs2_ready = 1;
         //cdb
-        cdb_packet_in.reg_tag = 2;
+        cdb_packet_in.reg_tag.tag = 2;
+        cdb_packet_in.reg_tag.valid = 1;
         cdb_packet_in.reg_value = 60;
         //rob
         rob2rs_packet_in.rob_head_idx = 1;
@@ -355,12 +376,15 @@ module testbench_RS;
         id_packet_in.rs2_value = 3;
         id_packet_in.dest_reg_idx = 4;
         //mt
-        mt2rs_packet_in.rs1_tag = 3;
-        mt2rs_packet_in.rs2_tag = 3;
+        mt2rs_packet_in.rs1_tag.tag = 3;
+        mt2rs_packet_in.rs2_tag.tag = 3;
+        mt2rs_packet_in.rs1_tag.valid = 1;
+        mt2rs_packet_in.rs2_tag.valid = 1;
         mt2rs_packet_in.rs1_ready = 1;
         mt2rs_packet_in.rs2_ready = 1;
         //cdb
-        cdb_packet_in.reg_tag = 1;
+        cdb_packet_in.reg_tag.tag = 1;
+        cdb_packet_in.reg_tag.valid = 1;
         cdb_packet_in.reg_value = 25;
         //rob
         rob2rs_packet_in.rob_head_idx = 1;
@@ -407,12 +431,15 @@ module testbench_RS;
         id_packet_in.rs2_value = 1;  
         id_packet_in.dest_reg_idx = 1;
         //mt
-        mt2rs_packet_in.rs1_tag = 1; // one tag
-        mt2rs_packet_in.rs2_tag = 3;
+        mt2rs_packet_in.rs1_tag.tag = 1; // one tag
+        mt2rs_packet_in.rs2_tag.tag = 3;
+        mt2rs_packet_in.rs1_tag.valid = 1; // one tag
+        mt2rs_packet_in.rs2_tag.valid = 1;
         mt2rs_packet_in.rs1_ready = 0;
         mt2rs_packet_in.rs2_ready = 1;
         //cdb
-        cdb_packet_in.reg_tag = 0;
+        cdb_packet_in.reg_tag.tag = 0;
+        cdb_packet_in.reg_tag.valid = 0;
         cdb_packet_in.reg_value = 0;
         //rob
         rob2rs_packet_in.rob_head_idx = 1;
@@ -427,12 +454,15 @@ module testbench_RS;
         id_packet_in.rs2_value = 2;  
         id_packet_in.dest_reg_idx = 1;
         //mt
-        mt2rs_packet_in.rs1_tag = 1; // one tag
-        mt2rs_packet_in.rs2_tag = 3;
+        mt2rs_packet_in.rs1_tag.tag = 1; // one tag
+        mt2rs_packet_in.rs2_tag.tag = 3;
+        mt2rs_packet_in.rs1_tag.valid = 1; // one tag
+        mt2rs_packet_in.rs2_tag.valid = 1;
         mt2rs_packet_in.rs1_ready = 0;
         mt2rs_packet_in.rs2_ready = 1;
         //cdb
-        cdb_packet_in.reg_tag = 0;
+        cdb_packet_in.reg_tag.tag = 0;
+        cdb_packet_in.reg_tag.valid = 0;
         cdb_packet_in.reg_value = 0;
         //rob
         rob2rs_packet_in.rob_head_idx = 1;
@@ -447,12 +477,15 @@ module testbench_RS;
         id_packet_in.rs2_value = 1;  
         id_packet_in.dest_reg_idx = 1;
         //mt
-        mt2rs_packet_in.rs1_tag = 2; // one tag
-        mt2rs_packet_in.rs2_tag = 5;
+        mt2rs_packet_in.rs1_tag.tag = 2; // one tag
+        mt2rs_packet_in.rs2_tag.tag = 5;
+        mt2rs_packet_in.rs1_tag.valid = 1; // one tag
+        mt2rs_packet_in.rs2_tag.valid = 1;
         mt2rs_packet_in.rs1_ready = 1;
         mt2rs_packet_in.rs2_ready = 0;
         //cdb
-        cdb_packet_in.reg_tag = 0;
+        cdb_packet_in.reg_tag.tag = 0;
+        cdb_packet_in.reg_tag.valid = 0;
         cdb_packet_in.reg_value = 0;
         //rob
         rob2rs_packet_in.rob_head_idx = 1;
@@ -467,12 +500,15 @@ module testbench_RS;
         id_packet_in.rs2_value = 2;  
         id_packet_in.dest_reg_idx = 1;
         //mt
-        mt2rs_packet_in.rs1_tag = 2; // one tag
-        mt2rs_packet_in.rs2_tag = 0;
+        mt2rs_packet_in.rs1_tag.tag = 2; // one tag
+        mt2rs_packet_in.rs2_tag.tag = 0;
+        mt2rs_packet_in.rs1_tag.valid = 1; // one tag
+        mt2rs_packet_in.rs2_tag.valid = 0;
         mt2rs_packet_in.rs1_ready = 0;
         mt2rs_packet_in.rs2_ready = 0;
         //cdb
-        cdb_packet_in.reg_tag = 0;
+        cdb_packet_in.reg_tag.tag = 0;
+        cdb_packet_in.reg_tag.valid = 0;
         cdb_packet_in.reg_value = 0;
         //rob
         rob2rs_packet_in.rob_head_idx = 1;
@@ -487,12 +523,15 @@ module testbench_RS;
         id_packet_in.rs2_value = 1;  
         id_packet_in.dest_reg_idx = 1;
         //mt
-        mt2rs_packet_in.rs1_tag = 0; // one tag
-        mt2rs_packet_in.rs2_tag = 5;
+        mt2rs_packet_in.rs1_tag.tag = 0; // one tag
+        mt2rs_packet_in.rs2_tag.tag = 5;
+        mt2rs_packet_in.rs1_tag.valid = 0; // one tag
+        mt2rs_packet_in.rs2_tag.valid = 1;
         mt2rs_packet_in.rs1_ready = 0;
         mt2rs_packet_in.rs2_ready = 0;
         //cdb
-        cdb_packet_in.reg_tag = 0;
+        cdb_packet_in.reg_tag.tag = 0;
+        cdb_packet_in.reg_tag.valid = 0;
         cdb_packet_in.reg_value = 0;
         //rob
         rob2rs_packet_in.rob_head_idx = 1;
@@ -507,12 +546,15 @@ module testbench_RS;
         id_packet_in.rs2_value = 2;  
         id_packet_in.dest_reg_idx = 1;
         //mt
-        mt2rs_packet_in.rs1_tag = 6; // one tag
-        mt2rs_packet_in.rs2_tag = 3;
+        mt2rs_packet_in.rs1_tag.tag = 6; // one tag
+        mt2rs_packet_in.rs2_tag.tag = 3;
+        mt2rs_packet_in.rs1_tag.valid = 1; // one tag
+        mt2rs_packet_in.rs2_tag.valid = 1;
         mt2rs_packet_in.rs1_ready = 1;
         mt2rs_packet_in.rs2_ready = 0;
         //cdb
-        cdb_packet_in.reg_tag = 0;
+        cdb_packet_in.reg_tag.tag = 0;
+        cdb_packet_in.reg_tag.valid = 0;
         cdb_packet_in.reg_value = 0;
         //rob
         rob2rs_packet_in.rob_head_idx = 1;
@@ -527,12 +569,15 @@ module testbench_RS;
         id_packet_in.rs2_value = 1;  
         id_packet_in.dest_reg_idx = 1;
         //mt
-        mt2rs_packet_in.rs1_tag = 5; // one tag
-        mt2rs_packet_in.rs2_tag = 1;
+        mt2rs_packet_in.rs1_tag.tag = 5; // one tag
+        mt2rs_packet_in.rs2_tag.tag = 1;
+        mt2rs_packet_in.rs1_tag.valid = 1; // one tag
+        mt2rs_packet_in.rs2_tag.valid = 1;
         mt2rs_packet_in.rs1_ready = 0;
         mt2rs_packet_in.rs2_ready = 0;
         //cdb
-        cdb_packet_in.reg_tag = 0;
+        cdb_packet_in.reg_tag.tag = 0;
+        cdb_packet_in.reg_tag.valid = 0;
         cdb_packet_in.reg_value = 0;
         //rob
         rob2rs_packet_in.rob_head_idx = 1;
@@ -547,12 +592,15 @@ module testbench_RS;
         id_packet_in.rs2_value = 2;  
         id_packet_in.dest_reg_idx = 1;
         //mt
-        mt2rs_packet_in.rs1_tag = 3; // one tag
-        mt2rs_packet_in.rs2_tag = 6;
+        mt2rs_packet_in.rs1_tag.tag = 3; // one tag
+        mt2rs_packet_in.rs2_tag.tag = 6;
+        mt2rs_packet_in.rs1_tag.valid = 1; // one tag
+        mt2rs_packet_in.rs2_tag.valid = 1;
         mt2rs_packet_in.rs1_ready = 0;
         mt2rs_packet_in.rs2_ready = 0;
         //cdb
-        cdb_packet_in.reg_tag = 0;
+        cdb_packet_in.reg_tag.tag = 0;
+        cdb_packet_in.reg_tag.valid = 0;
         cdb_packet_in.reg_value = 0;
         //rob
         rob2rs_packet_in.rob_head_idx = 1;
@@ -573,12 +621,15 @@ module testbench_RS;
         id_packet_in.rs2_value = 2;  
         id_packet_in.dest_reg_idx = 1;
         //mt
-        mt2rs_packet_in.rs1_tag = 3; // one tag
-        mt2rs_packet_in.rs2_tag = 6;
+        mt2rs_packet_in.rs1_tag.tag = 3; // one tag
+        mt2rs_packet_in.rs2_tag.tag = 6;
+        mt2rs_packet_in.rs1_tag.valid = 1; // one tag
+        mt2rs_packet_in.rs2_tag.valid = 1;
         mt2rs_packet_in.rs1_ready = 1;
         mt2rs_packet_in.rs2_ready = 1;
         //cdb
-        cdb_packet_in.reg_tag = 0;
+        cdb_packet_in.reg_tag.tag = 0;
+        cdb_packet_in.reg_tag.valid = 0;
         cdb_packet_in.reg_value = 0;
         //rob
         rob2rs_packet_in.rob_head_idx = 1;
@@ -607,12 +658,15 @@ module testbench_RS;
         id_packet_in.rs2_value = 3;
         id_packet_in.dest_reg_idx = 4;
         //mt
-        mt2rs_packet_in.rs1_tag = 3;
-        mt2rs_packet_in.rs2_tag = 3;
+        mt2rs_packet_in.rs1_tag.tag = 3;
+        mt2rs_packet_in.rs2_tag.tag = 3;
+        mt2rs_packet_in.rs1_tag.valid = 1;
+        mt2rs_packet_in.rs2_tag.valid = 1;
         mt2rs_packet_in.rs1_ready = 1;
         mt2rs_packet_in.rs2_ready = 1;
         //cdb
-        cdb_packet_in.reg_tag = 1;
+        cdb_packet_in.reg_tag.tag = 1;
+        cdb_packet_in.reg_tag.valid = 1;
         cdb_packet_in.reg_value = 20;
         //rob
         rob2rs_packet_in.rob_head_idx = 1;
@@ -631,12 +685,15 @@ module testbench_RS;
         id_packet_in.rs2_value = 3;
         id_packet_in.dest_reg_idx = 4;
         //mt
-        mt2rs_packet_in.rs1_tag = 3;
-        mt2rs_packet_in.rs2_tag = 3;
+        mt2rs_packet_in.rs1_tag.tag = 3;
+        mt2rs_packet_in.rs2_tag.tag = 3;
+        mt2rs_packet_in.rs1_tag.valid = 1;
+        mt2rs_packet_in.rs2_tag.valid = 1;
         mt2rs_packet_in.rs1_ready = 1;
         mt2rs_packet_in.rs2_ready = 1;
         //cdb
-        cdb_packet_in.reg_tag = 5;
+        cdb_packet_in.reg_tag.tag = 5;
+        cdb_packet_in.reg_tag.valid = 1;
         cdb_packet_in.reg_value = 14;
         //rob
         rob2rs_packet_in.rob_head_idx = 1;
@@ -654,12 +711,15 @@ module testbench_RS;
         id_packet_in.rs2_value = 3;
         id_packet_in.dest_reg_idx = 4;
         //mt
-        mt2rs_packet_in.rs1_tag = 3;
-        mt2rs_packet_in.rs2_tag = 3;
+        mt2rs_packet_in.rs1_tag.tag = 3;
+        mt2rs_packet_in.rs2_tag.tag = 3;
+        mt2rs_packet_in.rs1_tag.valid = 1;
+        mt2rs_packet_in.rs2_tag.valid = 1;
         mt2rs_packet_in.rs1_ready = 1;
         mt2rs_packet_in.rs2_ready = 1;
         //cdb
-        cdb_packet_in.reg_tag = 0;
+        cdb_packet_in.reg_tag.tag = 0;
+        cdb_packet_in.reg_tag.valid = 0;
         cdb_packet_in.reg_value = 0;
         //rob
         rob2rs_packet_in.rob_head_idx = 1;
@@ -678,12 +738,15 @@ module testbench_RS;
         id_packet_in.rs2_value = 3;
         id_packet_in.dest_reg_idx = 4;
         //mt
-        mt2rs_packet_in.rs1_tag = 3;
-        mt2rs_packet_in.rs2_tag = 3;
+        mt2rs_packet_in.rs1_tag.tag = 3;
+        mt2rs_packet_in.rs2_tag.tag = 3;
+        mt2rs_packet_in.rs1_tag.valid = 1;
+        mt2rs_packet_in.rs2_tag.valid = 1;
         mt2rs_packet_in.rs1_ready = 1;
         mt2rs_packet_in.rs2_ready = 1;
         //cdb
-        cdb_packet_in.reg_tag = 5;
+        cdb_packet_in.reg_tag.tag = 5;
+        cdb_packet_in.reg_tag.valid = 1;
         cdb_packet_in.reg_value = 33;
         //rob
         rob2rs_packet_in.rob_head_idx = 1;
@@ -702,12 +765,15 @@ module testbench_RS;
         id_packet_in.rs2_value = 3;
         id_packet_in.dest_reg_idx = 4;
         //mt
-        mt2rs_packet_in.rs1_tag = 3;
-        mt2rs_packet_in.rs2_tag = 3;
+        mt2rs_packet_in.rs1_tag.tag = 3;
+        mt2rs_packet_in.rs2_tag.tag = 3;
+        mt2rs_packet_in.rs1_tag.valid = 1;
+        mt2rs_packet_in.rs2_tag.valid = 1;
         mt2rs_packet_in.rs1_ready = 1;
         mt2rs_packet_in.rs2_ready = 1;
         //cdb
-        cdb_packet_in.reg_tag = 2;
+        cdb_packet_in.reg_tag.tag = 2;
+        cdb_packet_in.reg_tag.valid = 1;
         cdb_packet_in.reg_value = 71;
         //rob
         rob2rs_packet_in.rob_head_idx = 1;
@@ -725,12 +791,15 @@ module testbench_RS;
         id_packet_in.rs2_value = 3;
         id_packet_in.dest_reg_idx = 4;
         //mt
-        mt2rs_packet_in.rs1_tag = 3;
-        mt2rs_packet_in.rs2_tag = 3;
+        mt2rs_packet_in.rs1_tag.tag = 3;
+        mt2rs_packet_in.rs2_tag.tag = 3;
+        mt2rs_packet_in.rs1_tag.valid = 1;
+        mt2rs_packet_in.rs2_tag.valid = 1;
         mt2rs_packet_in.rs1_ready = 1;
         mt2rs_packet_in.rs2_ready = 1;
         //cdb
-        cdb_packet_in.reg_tag = 0;
+        cdb_packet_in.reg_tag.tag = 0;
+        cdb_packet_in.reg_tag.valid = 0;
         cdb_packet_in.reg_value = 0;
         //rob
         rob2rs_packet_in.rob_head_idx = 1;
@@ -749,12 +818,15 @@ module testbench_RS;
         id_packet_in.rs2_value = 3;
         id_packet_in.dest_reg_idx = 4;
         //mt
-        mt2rs_packet_in.rs1_tag = 3;
-        mt2rs_packet_in.rs2_tag = 3;
+        mt2rs_packet_in.rs1_tag.tag = 3;
+        mt2rs_packet_in.rs2_tag.tag = 3;
+        mt2rs_packet_in.rs1_tag.valid = 1;
+        mt2rs_packet_in.rs2_tag.valid = 1;
         mt2rs_packet_in.rs1_ready = 1;
         mt2rs_packet_in.rs2_ready = 1;
         //cdb
-        cdb_packet_in.reg_tag = 3;
+        cdb_packet_in.reg_tag.tag = 3;
+        cdb_packet_in.reg_tag.valid = 1;
         cdb_packet_in.reg_value = 66;
         //rob
         rob2rs_packet_in.rob_head_idx = 1;
@@ -773,12 +845,15 @@ module testbench_RS;
         id_packet_in.rs2_value = 3;
         id_packet_in.dest_reg_idx = 4;
         //mt
-        mt2rs_packet_in.rs1_tag = 3;
-        mt2rs_packet_in.rs2_tag = 3;
+        mt2rs_packet_in.rs1_tag.tag = 3;
+        mt2rs_packet_in.rs2_tag.tag = 3;
+        mt2rs_packet_in.rs1_tag.valid = 1;
+        mt2rs_packet_in.rs2_tag.valid = 1;
         mt2rs_packet_in.rs1_ready = 1;
         mt2rs_packet_in.rs2_ready = 1;
         //cdb
-        cdb_packet_in.reg_tag = 6;
+        cdb_packet_in.reg_tag.tag = 6;
+        cdb_packet_in.reg_tag.valid = 1;
         cdb_packet_in.reg_value = 23;
         //rob
         rob2rs_packet_in.rob_head_idx = 1;
