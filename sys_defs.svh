@@ -367,9 +367,17 @@ typedef struct packed {
 //
 //////////////////////////////////////////////
 
+
+typedef struct packed {
+	logic [$clog2(`ROB_LEN)-1:0] tag;   //ROB entry number
+	logic 						 valid; //valid bit (e.g. tag = 0 && valid = 1 => ROB#0, tag = 0 && valid = 0 => tag is empty)
+} TAG_PACKET;
+
 typedef struct packed {
 	TAG_PACKET rs1_tag;
 	TAG_PACKET rs2_tag;
+	// logic [$clog2(`ROB_LEN)-1:0] rs1_tag;
+	// logic [$clog2(`ROB_LEN)-1:0] rs2_tag;
 	logic rs1_ready;
 	logic rs2_ready;
 } MT2RS_PACKET;
@@ -386,6 +394,7 @@ typedef struct packed {
 	logic [`REG_LEN-1:0] rs2_idx;
 	logic [`REG_LEN-1:0] dest_reg_idx;
 	TAG_PACKET dest_reg_tag;
+	// logic [$clog2(`ROB_LEN)-1:0] dest_reg_tag;
 } RS2MT_PACKET;
 
 //////////////////////////////////////////////
@@ -397,6 +406,7 @@ typedef struct packed {
 
 typedef struct packed {
 	TAG_PACKET reg_tag;
+	// logic [$clog2(`ROB_LEN)-1:0] reg_tag;
 	logic [`XLEN-1:0] reg_value;
 } CDB_PACKET;
 
@@ -440,10 +450,5 @@ typedef struct packed {
 	logic [$clog2(`ROB_LEN)-1:0] dest_reg_idx;    //address
 	logic                        valid;
 } ROB_entry_PACKET;
-
-typedef struct packed {
-	logic [$clog2(`ROB_LEN)-1:0] tag;   //ROB entry number
-	logic 						 valid; //valid bit (e.g. tag = 0 && valid = 1 => ROB#0, tag = 0 && valid = 0 => tag is empty)
-} TAG_PACKET;
 
 `endif // __SYS_DEFS_SVH__
