@@ -44,6 +44,7 @@ Outputs for RegisterStation
 module RS(
     input clock,
     input reset,
+    input squash,
     input ID_PACKET id_packet_in,
     input ROB2RS_PACKET rob2rs_packet_in,
     input MT2RS_PACKET mt2rs_packet_in,
@@ -130,6 +131,7 @@ Output the index of the RS_entry that issued instruction
         // all rs_entry share the same input packets
         .clock(clock),
         .reset(reset),
+        .squash(squash),
         .id_packet_in(id_packet_in),
         .mt2rs_packet_in(mt2rs_packet_in),
         .cdb_packet_in(cdb_packet_in),

@@ -2,6 +2,7 @@
 module testbench_RS;
     logic clock;
     logic reset;
+    logic squash;
     ID_PACKET id_packet_in; // invalid if enable = 0
     MT2RS_PACKET mt2rs_packet_in;
     CDB_PACKET cdb_packet_in; 
@@ -35,6 +36,7 @@ module testbench_RS;
     RS Big_RS(
         .clock(clock),
         .reset(reset),
+        .squash(squash),
         .id_packet_in(id_packet_in),
         .rob2rs_packet_in(rob2rs_packet_in),
         .mt2rs_packet_in(mt2rs_packet_in),
@@ -112,6 +114,7 @@ module testbench_RS;
         $monitor("TIME:%4.0f busy:%8b ready:%8b enable:%8b issue_inst:%8b", $time, rs_entry_busy, rs_entry_ready, rs_entry_enable, issue_inst_rob_entry);
         clock = 0;
         reset = 1;
+        squash = 0;
         @(negedge clock);
         reset = 0;
 
@@ -862,6 +865,95 @@ module testbench_RS;
         rob2rs_packet_in.rs2_value = 0;
 
         #1 check_func(32'h88888888, 66, 23);
+
+        @(negedge clock);
+        squash = 1;
+
+        @(negedge clock);
+        squash = 0;
+// Tag 0 in rs1
+        id_packet_in.inst.inst = 32'hDEADFACE;
+        id_packet_in.rs1_value = 1;  
+        id_packet_in.rs2_value = 1;  
+        id_packet_in.dest_reg_idx = 1;
+
+        //mt
+        mt2rs_packet_in.rs1_tag.tag = 0; // reg file
+        mt2rs_packet_in.rs2_tag.tag = 2;
+        mt2rs_packet_in.rs1_tag.valid = 1; // reg file
+        mt2rs_packet_in.rs2_tag.valid = 1;
+        mt2rs_packet_in.rs1_ready = 1;
+        mt2rs_packet_in.rs2_ready = 1;
+
+        //cdb
+        cdb_packet_in.reg_tag.tag = 0;
+        cdb_packet_in.reg_tag.valid = 0;
+        cdb_packet_in.reg_value = 0;
+
+        //rob
+        rob2rs_packet_in.rob_entry = 1;
+        rob2rs_packet_in.rs1_value = 23;
+        rob2rs_packet_in.rs2_value = 7;
+        rob2rs_packet_in.rob_head_idx = 1;
+
+        @(negedge clock);
+// Tag 0 in rs2
+        id_packet_in.inst.inst = 32'hFACEF00D;
+        id_packet_in.rs1_value = 1;  
+        id_packet_in.rs2_value = 1;  
+        id_packet_in.dest_reg_idx = 1;
+
+        //mt
+        mt2rs_packet_in.rs1_tag.tag = 5; // reg file
+        mt2rs_packet_in.rs2_tag.tag = 0;
+        mt2rs_packet_in.rs1_tag.valid = 1; // reg file
+        mt2rs_packet_in.rs2_tag.valid = 1;
+        mt2rs_packet_in.rs1_ready = 1;
+        mt2rs_packet_in.rs2_ready = 1;
+
+        //cdb
+        cdb_packet_in.reg_tag.tag = 0;
+        cdb_packet_in.reg_tag.valid = 0;
+        cdb_packet_in.reg_value = 0;
+
+        //rob
+        rob2rs_packet_in.rob_entry = 1;
+        rob2rs_packet_in.rs1_value = 61;
+        rob2rs_packet_in.rs2_value = 43;
+        rob2rs_packet_in.rob_head_idx = 1;
+
+        #1 check_func(32'hDEADFACE, 23, 7);
+
+        @(negedge clock);
+// Tag 0 in rs2
+        id_packet_in.inst.inst = 32'hF00DF00D;
+        id_packet_in.rs1_value = 1;  
+        id_packet_in.rs2_value = 1;  
+        id_packet_in.dest_reg_idx = 1;
+
+        //mt
+        mt2rs_packet_in.rs1_tag.tag = 0; // reg file
+        mt2rs_packet_in.rs2_tag.tag = 0;
+        mt2rs_packet_in.rs1_tag.valid = 1; // reg file
+        mt2rs_packet_in.rs2_tag.valid = 1;
+        mt2rs_packet_in.rs1_ready = 1;
+        mt2rs_packet_in.rs2_ready = 1;
+
+        //cdb
+        cdb_packet_in.reg_tag.tag = 0;
+        cdb_packet_in.reg_tag.valid = 0;
+        cdb_packet_in.reg_value = 0;
+
+        //rob
+        rob2rs_packet_in.rob_entry = 1;
+        rob2rs_packet_in.rs1_value = 11;
+        rob2rs_packet_in.rs2_value = 11;
+        rob2rs_packet_in.rob_head_idx = 1;
+
+        #1 check_func(32'hFACEF00D, 61, 43);
+
+        @(negedge clock);
+        #1 check_func(32'hF00DF00D, 11, 11);
         
         $display("@@@PASSED@@@");
         $finish;

@@ -9,6 +9,7 @@
 module RS_entry(
     input clock,
     input reset,
+    input squash,
     input ID_PACKET id_packet_in, // invalid if wr_en = 0
     input MT2RS_PACKET mt2rs_packet_in, // invalid if wr_en = 0
     input CDB_PACKET cdb_packet_in, 
@@ -234,7 +235,7 @@ Note: packets to ROB, Map Table and selection of RS_entry, issued s_x_packet sho
     // Dispatch to issue stage
     // synopsys sync_set_reset "reset"
     always_ff @(posedge clock) begin
-        if (reset) begin
+        if (reset || squash) begin
             busy <= `SD 0;
             
             entry_packet <= `SD '{{`XLEN{1'b0}},
