@@ -63,11 +63,16 @@ module RS(
     output IS_PACKET [`RS_LEN-1:0] rs_entry_packet_out,
     
     output logic [`RS_LEN-1:0] rs_entry_clear,
+
+    output logic [`RS_LEN-1:0][$clog2(`ROB_LEN)-1:0] entry_rs1_tags,
+    output logic [`RS_LEN-1:0][$clog2(`ROB_LEN)-1:0] entry_rs2_tags,
     `endif
 
     output RS2ROB_PACKET rs2rob_packet_out,
     output RS2MT_PACKET rs2mt_packet_out,
-    output IS_PACKET is_packet_out    
+    output IS_PACKET is_packet_out,
+    
+    output logic valid // if valid = 0, rs encountered structural hazard and has to stall
 );
 /*
 What this module does:
@@ -100,11 +105,12 @@ Output the index of the RS_entry that issued instruction
     `endif
 
     FLAG [`RS_LEN-1:0] rs_flags;
-    logic valid; // if valid = 0, rs encountered structural hazard and has to stall
 
     logic [`RS_LEN-1:0] rs_entry_clear_in;
     logic [`RS_LEN-1:0] rs_entry_clear_out;
+
     assign rs_entry_clear_in = rs_entry_clear_out;
+
     `ifdef DEBUG
         assign rs_entry_clear = rs_entry_clear_in;
     `endif
@@ -134,6 +140,11 @@ Output the index of the RS_entry that issued instruction
         .entry_packet(rs_entry_packet_out),
         .busy(rs_entry_busy),
         .ready(rs_entry_ready),
+
+        `ifdef DEBUG
+        .entry_rs1_tag(entry_rs1_tags),
+        .entry_rs2_tag(entry_rs2_tags),
+        `endif
 
         .flag(rs_flags)
     );
@@ -209,10 +220,10 @@ Output the index of the RS_entry that issued instruction
         for (int i = 0; i < `RS_LEN; i++) begin
             if ((issue_inst_rob_entry == rs_entry_rob_entry[i]) && (issue_inst_rob_entry != 0)) begin
                 is_packet_out = rs_entry_packet_out[i];
-                if ((rs_flags == CDBTAG) || (rs_flags == CDBCDB))
+                if ((rs_flags[i] == CDBTAG) || (rs_flags[i] == CDBCDB))
                     is_packet_out.rs1_value = cdb_packet_in.reg_value;
                 
-                if ((rs_flags == TAGCDB) || (rs_flags == CDBCDB))
+                if ((rs_flags[i] == TAGCDB) || (rs_flags[i] == CDBCDB))
                     is_packet_out.rs2_value = cdb_packet_in.reg_value;
                 
                 rs_entry_clear_out[i] = 1;

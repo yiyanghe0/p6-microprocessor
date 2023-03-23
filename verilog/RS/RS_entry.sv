@@ -1,6 +1,8 @@
 `ifndef __RS_ENTRY_SV__
 `define __RS_ENTRY_SV__
 
+`define DEBUG
+
 `include "sys_defs.svh"
 
 // RS_entry is the dispatch stage
@@ -17,6 +19,11 @@ module RS_entry(
     output IS_PACKET entry_packet, // this is the output of the dispatch stage and input of issue stage
     output logic busy,
     output logic ready,
+
+    `ifdef DEBUG
+    output logic [$clog2(`ROB_LEN)-1:0] entry_rs1_tag,
+    output logic [$clog2(`ROB_LEN)-1:0] entry_rs2_tag,
+    `endif
 
     output FLAG flag // when cdb write through, corresponding flag will be raised
 );
@@ -47,10 +54,12 @@ Note: packets to ROB, Map Table and selection of RS_entry, issued s_x_packet sho
 */
     IS_PACKET next_entry_packet;
 
+    `ifndef DEBUG
     logic [$clog2(`ROB_LEN)-1:0] entry_rs1_tag;
-    logic [$clog2(`ROB_LEN)-1:0] next_entry_rs1_tag;
-
     logic [$clog2(`ROB_LEN)-1:0] entry_rs2_tag;
+    `endif
+
+    logic [$clog2(`ROB_LEN)-1:0] next_entry_rs1_tag;
     logic [$clog2(`ROB_LEN)-1:0] next_entry_rs2_tag;
 
     logic next_busy;
@@ -84,7 +93,7 @@ Note: packets to ROB, Map Table and selection of RS_entry, issued s_x_packet sho
             if (mt2rs_packet_in.rs1_ready)
                 next_entry_rs1_tag = 0;
             // Map table not ready until next cycle when cdb broadcasts
-            else if ((cdb_packet_in.reg_tag == entry_rs1_tag) && (cdb_packet_in.reg_tag != 0))
+            else if ((cdb_packet_in.reg_tag == mt2rs_packet_in.rs1_tag) && (cdb_packet_in.reg_tag != 0))
                 next_entry_rs1_tag = 0;
             else
                 next_entry_rs1_tag = mt2rs_packet_in.rs1_tag;
@@ -108,7 +117,7 @@ Note: packets to ROB, Map Table and selection of RS_entry, issued s_x_packet sho
             if (mt2rs_packet_in.rs2_ready)
                 next_entry_rs2_tag = 0;
             // Map table not ready until next cycle when cdb broadcasts
-            else if ((cdb_packet_in.reg_tag == entry_rs2_tag) && (cdb_packet_in.reg_tag != 0))
+            else if ((cdb_packet_in.reg_tag == mt2rs_packet_in.rs2_tag) && (cdb_packet_in.reg_tag != 0))
                 next_entry_rs2_tag = 0;
             else
                 next_entry_rs2_tag = mt2rs_packet_in.rs2_tag;
@@ -131,7 +140,7 @@ Note: packets to ROB, Map Table and selection of RS_entry, issued s_x_packet sho
         if (wr_en) begin
             if (mt2rs_packet_in.rs1_ready && mt2rs_packet_in.rs1_tag != 0)
                 next_entry_packet.rs1_value = rob2rs_packet_in.rs1_value;
-            else if (!mt2rs_packet_in.rs1_ready && (cdb_packet_in.reg_tag == entry_rs1_tag) && (cdb_packet_in.reg_tag != 0))
+            else if (!mt2rs_packet_in.rs1_ready && (cdb_packet_in.reg_tag == mt2rs_packet_in.rs1_tag) && (cdb_packet_in.reg_tag != 0))
                 next_entry_packet.rs1_value = cdb_packet_in.reg_value;
             else
                 next_entry_packet.rs1_value = id_packet_in.rs1_value;  
@@ -153,7 +162,7 @@ Note: packets to ROB, Map Table and selection of RS_entry, issued s_x_packet sho
         if (wr_en) begin
             if (mt2rs_packet_in.rs2_ready && mt2rs_packet_in.rs2_tag != 0)
                 next_entry_packet.rs2_value = rob2rs_packet_in.rs2_value;
-            else if (!mt2rs_packet_in.rs2_ready && (cdb_packet_in.reg_tag == entry_rs2_tag) && (cdb_packet_in.reg_tag != 0))
+            else if (!mt2rs_packet_in.rs2_ready && (cdb_packet_in.reg_tag == mt2rs_packet_in.rs2_tag) && (cdb_packet_in.reg_tag != 0))
                 next_entry_packet.rs2_value = cdb_packet_in.reg_value;
             else
                 next_entry_packet.rs2_value = id_packet_in.rs2_value;  
