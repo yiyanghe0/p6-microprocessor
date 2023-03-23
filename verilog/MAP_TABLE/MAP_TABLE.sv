@@ -6,9 +6,11 @@
 module MAP_TABLE(
     input clock,
     input reset,
+    input wr_en,
     input RS2MT_PACKET rs2mt_packet_in,
     input CDB_PACKET cdb_packet_in,
     output MT2RS_PACKET mt2rs_packet_out
+    //waiting for ROB retire information
 );
     TAG_PACKET [`MAP_TABLE_LEN-1:0] map_table_entry_tag;
     logic [`MAP_TABLE_LEN-1:0] map_table_entry_ready;
@@ -16,20 +18,28 @@ module MAP_TABLE(
     // Write into Map Table
     TAG_PACKET next_map_table_entry_tag;
     logic next_map_table_entry_ready;
+    logic next_map_table_entry_cdb_ready;
     logic [`REG_LEN-1:0] next_map_table_entry_cdb_idx;
+    logic cdb_found;
 
-    assign next_map_table_entry_tag = wr_en ? rs2mt_packet_in.dest_reg_tag : map_table_entry_tag[rs2mt_packet_in.dest_reg_idx];
+    assign next_map_table_entry_tag = (wr_en && rs2mt_packet_in.dest_reg_tag.valid) ? rs2mt_packet_in.dest_reg_tag : map_table_entry_tag[rs2mt_packet_in.dest_reg_idx];
+    assign next_map_table_entry_ready = (wr_en && rs2mt_packet_in.dest_reg_tag.valid) ? 0 : map_table_entry_ready[rs2mt_packet_in.dest_reg_idx];
     
     always_comb begin
         next_map_table_entry_cdb_idx = 0;
+        cdb_found = 0;
         for (int i = 0; i < `MAP_TABLE_LEN; i++) begin
             if ((map_table_entry_tag[i].tag == cdb_packet_in.reg_tag.tag) &&
-                map_table_entry_tag[i].valid && cdb_packet_in.valid)
+                map_table_entry_tag[i].valid && cdb_packet_in.reg_tag.valid) begin
                 next_map_table_entry_cdb_idx = i;
+                if(!(wr_en && rs2mt_packet_in.dest_reg_tag.valid && rs2mt_packet_in.dest_reg_idx == i))
+                    cdb_found = 1;
+                break;
+            end
         end
     end
 
-    assign next_map_table_entry_ready = cdb_packet_in.reg_tag.valid;
+    assign next_map_table_entry_cdb_ready = cdb_packet_in.reg_tag.valid;
 
     // Output
     always_comb begin
@@ -70,7 +80,8 @@ module MAP_TABLE(
         end
         else begin
             map_table_entry_tag[rs2mt_packet_in.dest_reg_idx] <= `SD next_map_table_entry_tag;
-            map_table_entry_ready[next_map_table_entry_cdb_idx] <= `SD next_map_table_entry_ready;
+            if (cdb_found) map_table_entry_ready[next_map_table_entry_cdb_idx] <= `SD next_map_table_entry_cdb_ready;
+            map_table_entry_ready[rs2mt_packet_in.dest_reg_idx] <= `SD next_map_table_entry_ready;
         end
     end
 

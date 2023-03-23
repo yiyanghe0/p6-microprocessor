@@ -64,8 +64,8 @@ module RS(
     
     output logic [`RS_LEN-1:0] rs_entry_clear,
 
-    output logic [`RS_LEN-1:0][$clog2(`ROB_LEN)-1:0] entry_rs1_tags,
-    output logic [`RS_LEN-1:0][$clog2(`ROB_LEN)-1:0] entry_rs2_tags,
+    output TAG_PACKET [`RS_LEN-1:0] entry_rs1_tags,
+    output TAG_PACKET [`RS_LEN-1:0] entry_rs2_tags,
     `endif
 
     output RS2ROB_PACKET rs2rob_packet_out,
@@ -116,14 +116,15 @@ Output the index of the RS_entry that issued instruction
     `endif
 
     // output packages
-    assign rs2mt_packet_out.rs1_idx         = id_packet_in.inst.r.rs1;
-    assign rs2mt_packet_out.rs2_idx         = id_packet_in.inst.r.rs2;
-    assign rs2mt_packet_out.dest_reg_idx    = id_packet_in.dest_reg_idx;
-    assign rs2mt_packet_out.dest_reg_tag    = rob2rs_packet_in.rob_entry;
+    assign rs2mt_packet_out.rs1_idx            = id_packet_in.inst.r.rs1;
+    assign rs2mt_packet_out.rs2_idx            = id_packet_in.inst.r.rs2;
+    assign rs2mt_packet_out.dest_reg_idx       = id_packet_in.dest_reg_idx;
+    assign rs2mt_packet_out.dest_reg_tag.tag   = rob2rs_packet_in.rob_entry;
+    assign rs2mt_packet_out.dest_reg_tag.valid = 1;
 
     assign rs2rob_packet_out.valid          = valid;
-    assign rs2rob_packet_out.rs1_idx        = mt2rs_packet_in.rs1_tag;
-    assign rs2rob_packet_out.rs2_idx        = mt2rs_packet_in.rs2_tag;
+    assign rs2rob_packet_out.rs1_idx        = mt2rs_packet_in.rs1_tag.tag;
+    assign rs2rob_packet_out.rs2_idx        = mt2rs_packet_in.rs2_tag.tag;
 
     RS_entry rs_entry [`RS_LEN-1:0] (
         // all rs_entry share the same input packets
