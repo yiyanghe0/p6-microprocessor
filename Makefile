@@ -76,7 +76,7 @@
 
 # this is a built-in Make variable that lets Make search folders to find dependencies and targets
 # it can greatly simplify make rules and increase readability
-VPATH = synth:testbench:test_progs:verilog:output:verilog/RS
+VPATH = synth:testbench:test_progs:verilog:output:verilog/RS:verilog/ROB
 
 ###############################################
 # ---- Compilation Commands and Variables ----
@@ -222,7 +222,7 @@ all: mult_no_lsq.out
 # delete this comment area when you want to
 # TODO TODO TODO TODO
 
-TESTED_MODULES = RS RS_entry
+TESTED_MODULES = RS RS_entry ROB
 
 # if a module includes other modules, add the dependencies explicitly here
 # this works due to the targets using the $^ automatic variable
@@ -233,8 +233,7 @@ TESTED_MODULES = RS RS_entry
 
 RS_simv: RS_entry.sv
 RS_coverage_simv: RS_entry.sv
-synth/RS.vg: RS_entry.sv
-
+synth/RS.vg: RS_entry.sv 
 
 # this make rule will generate <name>_simv targets from the TESTED_MODULES variable e.g. 'make rob_simv'
 # it expects a <name>_tb.sv file in the testbench folder
@@ -362,6 +361,7 @@ testbench_passed:
 # NOTE: we're able to write these filenames without directories due to the VPATH declaration above
 # Make will automatically expand these to their actual paths when used in recipes
 TESTBENCH = testbench.sv \
+				ROB_tb.sv \
             mem.sv
 
 # you could simplify this line with $(wildcard verilog/*.sv) - but the manual way is more explicit
