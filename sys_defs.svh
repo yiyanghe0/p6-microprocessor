@@ -471,19 +471,16 @@ typedef struct packed {
 	logic             take_branch; // is this a taken branch?
 	logic [4:0]       dest_reg_idx;
 	logic [`XLEN-1:0] rs2_value;	//rs2_value
-	logic 			  stru_hazard; //if there is a structural hazard
 
 	logic       	  rd_mem;        // does inst read memory?
 	logic       	  wr_mem;        // does inst write memory?
-	logic       	  cond_branch;   // is inst a conditional branch?
-	logic       	  uncond_branch; // is inst an unconditional branch?
 	logic       	  halt;          // is this a halt?
 	logic       	  illegal;       // is this instruction illegal?
 	logic       	  csr_op;        // is this a CSR operation? (we only used this as a cheap way to get return code)
 	logic       	  valid;         // is inst a valid instruction to be counted for CPI calculations?
 	logic [2:0]       mem_size;
 
-} EX_OUT_PACKET;
+} EX_PACKET;
 
 typedef struct packed {
 	TAG_PACKET mispredict_rob_entry_idx;
