@@ -1,13 +1,16 @@
-
-`include "sys_defs.svh"
+`define DEBUG
+`define FIFO_LEN 8
 
 module FIFO_tb;
-    logic clock,reset
+    logic clock,reset;
     EX_PACKET ex_packet1;
     EX_PACKET ex_packet2;
 
     EX_PACKET ex_packet_out;
-    logic     null;
+    logic     no_output;
+
+    EX_PACKET [`FIFO_LEN-1:0] fifo_storage;
+    logic [$clog2(`FIFO_LEN):0] pointer;
 
     FIFO FIFO_0 (
         .clock(clock),
@@ -16,9 +19,42 @@ module FIFO_tb;
         .ex_packet2(ex_packet2),
 
         //output
+        .fifo_storage(fifo_storage),
+        .pointer(pointer),
+
         .ex_packet_out(ex_packet_out),
-        .null(null)
+        .no_output(no_output)
     );
+
+    task exit_on_error;
+        input correct_no_output;
+        input [`XLEN-1:0] correct_alu_result;
+
+        begin
+            $display("@@@ Incorrect at time %4.0f", $time);
+            $display("@@@ Expected no_output: %b; Actual issued inst: %b", correct_no_output, no_output);
+            $display("@@@ Expected output packet alu: %d; Actual output packet alu: %d", correct_alu_result, ex_packet_out.alu_result);
+            $display("@@@ ----------------------------------------- @@@");
+
+            $display("@@@ Current FIFO contents:");
+            for (int i = 0; i < `FIFO_LEN; i++) begin
+                $display("@@@ [%1d] packet alu: %d", i, fifo_storage[i].alu_result);
+            end
+            
+            $display("@@@failed");
+            $finish;
+        end
+    endtask
+
+    task check_func;
+        input correct_no_output;
+        input [`XLEN-1:0] correct_alu_result;
+
+        begin 
+            #1 assert (no_output == correct_no_output)                        else exit_on_error(correct_no_output,correct_alu_result);
+            assert (ex_packet_out.alu_result == correct_alu_result)           else exit_on_error(correct_no_output,correct_alu_result);
+        end
+    endtask
 
     always begin
         #5;
@@ -60,71 +96,56 @@ module FIFO_tb;
 		ex_packet2.take_branch  = 0;
 		ex_packet2.alu_result   = 0;
 
-        @(negedge clock);
-        assert(null == 1) else begin 
-            $display("expected null == 1, actual null == 0");
-            $finish;
-        end
+        check_func(1, 0);
 
+        @(negedge clock);
         //packet 1 not empty, packet 2 is empty
         ex_packet1.alu_result   = 100;
+        check_func(0, 100);
+
         @(negedge clock);
-
-        assert(null == 0) else begin 
-            $display("expected null == 0, actual null == 1");
-            $finish;
-        end
-        assert(ex_packet_out.alu_result  == 100) else begin 
-            $display("expected alu_result == 100, actual alu_result == %d", ex_packet_out.alu_result);
-            $finish;
-        end
-
         //packet 2 not empty, packet 1 is empty
         ex_packet1.alu_result   = 0;
         ex_packet2.alu_result   = 200;
+        check_func(0, 200);
 
         @(negedge clock);
-
-        assert(null == 0) else begin 
-            $display("expected null == 0, actual null == 1");
-            $finish;
-        end
-        assert(ex_packet_out.alu_result  == 200) else begin 
-            $display("expected alu_result == 200, actual alu_result == %d", ex_packet_out.alu_result);
-            $finish;
-        end
-
         //both two packets are not empty
         ex_packet1.alu_result   = 300;
         ex_packet2.alu_result   = 400;
+        check_func(0, 300);
 
         @(negedge clock);
-
-        assert(null == 0) else begin 
-            $display("expected null == 0, actual null == 1");
-            $finish;
-        end
-        assert(ex_packet_out.alu_result  == 300) else begin 
-            $display("expected alu_result == 300, actual alu_result == %d", ex_packet_out.alu_result);
-            $finish;
-        end
-
         //packet 1 not empty, packet 2 is empty
         ex_packet1.alu_result   = 500;
         ex_packet2.alu_result   = 0;
+        check_func(0, 400);
 
         @(negedge clock);
+        //packet 2 not empty, packet 1 is empty
+        ex_packet1.alu_result   = 0;
+        ex_packet2.alu_result   = 600;
+        check_func(0, 500);
 
-        assert(null == 0) else begin 
-            $display("expected null == 0, actual null == 1");
-            $finish;
-        end
-        assert(ex_packet_out.alu_result  == 400) else begin 
-            $display("expected alu_result == 400, actual alu_result == %d", ex_packet_out.alu_result);
-            $finish;
-        end
+        @(negedge clock);
+        //both two packets are not empty
+        ex_packet1.alu_result   = 700;
+        ex_packet2.alu_result   = 800;
+        check_func(0, 600);
 
-        $display("@@@Passed!");
+        @(negedge clock);
+        //both two packets are empty
+        ex_packet1.alu_result   = 0;
+        ex_packet2.alu_result   = 0;
+        check_func(0, 700);
+
+        @(negedge clock);
+        check_func(0, 800);
+
+        @(negedge clock);
+        check_func(1, 0);
+
+        $display("@@@passed");
         $finish;
     end
     

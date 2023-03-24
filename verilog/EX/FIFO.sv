@@ -2,6 +2,7 @@
 `define __FIFO_SV__
 
 `define FIFO_LEN 8
+`define DEBUG
 
 `include "sys_defs.svh"
 
@@ -11,14 +12,23 @@ module FIFO(
     input EX_PACKET ex_packet1,
     input EX_PACKET ex_packet2,
 
+    `ifdef DEBUG
+    output EX_PACKET [`FIFO_LEN-1:0] fifo_storage,
+    output logic [$clog2(`FIFO_LEN):0] pointer,
+    `endif
+
     output EX_PACKET ex_packet_out,
     output logic no_output // no_output = 1 -> nothing output; no_output = 0 -> valid output
 );
+    `ifndef DEBUG
     EX_PACKET [`FIFO_LEN-1:0] fifo_storage;
+    `endif
     EX_PACKET [`FIFO_LEN-1:0] next_fifo_storage;
 
     // pointer == `FIFO_LEN -> empty
+    `ifndef DEBUG
     logic [$clog2(`FIFO_LEN):0] pointer;
+    `endif
     logic [$clog2(`FIFO_LEN):0] next_pointer;
 
     logic is_empty1;
@@ -69,10 +79,10 @@ module FIFO(
     end
 
     always_comb begin
+        next_fifo_storage = fifo_storage;
+
         if (empty) begin
-            if (is_empty1 || is_empty2) // Originally empty, either one or two incoming packets empty, next fifo storage still empty
-                next_fifo_storage = fifo_storage;
-            else
+            if (!is_empty1 && !is_empty2)
                 next_fifo_storage[0] = ex_packet2;
         end
         else begin
@@ -80,32 +90,13 @@ module FIFO(
                 next_fifo_storage[i] = fifo_storage[i+1];
             end
 
-            if (is_empty1 && is_empty2) begin
-                for (int i = pointer; i < `FIFO_LEN; i++) begin
-                    next_fifo_storage[i] = fifo_storage[i];
-                end
-            end
-            else if (is_empty2) begin
+            if (!is_empty1 && is_empty2)
                 next_fifo_storage[pointer] = ex_packet1;
-
-                for (int i = pointer + 1; i < `FIFO_LEN; i++) begin
-                    next_fifo_storage[i] = fifo_storage[i];
-                end
-            end
-            else if (is_empty1) begin
+            else if (is_empty1 && !is_empty2)
                 next_fifo_storage[pointer] = ex_packet2;
-
-                for (int i = pointer + 1; i < `FIFO_LEN; i++) begin
-                    next_fifo_storage[i] = fifo_storage[i];
-                end
-            end
-            else begin
+            else if (!is_empty1 && !is_empty2) begin
                 next_fifo_storage[pointer] = ex_packet1;
                 next_fifo_storage[pointer+1] = ex_packet2;
-
-                for (int i = pointer + 2; i < `FIFO_LEN; i++) begin
-                    next_fifo_storage[i] = fifo_storage[i];
-                end
             end
         end
     end
@@ -153,18 +144,18 @@ module FIFO(
         if (reset) begin
             pointer <= `SD `FIFO_LEN; // empty
             for (int i = 0; i < `FIFO_LEN; i++) begin
-                fifo_storage[i].NPC          = 0;
-                fifo_storage[i].rs2_value    = 0;
-                fifo_storage[i].rd_mem       = 0;
-                fifo_storage[i].wr_mem       = 0;
-                fifo_storage[i].dest_reg_idx = 0;
-                fifo_storage[i].halt         = 0;
-                fifo_storage[i].illegal      = 0;
-                fifo_storage[i].csr_op       = 0;
-                fifo_storage[i].valid        = 0;
-                fifo_storage[i].mem_size     = 0;
-                fifo_storage[i].take_branch  = 0;
-                fifo_storage[i].alu_result   = 0;
+                fifo_storage[i].NPC          <= `SD 0;
+                fifo_storage[i].rs2_value    <= `SD 0;
+                fifo_storage[i].rd_mem       <= `SD 0;
+                fifo_storage[i].wr_mem       <= `SD 0;
+                fifo_storage[i].dest_reg_idx <= `SD 0;
+                fifo_storage[i].halt         <= `SD 0;
+                fifo_storage[i].illegal      <= `SD 0;
+                fifo_storage[i].csr_op       <= `SD 0;
+                fifo_storage[i].valid        <= `SD 0;
+                fifo_storage[i].mem_size     <= `SD 0;
+                fifo_storage[i].take_branch  <= `SD 0;
+                fifo_storage[i].alu_result   <= `SD 0;
             end
         end
         else begin
