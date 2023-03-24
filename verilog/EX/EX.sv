@@ -37,7 +37,8 @@ module EX (
 	input CHANNEL channel_in,
 
 	output EX_PACKET ex_packet_out,
-	output logic valid // if valid = 0, rs encountered structural hazard and has to stall
+	output logic valid, // if valid = 0, rs encountered structural hazard and has to stall
+	output logic null  // null = 1 -> nothing output; null = 0 -> valid output
 );
 
 	logic [`XLEN-1:0] 					opa_mux_out, opb_mux_out;
@@ -217,6 +218,16 @@ module EX (
 			end
 		end
 	end
+
+	FIFO f0(
+		.clock(clock),
+		.reset(reset),
+		.ex_packet1(ex_packet1),
+		.ex_packet2(ex_packet2),
+
+		.ex_packet_out(ex_packet_out),
+		.null(null)
+	)
 
 
 endmodule // module ex_stage
