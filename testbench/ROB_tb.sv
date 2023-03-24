@@ -87,29 +87,25 @@ module 	ROB_tb;
 		@(negedge clock);  // 10ns: reset
 		reset = 0;		
 		@(negedge clock);  // 20ns: assign ROB #0 to r2 
-		$display("@@@time: 20, retire = %b", ROB_0.retire);		
-		$display("@@@time: 20, rob0.next_dest_reg_idx = %b", ROB_0.rob_entry[0].next_dest_reg_idx);	
-		$display("@@@time: 20, rob0.dest_reg_idx = %b", ROB_0.rob_entry[0].dest_reg_idx);
-
 		check_ROB(0,1);
+
 		id_packet_in.dest_reg_idx = 5'b00011; // entry1: r3
 		
-		@(negedge clock);  // 30ns: assign ROB #1 to r3	
-		$display("@@@time: 30, retire = %b", ROB_0.retire);	
-		$display("@@@time: 30, rob0.dest_reg_idx = %b", ROB_0.rob_entry[0].dest_reg_idx);	
-		$display("@@@time: 30, rob1.next_dest_reg_idx = %b", ROB_0.rob_entry[1].next_dest_reg_idx);	
-
+		@(negedge clock);  // 30ns: assign ROB #1 to r3
+		$display("@@@rob_0_dest_reg_idx = %b", ROB_0.rob_entry[0].dest_reg_idx);			
 		check_ROB(0,2);
 		
 		cdb_packet_in.reg_tag.valid = 1'b1;
 		cdb_packet_in.reg_value = 32'h0000000A;
 		
 		id_packet_in.dest_reg_idx = 5'b00100; // entry2: r4
-		$display("@@@time: 30, rob_entry_wr_en = %8b", ROB_0.rob_entry_wr_en);			
+		
+		$display("@@@retire = %b", ROB_0.retire);			
+		$display("@@@next_head30 = %8b", ROB_0.next_head);			
 		
 		@(negedge clock);  // 40ns: complete ROB #0; assign ROB #2 to r4
-		$display("@@@time: 40, retire = %b", ROB_0.retire);		
-
+		$display("@@@next_head40 = %8b", ROB_0.next_head);	
+		$display("@@@retire = %b", ROB_0.retire);					
 		check_ROB(1,3);
 		
 		cdb_packet_in.reg_tag.tag = 3'b001;
@@ -119,7 +115,7 @@ module 	ROB_tb;
 		
 		@(negedge clock);  // 50ns: retire ROB #0; complete ROB #1; NO NEW ASSIGN
 
-		$display("@@@time: 50, retire = %b", ROB_0.retire);	
+
 		check_ROB(2,3);
 
 		cdb_packet_in.reg_tag.valid = 1'b0;
@@ -128,7 +124,8 @@ module 	ROB_tb;
 
 		id_packet_in.valid = 1'b1;		
 		id_packet_in.dest_reg_idx = 5'b00101; // entry3: r5 
-		
+		$display("@@@next_head50 = %8b", ROB_0.next_head);
+		$display("@@@retire = %b", ROB_0.retire);			
 		@(negedge clock);  // 60ns: retire ROB #1 assign ROB #3 to r5
 		check_ROB(2,4);
 
@@ -162,7 +159,10 @@ module 	ROB_tb;
 		
 		id_packet_in.dest_reg_idx = 5'b01010; // entry0: r10
 
-		@(negedge clock); // 110ns: assign ROB #0 to r10
+		mispredict_packet_in.mispredict_rob_entry_idx.valid = 1'b1;
+		mispredict_packet_in.mispredict_rob_entry_idx.tag = 3'b011;
+
+		@(negedge clock); // 110ns: assign ROB #0 to r10 & ROB #3 IS MISPREDICTED
 		check_ROB(2,1);
 
 		id_packet_in.dest_reg_idx = 5'b01011; // entry1: r11
@@ -170,6 +170,18 @@ module 	ROB_tb;
 		@(negedge clock); // 120ns: assign ROB #1 to r11 STRUCTURAL HAZARD
 		check_ROB(2,2);
 		assert (rob_struc_hazard == 1'b1)	else begin $display("@@@failed struc hazard@@@"); $finish; end
+
+		cdb_packet_in.reg_tag.valid = 1'b1;
+		cdb_packet_in.reg_value = 32'h0000000C;
+		cdb_packet_in.reg_tag.tag = 2;
+
+		@(negedge clock);  // 130ns: complete & retire ROB #2 squash signal is asserted
+		check_ROB(3,2);
+		assert (rob2mt_packet_out.squash == 1'b1)	else begin $display("@@@fail to squash@@@"); $finish; end
+
+		@(negedge clock); // 140ns: head_idx & tail_idx back to 0
+		check_ROB(0,0);
+		$display("@@@successfully squashed@@@");
 		
 
 		$display("@@@Passed");
