@@ -8,8 +8,8 @@
 //                                                                     //
 /////////////////////////////////////////////////////////////////////////
 
-`ifndef __Branch_SV__
-`define __Branch_SV__
+`ifndef __BRANCH_SV__
+`define __BRANCH_SV__
 
 `include "sys_defs.svh"
 

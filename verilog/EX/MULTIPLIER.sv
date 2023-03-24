@@ -8,8 +8,8 @@
 //                                                                     //
 /////////////////////////////////////////////////////////////////////////
 
-`ifndef __MULT_SV__
-`define __MULT_SV__
+`ifndef __MULTIPLIER_SV__
+`define __MULTIPLIER_SV__
 
 `include "sys_defs.svh"
 

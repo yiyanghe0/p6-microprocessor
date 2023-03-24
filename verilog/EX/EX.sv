@@ -180,16 +180,44 @@ module EX (
 	assign ex_packet1.mem_size     = (ALU_done) ? ALU_is_packet.mem_size :
 												  (BRANCH_done) ? BRANCH_is_packet.mem_size : 0;
 	assign ex_packet1.take_branch  = (ALU_done) ? 0 :
-												  (BRANCH_done) ? 
+												  (BRANCH_done) ? (is_packet_in.uncond_branch | (is_packet_in.cond_branch & brcond_result)) : 0;
+	assign ex_packet1.alu_result   = (ALU_done) ? ALU_result :
+												  (BRANCH_done) ? BRANCH_addr : 0;
 
+	always_comb begin
+		ex_packet2.NPC          = 0;
+		ex_packet2.rs2_value    = 0;
+		ex_packet2.rd_mem       = 0;
+		ex_packet2.wr_mem       = 0;
+		ex_packet2.dest_reg_idx = 0;
+		ex_packet2.halt         = 0;
+		ex_packet2.illegal      = 0;
+		ex_packet2.csr_op       = 0;
+		ex_packet2.valid        = 0;
+		ex_packet2.mem_size     = 0;
+		ex_packet2.take_branch  = 0;
+		ex_packet2.alu_result   = 0;
 
+		for (int i = 0; i < `MUL_NUM; i++) begin
+			if (MUL_done[i]) begin
+				ex_packet2.NPC          = MUL_is_packet[i].NPC;
+				ex_packet2.rs2_value    = MUL_is_packet[i].rs2_value;
+				ex_packet2.rd_mem       = MUL_is_packet[i].rd_mem;
+				ex_packet2.wr_mem       = MUL_is_packet[i].wr_mem;
+				ex_packet2.dest_reg_idx = MUL_is_packet[i].dest_reg_idx;
+				ex_packet2.halt         = MUL_is_packet[i].halt;
+				ex_packet2.illegal      = MUL_is_packet[i].illegal;
+				ex_packet2.csr_op       = MUL_is_packet[i].csr_op;
+				ex_packet2.valid        = MUL_is_packet[i].valid;
+				ex_packet2.mem_size     = MUL_is_packet[i].mem_size;
+				ex_packet2.take_branch  = 0;
+				ex_packet2.alu_result   = MUL_product[i];
 
-	
+				break;
+			end
+		end
+	end
 
-	 // ultimate "take branch" signal:
-	 // unconditional, or conditional and the condition is true
-	assign ex_packet_out.take_branch = is_packet_in.uncond_branch
-	                                   | (is_packet_in.cond_branch & brcond_result);
 
 endmodule // module ex_stage
 `endif // __EX_STAGE_SV__
