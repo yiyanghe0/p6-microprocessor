@@ -160,11 +160,11 @@ logic [`XLEN-1:0] next_dest_reg_value;
 // assignment
 assign next_dest_reg_idx   = wr_en ? dest_reg_idx_in : dest_reg_idx;
 assign next_dest_reg_value = wr_en ? 0 : (wr_value ? dest_reg_cdb : dest_reg_value);
-assign next_valid          = wr_en ? 0 : (wr_value : 1'b1 : valid);
+assign next_valid          = wr_en ? 0 : (wr_value ? 1'b1 : valid);
 
 assign rob_entry_packet_out.dest_reg_value = dest_reg_value;
 assign rob_entry_packet_out.dest_reg_idx   = dest_reg_idx;
-assign rob_entry_packet_out.valid 		   = valid;
+assign rob_entry_packet_out.valid 		   = next_valid;
 //sequential logic
 // synopsys sync_set_reset "reset"
 always_ff @(posedge clock) begin

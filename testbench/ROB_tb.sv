@@ -159,7 +159,10 @@ module 	ROB_tb;
 		
 		id_packet_in.dest_reg_idx = 5'b01010; // entry0: r10
 
-		@(negedge clock); // 110ns: assign ROB #0 to r10
+		mispredict_packet_in.mispredict_rob_entry_idx.valid = 1'b1;
+		mispredict_packet_in.mispredict_rob_entry_idx.tag = 3'b011;
+
+		@(negedge clock); // 110ns: assign ROB #0 to r10 & ROB #3 IS MISPREDICTED
 		check_ROB(2,1);
 
 		id_packet_in.dest_reg_idx = 5'b01011; // entry1: r11
@@ -167,6 +170,18 @@ module 	ROB_tb;
 		@(negedge clock); // 120ns: assign ROB #1 to r11 STRUCTURAL HAZARD
 		check_ROB(2,2);
 		assert (rob_struc_hazard == 1'b1)	else begin $display("@@@failed struc hazard@@@"); $finish; end
+
+		cdb_packet_in.reg_tag.valid = 1'b1;
+		cdb_packet_in.reg_value = 32'h0000000C;
+		cdb_packet_in.reg_tag.tag = 2;
+
+		@(negedge clock);  // 130ns: complete & retire ROB #2 squash signal is asserted
+		check_ROB(3,2);
+		assert (rob2mt_packet_out.squash == 1'b1)	else begin $display("@@@fail to squash@@@"); $finish; end
+
+		@(negedge clock); // 140ns: head_idx & tail_idx back to 0
+		check_ROB(0,0);
+		$display("@@@successfully squashed@@@");
 		
 
 		$display("@@@Passed");
