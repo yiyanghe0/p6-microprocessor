@@ -19,8 +19,7 @@ module brcond (
 	input [`XLEN-1:0] rs2,
 	input [2:0]       func, // Specifies which condition to check
 
-	output logic cond, // 0/1 condition result (False/True)
-	output logic busy
+	output logic cond // 0/1 condition result (False/True)
 );
 
 	logic signed [`XLEN-1:0] signed_rs1, signed_rs2;
@@ -37,6 +36,38 @@ module brcond (
 			3'b111: cond = rs1 >= rs2;               // BGEU
 		endcase
 	end
-
 endmodule // brcond
+
+module BRANCH(
+	input [`XLEN-1:0] opa,
+	input [`XLEN-1:0] opb,
+
+	input [`XLEN-1:0] rs1,  // Value to check against condition
+	input [`XLEN-1:0] rs2,
+	input [2:0]       func, // Specifies which condition to check
+
+	input IS_PACKET is_packet_in,
+
+	input start,
+
+	output logic [`XLEN-1:0] braddr,
+
+	output logic cond, // 0/1 condition result (False/True)
+	output logic done,
+
+	output IS_PACKET is_packet_out
+);
+	brcond br0(
+		.rs1(rs1),
+		.rs2(rs2),
+		.func(func),
+
+		.cond(cond)
+	);
+
+	assign braddr = opa + opb;
+	assign done = start;
+	assign is_packet_out = is_packet_in;
+
+endmodule
 `endif

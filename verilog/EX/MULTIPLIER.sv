@@ -98,4 +98,138 @@ module mult_stage #(parameter NUM_STAGES = `MULT_DEFAULT_N_STAGES) (
 
 endmodule // module mult_stage
 
+module MULTIPLIER(
+	input [`XLEN-1:0] opa,
+	input [`XLEN-1:0] opb,
+	ALU_FUNC          func,
+
+	input IS_PACKET is_packet_in,
+
+	input clock, reset,
+	input start,
+
+	output logic [`XLEN-1:0] product,
+	output logic done,
+	output logic busy,
+
+	output IS_PACKET is_packet_out
+);
+	// !!!opa - multiplicand; opb - multiplier [please check]
+	logic mcand_sign, mplier_sign;
+	logic [(2*`XLEN)-1:0] mproduct;
+	logic next_busy;
+	IS_PACKET is_packet;
+	IS_PACKET next_is_packet;
+
+	assign is_packet_out = is_packet;
+
+	always_comb begin
+		next_is_packet = '{{`XLEN{1'b0}},
+				{`XLEN{1'b0}},
+				{`XLEN{1'b0}},
+				{`XLEN{1'b0}},
+				OPA_IS_RS1,
+				OPB_IS_RS2,
+				`NOP,
+				`ZERO_REG,
+				ALU_ADD,
+				1'b0, // rd_mem
+				1'b0, // wr_mem
+				1'b0, // cond
+				1'b0, // uncond
+				1'b0, // halt
+				1'b0, // illegal
+				1'b0, // csr_op
+				1'b0  // valid
+			}; // or a nop instruction
+		
+		if (start)
+			next_is_packet = is_packet_in;
+		else if (busy)
+			next_is_packet = is_packet;
+	end
+
+	always_comb begin
+		case (func):
+			ALU_MUL:      mcand_sign = opa[`XLEN-1];
+			ALU_MULH:     mcand_sign = opa[`XLEN-1];
+			ALU_MULHSU:   mcand_sign = opa[`XLEN-1];
+			ALU_MULHU:    mcand_sign = 0;
+			
+			default:      mcand_sign = 0;
+		endcase
+	end
+
+	always_comb begin
+		case (func):
+			ALU_MUL:      mplier_sign = opb[`XLEN-1];
+			ALU_MULH:     mplier_sign = opb[`XLEN-1];
+			ALU_MULHSU:   mplier_sign = 0;
+			ALU_MULHU:    mplier_sign = 0;
+
+			default:      mplier_sign = 0;
+		endcase
+	end
+
+	always_comb begin
+		if (start)
+			next_busy = 1;
+		else if (done)
+			next_busy = 0;
+		else
+			next_busy = busy;
+	end
+
+	mult m0(
+		.clock(clock),
+		.reset(reset),
+		.start(start),
+		.mcand_sign(mcand_sign),
+		.mplier_sign(mplier_sign),
+		.mcand(opa),
+		.mplier(opb),
+
+		.product(mproduct),
+		.done(done)
+	);
+
+	always_comb begin
+		case (func):
+			ALU_MUL:                             product = mproduct[`XLEN-1:0];
+			ALU_MULH, ALU_MULHSU, ALU_MULHU:     product = mproduct[2*`XLEN-1:`XLEN];
+
+			default:                             product = mproduct[`XLEN-1:0];
+		endcase
+	end
+
+	//synopsys sync_set_reset "reset"
+	always_ff @(posedge clock) begin
+		if (reset) begin
+			busy <= `SD 0;
+			is_packet <= `SD '{{`XLEN{1'b0}},
+				{`XLEN{1'b0}},
+				{`XLEN{1'b0}},
+				{`XLEN{1'b0}},
+				OPA_IS_RS1,
+				OPB_IS_RS2,
+				`NOP,
+				`ZERO_REG,
+				ALU_ADD,
+				1'b0, // rd_mem
+				1'b0, // wr_mem
+				1'b0, // cond
+				1'b0, // uncond
+				1'b0, // halt
+				1'b0, // illegal
+				1'b0, // csr_op
+				1'b0  // valid
+			}; // or a nop instruction
+		end
+		else begin
+			busy <= `SD next_busy;
+			is_packet <= `SD next_is_packet;
+		end
+	end
+endmodule
+
 `endif //__MULT_SV__
