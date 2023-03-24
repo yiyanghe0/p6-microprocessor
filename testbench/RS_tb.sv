@@ -3,6 +3,7 @@ module testbench_RS;
     logic clock;
     logic reset;
     logic squash;
+    logic stall;
     ID_PACKET id_packet_in; // invalid if enable = 0
     MT2RS_PACKET mt2rs_packet_in;
     CDB_PACKET cdb_packet_in; 
@@ -37,6 +38,7 @@ module testbench_RS;
         .clock(clock),
         .reset(reset),
         .squash(squash),
+        .stall(stall),
         .id_packet_in(id_packet_in),
         .rob2rs_packet_in(rob2rs_packet_in),
         .mt2rs_packet_in(mt2rs_packet_in),
@@ -115,6 +117,7 @@ module testbench_RS;
         clock = 0;
         reset = 1;
         squash = 0;
+        stall = 0;
         @(negedge clock);
         reset = 0;
 
@@ -896,8 +899,15 @@ module testbench_RS;
         rob2rs_packet_in.rs2_value = 7;
         rob2rs_packet_in.rob_head_idx = 1;
 
+        // $display("@@@ | RS Index | Wr_en | Busy |   Inst   | Ready | Clear | Tag1 | Tag2 |");
+        // for (int i = 0; i < `RS_LEN; i++) begin
+        // $display("@@@ |   [%1d]    |   %b   |  %b   | %h |   %b   |   %b   | %b  | %b  |",
+        //                 i, rs_entry_enable[i], rs_entry_busy[i], rs_entry_packet_out[i].inst.inst, rs_entry_ready[i], rs_entry_clear[i], entry_rs1_tags[i].tag, entry_rs2_tags[i].tag);
+        // end
+
         @(negedge clock);
 // Tag 0 in rs2
+        stall = 1;
         id_packet_in.inst.inst = 32'hFACEF00D;
         id_packet_in.rs1_value = 1;  
         id_packet_in.rs2_value = 1;  
@@ -917,15 +927,23 @@ module testbench_RS;
         cdb_packet_in.reg_value = 0;
 
         //rob
-        rob2rs_packet_in.rob_entry = 1;
+        rob2rs_packet_in.rob_entry = 2;
         rob2rs_packet_in.rs1_value = 61;
         rob2rs_packet_in.rs2_value = 43;
         rob2rs_packet_in.rob_head_idx = 1;
 
-        #1 check_func(32'hDEADFACE, 23, 7);
+        // $display("~~~Stalling now");
+        // $display("@@@ | RS Index | Wr_en | Busy |   Inst   | Ready | Clear | Tag1 | Tag2 |");
+        // for (int i = 0; i < `RS_LEN; i++) begin
+        // $display("@@@ |   [%1d]    |   %b   |  %b   | %h |   %b   |   %b   | %b  | %b  |",
+        //                 i, rs_entry_enable[i], rs_entry_busy[i], rs_entry_packet_out[i].inst.inst, rs_entry_ready[i], rs_entry_clear[i], entry_rs1_tags[i].tag, entry_rs2_tags[i].tag);
+        // end
+
+        // #1 check_func(32'hDEADFACE, 23, 7);
 
         @(negedge clock);
 // Tag 0 in rs2
+        stall = 0;
         id_packet_in.inst.inst = 32'hF00DF00D;
         id_packet_in.rs1_value = 1;  
         id_packet_in.rs2_value = 1;  
@@ -945,12 +963,17 @@ module testbench_RS;
         cdb_packet_in.reg_value = 0;
 
         //rob
-        rob2rs_packet_in.rob_entry = 1;
+        rob2rs_packet_in.rob_entry = 3;
         rob2rs_packet_in.rs1_value = 11;
         rob2rs_packet_in.rs2_value = 11;
         rob2rs_packet_in.rob_head_idx = 1;
 
+        #1 check_func(32'hDEADFACE, 23, 7);
+        // #1 check_func(32'hFACEF00D, 61, 43);
+
+        @(negedge clock);
         #1 check_func(32'hFACEF00D, 61, 43);
+        // #1 check_func(32'hF00DF00D, 11, 11);
 
         @(negedge clock);
         #1 check_func(32'hF00DF00D, 11, 11);
