@@ -38,7 +38,7 @@ module EX (
 
 	output EX_PACKET ex_packet_out,
 	output logic valid, // if valid = 0, rs encountered structural hazard and has to stall
-	output logic null  // null = 1 -> nothing output; null = 0 -> valid output
+	output logic no_output  // no_output = 1 -> nothing output; no_output = 0 -> valid output
 );
 
 	logic [`XLEN-1:0] 					opa_mux_out, opb_mux_out;
@@ -226,7 +226,7 @@ module EX (
 		.ex_packet2(ex_packet2),
 
 		.ex_packet_out(ex_packet_out),
-		.null(null)
+		.no_output(no_output)
 	)
 
 

@@ -12,7 +12,7 @@ module FIFO(
     input EX_PACKET ex_packet2,
 
     output EX_PACKET ex_packet_out,
-    output logic null // null = 1 -> nothing output; null = 0 -> valid output
+    output logic no_output // no_output = 1 -> nothing output; no_output = 0 -> valid output
 );
     EX_PACKET [`FIFO_LEN-1:0] fifo_storage;
     EX_PACKET [`FIFO_LEN-1:0] next_fifo_storage;
@@ -113,7 +113,7 @@ module FIFO(
     always_comb begin
         if (empty) begin
             if (is_empty1 && is_empty2) begin
-                null = 1;
+                no_output = 1;
                 ex_packet_out.NPC          = 0;
                 ex_packet_out.rs2_value    = 0;
                 ex_packet_out.rd_mem       = 0;
@@ -128,22 +128,22 @@ module FIFO(
                 ex_packet_out.alu_result   = 0;
             end
             else if (is_empty2) begin
-                null = 0;
+                no_output = 0;
                 ex_packet_out = ex_packet1;
             end
             else if (is_empty1) begin
-                null = 0;
+                no_output = 0;
                 ex_packet_out = ex_packet2;
             end
             else begin
-                null = 0;
+                no_output = 0;
                 // Always assume ex_packet1 first out
                 // Put ex_packet2 into fifo_storage
                 ex_packet_out = ex_packet1;
             end
         end
         else begin
-            null = 0;
+            no_output = 0;
             ex_packet_out = fifo_storage[0];
         end
     end
