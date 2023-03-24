@@ -300,6 +300,9 @@ typedef struct packed {
 // flags for cdb write through
 typedef enum logic [1:0] {TAGTAG, TAGCDB, CDBTAG, CDBCDB} FLAG;
 
+// indicate which channel in ex
+typedef enum logic [2:0] {ALU, MULT, BR, LD, ST} CHANNEL;
+
 // packet of tag
 typedef struct packed {
 	logic [$clog2(`ROB_LEN)-1:0] tag;   //ROB entry number
@@ -334,6 +337,7 @@ typedef struct packed {
 	logic       illegal;       // is this instruction illegal?
 	logic       csr_op;        // is this a CSR operation? (we only used this as a cheap way to get return code)
 	logic       valid;         // is inst a valid instruction to be counted for CPI calculations?
+	CHANNEL     channel;
 } ID_PACKET;
 
 //////////////////////////////////////////////

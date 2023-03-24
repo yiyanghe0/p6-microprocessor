@@ -92,7 +92,8 @@ module MAP_TABLE(
             map_table_entry_tag[rs2mt_packet_in.dest_reg_idx] <= `SD next_map_table_entry_tag;
             map_table_entry_ready[rs2mt_packet_in.dest_reg_idx] <= `SD next_map_table_entry_ready;
             if (retire_found && rob2mt_packet_in.retire) begin
-                map_table_entry_tag[next_map_table_entry_retire_idx] <= `SD 0;
+                map_table_entry_tag[next_map_table_entry_retire_idx].tag <= `SD 0;
+                map_table_entry_tag[next_map_table_entry_retire_idx].valid <= `SD 0;
                 map_table_entry_ready[next_map_table_entry_retire_idx] <= `SD 0;
             end
             if (cdb_found) map_table_entry_ready[next_map_table_entry_cdb_idx] <= `SD next_map_table_entry_cdb_ready;
