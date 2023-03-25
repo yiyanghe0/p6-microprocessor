@@ -18,8 +18,8 @@ module ROB(
 	output logic                           		   rob_struc_hazard,    // structural hazard in ROB
 	`endif
 
-    output ROB2RS_PACKET rob2rs_packet_out,    // transfer rs1 & rs2 & Tag 
-    output ROB2MT_PACKET rob2mt_packet_out,    // update tag in MT 
+    output ROB2RS_PACKET  rob2rs_packet_out,    // transfer rs1 & rs2 & Tag 
+    output ROB2MT_PACKET  rob2mt_packet_out,    // update tag in MT 
     output ROB2REG_PACKET rob2reg_packet_out   // retire 
 );
 
@@ -90,7 +90,7 @@ always_comb begin
     next_rob_entry_mispredict = rob_entry_mispredict;
     for (int i=0; i < `ROB_LEN; i++) begin
         if (i == mispredict_packet_in.mispredict_rob_entry_idx.tag && mispredict_packet_in.mispredict_rob_entry_idx.valid)
-            next_rob_entry_mispredict[i] = 1;
+            next_rob_entry_mispredict[i+1] = 1;
     end
     if (squash) next_rob_entry_mispredict = 0;
 end

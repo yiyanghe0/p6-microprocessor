@@ -84,7 +84,8 @@ Note: packets to ROB, Map Table and selection of RS_entry, issued s_x_packet sho
     assign next_entry_packet.illegal          = wr_en ? id_packet_in.illegal        : entry_packet.illegal;
     assign next_entry_packet.csr_op           = wr_en ? id_packet_in.csr_op         : entry_packet.csr_op;
     assign next_entry_packet.valid            = wr_en ? id_packet_in.valid          : entry_packet.valid;
-    assign next_entry_packet.dest_reg_idx     = wr_en ? rob2rs_packet_in.rob_entry  : entry_packet.dest_reg_idx; // changed 
+    assign next_entry_packet.dest_reg_idx     = wr_en ? id_packet_in.dest_reg_idx   : entry_packet.dest_reg_idx; 				 
+    assign next_entry_packet.rob_entry        = wr_en ? rob2rs_packet_in.rob_entry  : entry_packet.dest_reg_rob_entry_idx; // ROB entry 
 
     // register values for next rs1 and rs2 tags
     // assign next_entry_rs1_tag = wr_en ? (mt2rs_packet_in.rs1_ready ? 0 :

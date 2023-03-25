@@ -358,7 +358,8 @@ typedef struct packed {
 	ALU_OPB_SELECT opb_select; // ALU opb mux select (ALU_OPB_xxx *)
 	INST inst;                 // instruction
 	
-	logic [$clog2(`ROB_LEN)-1:0] dest_reg_idx;  // destination (writeback) register rob entry number
+	logic [$clog2(`REG_LEN)-1:0] dest_reg_idx;  // destination (writeback) register 
+	logic [$clog2(`ROB_LEN)-1:0] rob_entry;  //destination (writeback) register rob entry number
 	ALU_FUNC    alu_func;      // ALU function select (ALU_xxx *)
 	logic       rd_mem;        // does inst read memory?
 	logic       wr_mem;        // does inst write memory?
@@ -414,13 +415,15 @@ typedef struct packed {
 //////////////////////////////////////////////
 //
 // CDB_PACKET:
-// Data broadcasted from CDB
+// Data broadcasted from CDB (CP stage)
 //
 //////////////////////////////////////////////
 
 typedef struct packed {
 	TAG_PACKET reg_tag;
 	logic [`XLEN-1:0] reg_value;
+	logic [`XLEN-1:0] NPC;         // pc + 4, forwarded
+	logic             take_branch; // is this a taken branch?, forwarded
 } CDB_PACKET;
 
 //////////////////////////////////////////////
@@ -465,11 +468,20 @@ typedef struct packed {
 	logic                        valid;
 } ROB_entry_PACKET;
 
+//////////////////////////////////////////////
+//
+// EX_PACKET:
+// Data from EX to CDB(cp_stage)
+//
+//////////////////////////////////////////////
+
 typedef struct packed {
 	logic [`XLEN-1:0] alu_result;  // alu_result
 	logic [`XLEN-1:0] NPC;         // pc + 4
 	logic             take_branch; // is this a taken branch?
 	logic [4:0]       dest_reg_idx;
+	logic [$clog2(`ROB_LEN)-1:0] rob_entry;  //destination (writeback) register rob entry number
+
 	logic [`XLEN-1:0] rs2_value;	//rs2_value
 
 	logic       	  rd_mem;        // does inst read memory?
@@ -478,7 +490,7 @@ typedef struct packed {
 	logic       	  illegal;       // is this instruction illegal?
 	logic       	  csr_op;        // is this a CSR operation? (we only used this as a cheap way to get return code)
 	logic       	  valid;         // is inst a valid instruction to be counted for CPI calculations?
-	logic [2:0]       mem_size;
+	logic [2:0]      mem_size;
 
 } EX_PACKET;
 
@@ -507,7 +519,13 @@ typedef struct packed {
 //
 //////////////////////////////////////////////
 
-typedef struct 
+typedef struct packed {
+	TAG_PACKET reg_tag;
+	logic [`XLEN-1:0] reg_value;
+	logic [`XLEN-1:0] NPC;         // pc + 4, forwarded
+	logic             take_branch; // is this a taken branch?, forwarded
+	logic 
+} RT_PACKET;
 
 
 `endif // __SYS_DEFS_SVH__
