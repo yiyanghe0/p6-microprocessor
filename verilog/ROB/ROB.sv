@@ -50,6 +50,7 @@ assign next_tail = squash ? 0 : ((id_packet_in.valid && (!rob_struc_hazard)) ? t
 assign next_head = squash ? 0 : (retire ? head_idx +1'b1 : head_idx);
 
 assign dest_reg_idx_in = id_packet_in.dest_reg_idx;
+assign rob2reg_packet_out.valid = retire;
 
 ROB_entry rob_entry [`ROB_LEN-1:0] (
      .clock(clock),
@@ -110,6 +111,8 @@ end
 // retire logic
 always_comb begin
     retire = 0;
+    rob2reg_packet_out.dest_reg_value = 0;
+    rob2reg_packet_out.dest_reg_idx = 0;
     for (int i=0; i < `ROB_LEN; i++) begin
         if (i == head_idx && rob_entry_packet_out[i].valid)
             retire = 1;

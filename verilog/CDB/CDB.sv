@@ -4,6 +4,7 @@
 `include "sys_defs.svh"
 
 module CDB(
+    input EX_
     input logic [`REG_LEN-1:0] mem_wb_dest_reg_idx,
     input logic [`XLEN-1:0] mem_wb_result_in,
     input valid,

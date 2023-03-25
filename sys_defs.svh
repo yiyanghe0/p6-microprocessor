@@ -496,7 +496,18 @@ typedef struct packed {
 typedef struct packed {
 	logic [`XLEN-1:0]    dest_reg_value;
 	logic [`REG_LEN-1:0] dest_reg_idx;
+	logic valid;
 } ROB2REG_PACKET;
+
+
+//////////////////////////////////////////////
+//
+// RT_PACKET:
+// Data from RT to REG
+//
+//////////////////////////////////////////////
+
+typedef struct 
 
 
 `endif // __SYS_DEFS_SVH__

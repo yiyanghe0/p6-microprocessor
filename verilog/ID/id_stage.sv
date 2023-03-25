@@ -235,7 +235,7 @@ module id_stage (
 	// input               wb_reg_wr_en_out,   // Reg write enable from WB Stage
 	// input  [4:0]        wb_reg_wr_idx_out,  // Reg write index from WB Stage
 	// input  [`XLEN-1:0]  wb_reg_wr_data_out, // Reg write data from WB Stage
-	input  ROB_entry_PACKET rob_retire_packet_in // rob retire
+	input  ROB_entry_PACKET rob_retire_packet_in, // rob retire
 	input  IF_ID_PACKET if_id_packet_in,
 
 
