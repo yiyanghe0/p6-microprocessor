@@ -15,9 +15,9 @@ module ROB(
 	output logic [`ROB_LEN-1:0]         rob_entry_wr_en,
 	output logic [`ROB_LEN-1:0]         rob_entry_wr_value,
 	output ROB_entry_PACKET [`ROB_LEN-1:0]         rob_entry_packet_out,
-	output logic                           		   rob_struc_hazard,    // structural hazard in ROB
 	`endif
 
+	output logic                           		   rob_struc_hazard,    // structural hazard in ROB
     output ROB2RS_PACKET  rob2rs_packet_out,    // transfer rs1 & rs2 & Tag 
     output ROB2MT_PACKET  rob2mt_packet_out,    // update tag in MT 
     output ROB2REG_PACKET rob2reg_packet_out   // retire 
@@ -28,7 +28,6 @@ logic            [$clog2(`ROB_LEN)-1:0] head_idx;            // store ROB head i
 logic            [$clog2(`ROB_LEN)-1:0] tail_idx;            // store ROB tail idx
 logic            [`ROB_LEN-1:0]         rob_entry_wr_en;
 logic            [`ROB_LEN-1:0]         rob_entry_wr_value;
-logic                            	    rob_struc_hazard;    // structural hazard in ROB
 ROB_entry_PACKET [`ROB_LEN-1:0]         rob_entry_packet_out;
 `endif
 
