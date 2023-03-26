@@ -480,7 +480,7 @@ typedef struct packed {
 	logic [`XLEN-1:0] alu_result;  // alu_result
 	logic [`XLEN-1:0] NPC;         // pc + 4
 	logic             take_branch; // is this a taken branch?
-	logic [4:0]       dest_reg_idx;
+	logic [$clog2(`ROB_LEN)-1:0] dest_reg_idx;
 	logic [`XLEN-1:0] rs2_value;	//rs2_value
 
 	logic       	  rd_mem;        // does inst read memory?
@@ -490,7 +490,7 @@ typedef struct packed {
 	logic       	  csr_op;        // is this a CSR operation? (we only used this as a cheap way to get return code)
 	logic       	  valid;         // is inst a valid instruction to be counted for CPI calculations?
 	logic [2:0]       mem_size;
-	CHANNEL			  channel;
+	logic			  is_ZEROREG;	   // is the dest_reg ZERO_REG, in other words, do we need to CDB broadcast in complete stage?
 } EX_PACKET;
 
 typedef struct packed {

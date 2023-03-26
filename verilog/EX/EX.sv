@@ -28,13 +28,10 @@
 // This module is purely combinational
 //
 
-typedef enum logic [2:0] { ALU, MULT, BR, LD, ST } CHANNEL;
-
 module EX (
 	input clock, // system clock
 	input reset, // system reset
 	input IS_PACKET is_packet_in,
-	input CHANNEL channel_in,
 
 	output EX_PACKET ex_packet_out,
 	output logic valid, // if valid = 0, rs encountered structural hazard and has to stall
@@ -64,15 +61,15 @@ module EX (
 	IS_PACKET [`MUL_NUM-1:0]			MUL_is_packet;
 
 	//mux to determine if mutiplier or ALU
-	assign ALU_start = (channel_in == ALU) ? 1 : 0;
-	assign BRANCH_start = (channel_in == BR) ? 1 : 0;
+	assign ALU_start = (is_packet_in.channel == ALU) ? 1 : 0;
+	assign BRANCH_start = (is_packet_in.channel == BR) ? 1 : 0;
 
 	always_comb begin
 		MUL_start = 0;
 		valid = 0;
 
 		for (int i = 0; i < `MUL_NUM; i++) begin
-			if (!MUL_busy[i] && (channel_in == MULT)) begin
+			if (!MUL_busy[i] && (is_packet_in.channel == MULT)) begin
 				MUL_start[i] = 1;
 				valid = 1;
 				break;
@@ -184,6 +181,8 @@ module EX (
 												  (BRANCH_done) ? (is_packet_in.uncond_branch | (is_packet_in.cond_branch & brcond_result)) : 0;
 	assign ex_packet1.alu_result   = (ALU_done) ? ALU_result :
 												  (BRANCH_done) ? BRANCH_addr : 0;
+	assign ex_packet1.is_ZEROREG   = (ALU_done) ? ALU_is_packet.is_ZEROREG :
+												  (BRANCH_done) ? BRANCH_is_packet.is_ZEROREG : 0;
 
 	always_comb begin
 		ex_packet2.NPC          = 0;
@@ -198,6 +197,7 @@ module EX (
 		ex_packet2.mem_size     = 0;
 		ex_packet2.take_branch  = 0;
 		ex_packet2.alu_result   = 0;
+		ex_packet2.is_ZEROREG	= 0;
 
 		for (int i = 0; i < `MUL_NUM; i++) begin
 			if (MUL_done[i]) begin
@@ -213,6 +213,7 @@ module EX (
 				ex_packet2.mem_size     = MUL_is_packet[i].mem_size;
 				ex_packet2.take_branch  = 0;
 				ex_packet2.alu_result   = MUL_product[i];
+				ex_packet2.is_ZEROREG	= MUL_is_packet[i].is_ZEROREG;
 
 				break;
 			end
