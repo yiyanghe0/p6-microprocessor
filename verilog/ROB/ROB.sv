@@ -50,7 +50,7 @@ assign next_tail = squash ? 0 : ((id_packet_in.valid && (!rob_struc_hazard)) ? t
 assign next_head = squash ? 0 : (retire ? head_idx +1'b1 : head_idx);
 
 assign dest_reg_idx_in = id_packet_in.dest_reg_idx;
-assign rob2reg_packet_out.valid = retire;
+assign rob2reg_packet_out.valid = (retire && (dest_reg_idx_in != `ZERO_REG)) ? 1 : 0;
 
 ROB_entry rob_entry [`ROB_LEN-1:0] (
      .clock(clock),
