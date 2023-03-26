@@ -368,6 +368,8 @@ typedef struct packed {
 	logic       illegal;       // is this instruction illegal?
 	logic       csr_op;        // is this a CSR operation? (we only used this as a cheap way to get return code)
 	logic       valid;         // is inst a valid instruction to be counted for CPI calculations?
+	logic		is_ZEROREG;	   // is the dest_reg ZERO_REG, in other words, do we need to CDB broadcast in complete stage?
+	CHANNEL		channel;
 } IS_PACKET;
 
 //////////////////////////////////////////////
@@ -479,7 +481,7 @@ typedef struct packed {
 	logic       	  csr_op;        // is this a CSR operation? (we only used this as a cheap way to get return code)
 	logic       	  valid;         // is inst a valid instruction to be counted for CPI calculations?
 	logic [2:0]       mem_size;
-
+	CHANNEL			  channel;
 } EX_PACKET;
 
 typedef struct packed {
