@@ -50,7 +50,7 @@ module FIFO(
                         (ex_packet1.mem_size     == 0) &&
                         (ex_packet1.take_branch  == 0) &&
                         (ex_packet1.alu_result   == 0) &&
-                        (ex_packet1.is_ZEROREG   == 0)) ? 1 : 0;
+                        (ex_packet1.is_ZEROREG   == 1)) ? 1 : 0;
 
     assign is_empty2 = ((ex_packet2.NPC          == 0) &&
                         (ex_packet2.rs2_value    == 0) &&
@@ -64,7 +64,7 @@ module FIFO(
                         (ex_packet2.mem_size     == 0) &&
                         (ex_packet2.take_branch  == 0) &&
                         (ex_packet2.alu_result   == 0) &&
-                        (ex_packet2.is_ZEROREG   == 0)) ? 1 : 0;
+                        (ex_packet2.is_ZEROREG   == 1)) ? 1 : 0;
 
     always_comb begin
         if (is_empty1 && is_empty2) begin

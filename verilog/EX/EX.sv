@@ -182,7 +182,7 @@ module EX (
 	assign ex_packet1.alu_result   = (ALU_done) ? ALU_result :
 												  (BRANCH_done) ? BRANCH_addr : 0;
 	assign ex_packet1.is_ZEROREG   = (ALU_done) ? ALU_is_packet.is_ZEROREG :
-												  (BRANCH_done) ? BRANCH_is_packet.is_ZEROREG : 0;
+												  (BRANCH_done) ? BRANCH_is_packet.is_ZEROREG : 1;
 
 	always_comb begin
 		ex_packet2.NPC          = 0;
@@ -197,7 +197,7 @@ module EX (
 		ex_packet2.mem_size     = 0;
 		ex_packet2.take_branch  = 0;
 		ex_packet2.alu_result   = 0;
-		ex_packet2.is_ZEROREG	= 0;
+		ex_packet2.is_ZEROREG	= 1;
 
 		for (int i = 0; i < `MUL_NUM; i++) begin
 			if (MUL_done[i]) begin
