@@ -121,8 +121,8 @@ Output the index of the RS_entry that issued instruction
     assign rs2mt_packet_out.rs1_idx            = id_packet_in.inst.r.rs1;
     assign rs2mt_packet_out.rs2_idx            = id_packet_in.inst.r.rs2;
     assign rs2mt_packet_out.dest_reg_idx       = id_packet_in.dest_reg_idx;
-    assign rs2mt_packet_out.dest_reg_tag.tag   = rob2rs_packet_in.rob_entry;
-    assign rs2mt_packet_out.dest_reg_tag.valid = 1;
+    assign rs2mt_packet_out.dest_reg_tag.tag   = (id_packet_in.dest_reg_idx == `ZERO_REG) ? 0 : rob2rs_packet_in.rob_entry;
+    assign rs2mt_packet_out.dest_reg_tag.valid = (id_packet_in.dest_reg_idx == `ZERO_REG) ? 0 : 1;
 
     assign rs2rob_packet_out.valid          = valid;
     assign rs2rob_packet_out.rs1_idx        = mt2rs_packet_in.rs1_tag.tag;
