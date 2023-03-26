@@ -18,8 +18,8 @@ module ROB(
 	output logic                           		   rob_struc_hazard,    // structural hazard in ROB
 	`endif
 
-    output ROB2RS_PACKET rob2rs_packet_out,    // transfer rs1 & rs2 & Tag 
-    output ROB2MT_PACKET rob2mt_packet_out,    // update tag in MT 
+    output ROB2RS_PACKET  rob2rs_packet_out,    // transfer rs1 & rs2 & Tag 
+    output ROB2MT_PACKET  rob2mt_packet_out,    // update tag in MT 
     output ROB2REG_PACKET rob2reg_packet_out   // retire 
 );
 
@@ -50,6 +50,7 @@ assign next_tail = squash ? 0 : ((id_packet_in.valid && (!rob_struc_hazard)) ? t
 assign next_head = squash ? 0 : (retire ? head_idx +1'b1 : head_idx);
 
 assign dest_reg_idx_in = id_packet_in.dest_reg_idx;
+assign rob2reg_packet_out.valid = retire;
 
 ROB_entry rob_entry [`ROB_LEN-1:0] (
      .clock(clock),
@@ -89,7 +90,7 @@ always_comb begin
     next_rob_entry_mispredict = rob_entry_mispredict;
     for (int i=0; i < `ROB_LEN; i++) begin
         if (i == mispredict_packet_in.mispredict_rob_entry_idx.tag && mispredict_packet_in.mispredict_rob_entry_idx.valid)
-            next_rob_entry_mispredict[i] = 1;
+            next_rob_entry_mispredict[i+1] = 1;
     end
     if (squash) next_rob_entry_mispredict = 0;
 end
@@ -110,6 +111,8 @@ end
 // retire logic
 always_comb begin
     retire = 0;
+    rob2reg_packet_out.dest_reg_value = 0;
+    rob2reg_packet_out.dest_reg_idx = 0;
     for (int i=0; i < `ROB_LEN; i++) begin
         if (i == head_idx && rob_entry_packet_out[i].valid)
             retire = 1;

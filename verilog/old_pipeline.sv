@@ -67,7 +67,7 @@ module pipeline (
 
 	// Pipeline register enables
 	logic if_id_enable, id_ex_enable, ex_mem_enable, mem_wb_enable;
-	logic RS_enable, ROB_enable;
+
 	// Outputs from IF-Stage
 	logic [`XLEN-1:0] proc2Imem_addr;
 	IF_ID_PACKET if_packet;
@@ -87,13 +87,13 @@ module pipeline (
 	EX_MEM_PACKET ex_mem_packet;
 
 	// Outputs from MEM-Stage
-// 	logic [`XLEN-1:0] mem_result_out;
-// 	logic [`XLEN-1:0] proc2Dmem_addr;
-// 	logic [`XLEN-1:0] proc2Dmem_data;
-// 	logic [1:0]       proc2Dmem_command;
-// `ifndef CACHE_MODE
-// 	MEM_SIZE          proc2Dmem_size;
-// `endif
+	logic [`XLEN-1:0] mem_result_out;
+	logic [`XLEN-1:0] proc2Dmem_addr;
+	logic [`XLEN-1:0] proc2Dmem_data;
+	logic [1:0]       proc2Dmem_command;
+`ifndef CACHE_MODE
+	MEM_SIZE          proc2Dmem_size;
+`endif
 
 	// Outputs from MEM/WB Pipeline Register
 	logic             mem_wb_halt;

@@ -416,13 +416,15 @@ typedef struct packed {
 //////////////////////////////////////////////
 //
 // CDB_PACKET:
-// Data broadcasted from CDB
+// Data broadcasted from CDB (CP stage)
 //
 //////////////////////////////////////////////
 
 typedef struct packed {
 	TAG_PACKET reg_tag;
 	logic [`XLEN-1:0] reg_value;
+	logic [`XLEN-1:0] NPC;         // pc + 4, forwarded
+	logic             take_branch; // is this a taken branch?, forwarded
 } CDB_PACKET;
 
 //////////////////////////////////////////////
@@ -467,6 +469,13 @@ typedef struct packed {
 	logic                        valid;
 } ROB_entry_PACKET;
 
+//////////////////////////////////////////////
+//
+// EX_PACKET:
+// Data from EX to CDB(cp_stage)
+//
+//////////////////////////////////////////////
+
 typedef struct packed {
 	logic [`XLEN-1:0] alu_result;  // alu_result
 	logic [`XLEN-1:0] NPC;         // pc + 4
@@ -498,7 +507,24 @@ typedef struct packed {
 typedef struct packed {
 	logic [`XLEN-1:0]    dest_reg_value;
 	logic [`REG_LEN-1:0] dest_reg_idx;
+	logic valid;
 } ROB2REG_PACKET;
+
+
+//////////////////////////////////////////////
+//
+// RT_PACKET:
+// Data from RT to REG
+//
+//////////////////////////////////////////////
+
+typedef struct packed {
+	TAG_PACKET reg_tag;
+	logic [`XLEN-1:0] reg_value;
+	logic [`XLEN-1:0] NPC;         // pc + 4, forwarded
+	logic             take_branch; // is this a taken branch?, forwarded
+	logic 
+} RT_PACKET;
 
 
 `endif // __SYS_DEFS_SVH__

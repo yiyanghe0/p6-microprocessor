@@ -4,14 +4,14 @@
 `include "sys_defs.svh"
 
 module CDB(
-    input logic [`REG_LEN-1:0] mem_wb_dest_reg_idx,
-    input logic [`XLEN-1:0] mem_wb_result_in,
-    input valid,
+    input EX_PACKET ex_packet_in,
     output CDB_PACKET cdb_packet_out
 );
-    assign cdb_packet_out.reg_tag.tag = mem_wb_dest_reg_idx;
-    assign cdb_packet_out.reg_tag.valid = valid;
-    assign cdb_packet_out.reg_value = mem_wb_result_in;
+    assign cdb_packet_out.reg_tag.tag 	 = ex_packet_in.rob_entry;
+    assign cdb_packet_out.reg_tag.valid = ex_packet_in.valid;
+    assign cdb_packet_out.reg_value     = ex_packet_in.alu_result;
+    assign cdb_packet_out.NPC 		    = ex_packet_in.NPC;
+    assign cdb_packet_out.take_branch   = ex_packet_in.take_branch;
 endmodule
 
 `endif
