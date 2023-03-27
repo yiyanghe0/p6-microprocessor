@@ -296,6 +296,8 @@ typedef struct packed {
 `define RS_LEN 8
 `define SUPERSCALER_LEN 1
 `define MAP_TABLE_LEN 32
+`define BTB_LEN 32
+
 
 // flags for cdb write through
 typedef enum logic [1:0] {TAGTAG, TAGCDB, CDBTAG, CDBCDB} FLAG;
@@ -501,5 +503,62 @@ typedef struct packed {
 	logic [`REG_LEN-1:0] dest_reg_idx;
 } ROB2REG_PACKET;
 
+
+//////////////////////////////////////////////
+//
+// IF2BTB_PACKET:
+// Data from IF/ID to BTB
+//
+//////////////////////////////////////////////
+
+typedef struct packed {
+	logic [`XLEN-1:0] inst;
+	logic valid;
+} IFID2BTB_PACKET;
+
+
+//////////////////////////////////////////////
+//
+// FU2BTB_PACKET:
+// Data from Brcond FU to BTB
+//
+//////////////////////////////////////////////
+
+typedef struct packed {
+	logic [`XLEN-1:0] inst;
+	logic [`XLEN-1:0] target_pc;
+	logic valid;
+	logic taken;
+} FU2BTB_PACKET;
+
+
+//////////////////////////////////////////////
+//
+// BTB_PACKET:
+// Data from BTB
+//
+//////////////////////////////////////////////
+
+typedef struct packed {
+	logic prediction; // 0 for not taken and 1 for taken
+	logic valid;
+	logic [`XLEN-1:0] target_pc;
+} BTB_PACKET;
+
+//////////////////////////////////////////////
+//
+// BTB_ENTRY:
+// Data from BTB
+//
+//////////////////////////////////////////////
+
+typedef struct packed {
+	BTB_PREDICT state; // T WT WN N
+	logic busy;
+	logic [`XLEN-1:$clog2(`BTB_LEN)] tag;
+	logic [`XLEN-1:0] target_pc;
+} BTB_ENTRY;
+
+typedef enum {TAKEN, WEAK_TAKEN, WEAK_NOTTAKE, NOTTAKE} BTB_PREDICT;
 
 `endif // __SYS_DEFS_SVH__
