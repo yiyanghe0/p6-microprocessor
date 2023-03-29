@@ -493,10 +493,6 @@ typedef struct packed {
 	logic			  is_ZEROREG;	   // is the dest_reg ZERO_REG, in other words, do we need to CDB broadcast in complete stage?
 } EX_PACKET;
 
-typedef struct packed {
-	TAG_PACKET mispredict_rob_entry_idx;
-} MISPREDICT_ROB_PACKET;
-
 
 //////////////////////////////////////////////
 //
