@@ -222,7 +222,7 @@ all: mult_no_lsq.out
 # delete this comment area when you want to
 # TODO TODO TODO TODO
 
-TESTED_MODULES = RS RS_entry ROB MAP_TABLE FIFO
+TESTED_MODULES = RS RS_entry ROB MAP_TABLE FIFO EX
 
 # if a module includes other modules, add the dependencies explicitly here
 # this works due to the targets using the $^ automatic variable
@@ -234,6 +234,7 @@ TESTED_MODULES = RS RS_entry ROB MAP_TABLE FIFO
 RS_simv: RS_entry.sv
 RS_coverage_simv: RS_entry.sv
 synth/RS.vg: RS_entry.sv 
+EX_simv: FIFO.sv MULTIPLIER.sv Branch.sv ALU.sv 
 
 # this make rule will generate <name>_simv targets from the TESTED_MODULES variable e.g. 'make rob_simv'
 # it expects a <name>_tb.sv file in the testbench folder

@@ -523,7 +523,6 @@ typedef struct packed {
 	logic [`XLEN-1:0] reg_value;
 	logic [`XLEN-1:0] NPC;         // pc + 4, forwarded
 	logic             take_branch; // is this a taken branch?, forwarded
-	logic 
 } RT_PACKET;
 
 

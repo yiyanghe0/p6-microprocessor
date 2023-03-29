@@ -131,7 +131,7 @@ module MULTIPLIER(
 				OPA_IS_RS1,
 				OPB_IS_RS2,
 				`NOP,
-				`ZERO_REG,
+				1'b0,
 				ALU_ADD,
 				1'b0, // rd_mem
 				1'b0, // wr_mem
@@ -140,7 +140,9 @@ module MULTIPLIER(
 				1'b0, // halt
 				1'b0, // illegal
 				1'b0, // csr_op
-				1'b0  // valid
+				1'b0, // valid
+				1'b1,
+				ALU
 			}; // or a nop instruction
 		
 		if (start)
@@ -150,7 +152,7 @@ module MULTIPLIER(
 	end
 
 	always_comb begin
-		case (func):
+		case (func)
 			ALU_MUL:      mcand_sign = opa[`XLEN-1];
 			ALU_MULH:     mcand_sign = opa[`XLEN-1];
 			ALU_MULHSU:   mcand_sign = opa[`XLEN-1];
@@ -161,7 +163,7 @@ module MULTIPLIER(
 	end
 
 	always_comb begin
-		case (func):
+		case (func)
 			ALU_MUL:      mplier_sign = opb[`XLEN-1];
 			ALU_MULH:     mplier_sign = opb[`XLEN-1];
 			ALU_MULHSU:   mplier_sign = 0;
@@ -194,7 +196,7 @@ module MULTIPLIER(
 	);
 
 	always_comb begin
-		case (func):
+		case (func)
 			ALU_MUL:                             product = mproduct[`XLEN-1:0];
 			ALU_MULH, ALU_MULHSU, ALU_MULHU:     product = mproduct[2*`XLEN-1:`XLEN];
 
@@ -213,7 +215,7 @@ module MULTIPLIER(
 				OPA_IS_RS1,
 				OPB_IS_RS2,
 				`NOP,
-				`ZERO_REG,
+				1'b0,
 				ALU_ADD,
 				1'b0, // rd_mem
 				1'b0, // wr_mem
@@ -222,7 +224,9 @@ module MULTIPLIER(
 				1'b0, // halt
 				1'b0, // illegal
 				1'b0, // csr_op
-				1'b0  // valid
+				1'b0, // valid
+				1'b1,
+				ALU
 			}; // or a nop instruction
 		end
 		else begin

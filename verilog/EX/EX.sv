@@ -104,7 +104,7 @@ module EX (
 	end
 
 	// instantiate the ALU
-	alu alu_0 (
+	ALU alu_0 (
 		// Inputs
 		.opa(opa_mux_out),
 		.opb(opb_mux_out),
@@ -175,8 +175,8 @@ module EX (
 												  (BRANCH_done) ? BRANCH_is_packet.csr_op : 0;
 	assign ex_packet1.valid        = (ALU_done) ? ALU_is_packet.valid :
 												  (BRANCH_done) ? BRANCH_is_packet.valid : 0;
-	assign ex_packet1.mem_size     = (ALU_done) ? ALU_is_packet.mem_size :
-												  (BRANCH_done) ? BRANCH_is_packet.mem_size : 0;
+	assign ex_packet1.mem_size     = (ALU_done) ? ALU_is_packet.inst.r.funct3 :
+												  (BRANCH_done) ? BRANCH_is_packet.inst.r.funct3 : 0;
 	assign ex_packet1.take_branch  = (ALU_done) ? 0 :
 												  (BRANCH_done) ? (is_packet_in.uncond_branch | (is_packet_in.cond_branch & brcond_result)) : 0;
 	assign ex_packet1.alu_result   = (ALU_done) ? ALU_result :
@@ -210,7 +210,7 @@ module EX (
 				ex_packet2.illegal      = MUL_is_packet[i].illegal;
 				ex_packet2.csr_op       = MUL_is_packet[i].csr_op;
 				ex_packet2.valid        = MUL_is_packet[i].valid;
-				ex_packet2.mem_size     = MUL_is_packet[i].mem_size;
+				ex_packet2.mem_size     = MUL_is_packet[i].inst.r.funct3;
 				ex_packet2.take_branch  = 0;
 				ex_packet2.alu_result   = MUL_product[i];
 				ex_packet2.is_ZEROREG	= MUL_is_packet[i].is_ZEROREG;
@@ -228,7 +228,7 @@ module EX (
 
 		.ex_packet_out(ex_packet_out),
 		.no_output(no_output)
-	)
+	);
 
 
 endmodule // module ex_stage
