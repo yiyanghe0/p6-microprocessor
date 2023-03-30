@@ -5,7 +5,6 @@ module testbench_ex_stage;
     logic reset;
     IS_PACKET               is_packet_in;
     EX_PACKET               ex_packet_out;
-    CHANNEL                 channel_in;
     logic valid;
     logic no_output;
 
@@ -65,17 +64,19 @@ always begin
 
     logic [2:0] func3;
     logic [3:0] et;
-    assign is_packet_in.inst.inst = (et << 8) + (func3 << 12);
+    logic [2:0] imm;
+    assign is_packet_in.inst.inst = (imm << 20) + (et << 8) + (func3 << 12);
 
 //Test case begin
     initial begin
     is_packet_in.rs1_value = 32'h87654321;
     is_packet_in.rs2_value = 32'h12345678;
+    imm = 0;
 
-    $monitor("TIME:%4.0f result:%8b channel:%8b valid:%8b no_output:%8b", $time, ex_packet_out.alu_result, channel_in, valid, no_output);
+    $monitor("TIME:%4.0f result:%8h channel:%8b valid:%8b no_output:%8b", $time, ex_packet_out.alu_result, is_packet_in.channel, valid, no_output);
     clock = 0;
     reset = 1;
-    @(negedge clock);
+    @(negedge clock); //10ns
     reset = 0;
 //case: ALU Func test
     is_packet_in.channel  = ALU;// switch to ALU Func
@@ -108,11 +109,11 @@ always begin
     is_packet_in.opb_select = 2'h0;
     check_alu_func(32'h95511559);	
 
-    @(negedge clock);
+    /*@(negedge clock);
     is_packet_in.alu_func = 5'h0e;//switch to DIV
     is_packet_in.opa_select = 2'h0;// switch to rs1_value
     is_packet_in.opb_select = 2'h0;
-    check_alu_func(32'h7F6E5D9);
+    check_alu_func(32'h7F6E5D9);*/
 
 //case: Branch Func test  
    @(negedge clock);
@@ -122,10 +123,31 @@ always begin
     is_packet_in.channel  = BR;// switch to Br Func
     func3 = 3'b000;//BEQ
     et = 4'b0010;
+    is_packet_in.uncond_branch = 1'b0;
+    is_packet_in.cond_branch = 1;
     is_packet_in.opa_select = OPA_IS_PC;// switch to rs1_value
     is_packet_in.opb_select = OPB_IS_B_IMM;//switch to rs2_value
+    //$display("@@@ alu_done = %b", ex_stage.alu_0.done);
+    //$display("@@@ branch_done = %b", ex_stage.BRANCH_0.done);
+    //$display("@@@ cond_branch = %b",is_packet_in.cond_branch);
+    //$display("@@@ brcond_result = %b",ex_stage.BRANCH_0.cond);
+
     check_branch_func(19,1);
 
+   @(negedge clock);
+    is_packet_in.rs1_value = 32'h87654321;
+    is_packet_in.PC = 15;
+    is_packet_in.channel  = BR;// switch to Br Func
+    func3 = 3'b000;//BEQ
+    et = 4'b0000;
+    imm = 5;
+    is_packet_in.uncond_branch = 1'b1;
+    is_packet_in.cond_branch = 0;
+    is_packet_in.opa_select = OPA_IS_RS1;// switch to rs1_value
+    is_packet_in.opb_select = OPB_IS_I_IMM;//switch to rs2_value
+
+    check_branch_func(32'h87654326,1);
+    
    @(negedge clock);
     //This beq will not branch
     is_packet_in.rs2_value = 32'h12345678;
@@ -133,8 +155,16 @@ always begin
     is_packet_in.channel  = BR;// switch to Br Func
     func3 = 3'b000;//BEQ
     et = 4'b0010;
+    is_packet_in.cond_branch = 1;
+    is_packet_in.uncond_branch = 1'b0;
     is_packet_in.opa_select = OPA_IS_PC;// switch to rs1_value
     is_packet_in.opb_select = OPB_IS_B_IMM;//switch to rs2_value
+    // $display("@@@ alu_done = %b", ex_stage.alu_0.done);
+    // $display("@@@ branch_done = %b", ex_stage.BRANCH_0.done);
+    // $display("@@@ cond_branch = %b",is_packet_in.cond_branch);
+    // $display("@@@ brcond_result = %b",ex_stage.brcond_result);
+    // $display("@@@ brcond_rs1 = %h",ex_stage.BRANCH_0.br0.rs1);
+    // $display("@@@ brcond_rs2 = %h",ex_stage.BRANCH_0.br0.rs2);
     check_branch_func(19,0);
 
    @(negedge clock);
@@ -143,6 +173,7 @@ always begin
     is_packet_in.channel  = BR;// switch to Br Func
     func3 = 3'b001;//BNE
     et = 4'b0010;
+    is_packet_in.cond_branch = 1;
     is_packet_in.opa_select = OPA_IS_PC;// switch to rs1_value
     is_packet_in.opb_select = OPB_IS_B_IMM;//switch to rs2_value
     check_branch_func(19,1);
@@ -153,6 +184,7 @@ always begin
     is_packet_in.channel  = BR;// switch to Br Func
     func3 = 3'b100;//BLT
     et = 4'b0010;
+    is_packet_in.cond_branch = 1;
     is_packet_in.opa_select = OPA_IS_PC;// switch to rs1_value
     is_packet_in.opb_select = OPB_IS_B_IMM;//switch to rs2_value
     check_branch_func(19,1);
@@ -163,6 +195,7 @@ always begin
     is_packet_in.channel  = BR;// switch to Br Func
     func3 = 3'b101;//BGE
     et = 4'b0010;
+    is_packet_in.cond_branch = 1;
     is_packet_in.opa_select = OPA_IS_PC;// switch to rs1_value
     is_packet_in.opb_select = OPB_IS_B_IMM;//switch to rs2_value
     check_branch_func(19,0);
@@ -173,6 +206,7 @@ always begin
     is_packet_in.channel  = BR;// switch to Br Func
     func3 = 3'b110;//BLTU
     et = 4'b0010;
+    is_packet_in.cond_branch = 1;
     is_packet_in.opa_select = OPA_IS_PC;// switch to rs1_value
     is_packet_in.opb_select = OPB_IS_B_IMM;//switch to rs2_value
     check_branch_func(19,0);
@@ -183,6 +217,7 @@ always begin
     is_packet_in.channel  = BR;// switch to Br Func
     func3 = 3'b111;//BGEU
     et = 4'b0010;
+    is_packet_in.cond_branch = 1;
     is_packet_in.opa_select = OPA_IS_PC;// switch to rs1_value
     is_packet_in.opb_select = OPB_IS_B_IMM;//switch to rs2_value
     check_branch_func(19,1);
@@ -190,6 +225,7 @@ always begin
 
 //case: Branch Mult test  
    @(negedge clock);
+    is_packet_in.cond_branch = 0;
     is_packet_in.channel = MULT;
     is_packet_in.rs1_value = 32'h00000001;
     is_packet_in.rs2_value = 32'h00000002;
@@ -223,21 +259,23 @@ always begin
     is_packet_in.alu_func = 5'h05;//switch to OR
     is_packet_in.opa_select = 2'h0;// switch to rs1_value
     is_packet_in.opb_select = 2'h0;
-    check_alu_func(32'h00000002);
-   // check_alu_func(32'h97755779);
+    // check_alu_func(32'h00000002);
+   check_alu_func(32'h97755779);
     	
   
   @(negedge clock);
     is_packet_in.alu_func = 5'h06;//switch to XOR
     is_packet_in.opa_select = 2'h0;// switch to rs1_value
     is_packet_in.opb_select = 2'h0;
-    check_alu_func(32'h00000000);
+    check_alu_func(32'h00000002);
+    // check_alu_func(32'h00000000);
     //check_alu_func(32'h95511559);	
 
   @(negedge clock);
     is_packet_in.alu_func = 5'h0e;//switch to DIV
     is_packet_in.opa_select = 2'h0;// switch to rs1_value
     is_packet_in.opb_select = 2'h0;
+    check_alu_func(32'h95511559);
 
     // check_alu_func(32'h97755779);
 

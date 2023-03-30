@@ -7,6 +7,7 @@
 module DP_IS (
 	input                clock,              // system clock
 	input                reset,              // system reset
+    input                stall,              // 1 - stall DP_IS stage;
     input IF_ID_PACKET   if_id_packet_in,
     input CDB_PACKET     cdb_packet_in,
 
@@ -15,77 +16,73 @@ module DP_IS (
 );
 
 // instantiate ID_STAGE
+ID_PACKET id_packet;
+ROB2REG_PACKET rob_retire_packet;
 
-ID_PACKET id_packet_out;
-ROB2REG_PACKET rob_retire_packet_in;
+//instantiate RS
+RS2ROB_PACKET rs2rob_packet;
+RS2MT_PACKET rs2mt_packet;
+logic RS_struc_hazard_inv; // 0 - structural hazard; 1 - no structural hazard
+
+// instantiate ROB
+ROB2MT_PACKET rob2mt_packet;
+ROB2RS_PACKET rob2rs_packet;
+logic rob_struc_hazard; // 0 - no structural hazard; 1 - structural hazard
+
+// instantiate MT
+MT2RS_PACKET mt2rs_packet;
 
 id_stage id_stage_0 (
     .clock(clock),
     .reset(reset),
-    .rob_retire_packet_in(rob_retire_packet_in),
+    .rob_retire_packet_in(rob_retire_packet),
     .if_id_packet_in(if_id_packet_in),
 
-    .id_packet_out(id_packet_out)
+    .id_packet_out(id_packet)
 );
-
-//instantiate RS
-
-RS2ROB_PACKET rs2rob_packet_out;
-RS2MT_PACKET rs2mt_packet_out;
-logic RS_struc_hazard;  
 
 RS RS_0 (
     .clock(clock),
     .reset(reset),
-    .squash(rs2rob_packet_out.squash),
-    .stall(),
-    .id_packet_in(id_packet_out),
-    .rob2rs_packet_in(rob2rs_packet_out),
-    .mt2rs_packet_in(mt2rs_packet_out),
+    .squash(rob2rs_packet.squash),
+    .stall(stall),
+    .id_packet_in(id_packet),
+    .rob2rs_packet_in(rob2rs_packet),
+    .mt2rs_packet_in(mt2rs_packet),
     .cdb_packet_in(cdb_packet_in),
 
-    .rs2rob_packet_out(rs2rob_packet_out),
-    .rs2mt_packet_out(rs2mt_packet_out)
+    .rs2rob_packet_out(rs2rob_packet),
+    .rs2mt_packet_out(rs2mt_packet)
     .is_packet_out(is_packet_out),
-    .valid(RS_struc_hazard)
+    .valid(RS_struc_hazard_inv)
 );
-
-// instantiate ROB
-
-ROB2MT_PACKET rob2mt_packet_out;
-ROB2RS_PACKET rob2rs_packet_out;
-logic rob_struc_hazard;
 
 ROB ROB_0 (
     .clock(clock),
     .reset(reset),
-    .rs2rob_packet_in(rs2rob_packet_out)
+    .stall(stall),
+    .rs2rob_packet_in(rs2rob_packet)
     .cdb_packet_in(cdb_packet_in),
-    .id_packet_in(id_packet_out),
+    .id_packet_in(id_packet),
 
-    .rob2rs_packet_out(rob2rs_packet_out),
-    .rob2mt_packet_out(rob2mt_packet_out),
-    .rob2reg_packet_out(rob_retire_packet_in),
+    .rob2rs_packet_out(rob2rs_packet),
+    .rob2mt_packet_out(rob2mt_packet),
+    .rob2reg_packet_out(rob_retire_packet),
     .rob_struc_hazard (rob_struc_hazard)
-
 );
-
-// instantiate MT
-
-MT2RS_PACKET mt2rs_packet_out;
 
 MT MT_0 (
     .clock(clock),
     .reset(reset),
-    .wr_en(),
-    .rs2mt_packet_in(rs2mt_packet_out),
+    .stall(stall),
+    .rs2mt_packet_in(rs2mt_packet),
     .cdb_packet_in(cdb_packet_in),
-    .rob2mt_packet_in(rob2mt_packet_out),
+    .rob2mt_packet_in(rob2mt_packet),
 
-    .mt2rs_packet_out(mt2rs_packet_out)
+    .mt2rs_packet_out(mt2rs_packet)
 );
 
 // structural hazard signal to IF/ID pipeline register
-assign struc_hazard = RS_struc_hazard | rob_struc_hazard; 
+assign struc_hazard = ~RS_struc_hazard_inv | rob_struc_hazard; 
 
 endmodule

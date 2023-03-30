@@ -119,6 +119,7 @@ module FIFO(
                 ex_packet_out.mem_size     = 0;
                 ex_packet_out.take_branch  = 0;
                 ex_packet_out.alu_result   = 0;
+                ex_packet_out.is_ZEROREG   = 1;
             end
             else if (is_empty2) begin
                 no_output = 0;

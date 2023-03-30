@@ -16,6 +16,7 @@
 `define MUL_NUM 2
 
 `include "sys_defs.svh"
+`include "ISA.svh"
 
 
 //

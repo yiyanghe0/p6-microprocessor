@@ -6,7 +6,7 @@
 module MAP_TABLE(
     input clock,
     input reset,
-    input wr_en,
+    input stall,
     input RS2MT_PACKET rs2mt_packet_in,
     input CDB_PACKET cdb_packet_in,
     input ROB2MT_PACKET rob2mt_packet_in,
@@ -24,6 +24,9 @@ module MAP_TABLE(
     logic [`REG_LEN-1:0] next_map_table_entry_retire_idx;
     logic cdb_found;
     logic retire_found;
+
+    logic wr_en;
+    assign wr_en = ~stall;
 
     assign next_map_table_entry_tag = (wr_en && rs2mt_packet_in.dest_reg_tag.valid) ? rs2mt_packet_in.dest_reg_tag : map_table_entry_tag[rs2mt_packet_in.dest_reg_idx];
     assign next_map_table_entry_ready = (wr_en && rs2mt_packet_in.dest_reg_tag.valid) ? 0 : map_table_entry_ready[rs2mt_packet_in.dest_reg_idx];

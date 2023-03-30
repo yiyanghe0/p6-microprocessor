@@ -234,7 +234,9 @@ TESTED_MODULES = RS RS_entry ROB MAP_TABLE FIFO EX
 RS_simv: RS_entry.sv
 RS_coverage_simv: RS_entry.sv
 synth/RS.vg: RS_entry.sv 
-EX_simv: FIFO.sv MULTIPLIER.sv Branch.sv ALU.sv 
+EX_simv: FIFO.sv MULTIPLIER.sv Branch.sv ALU.sv
+EX_coverage_simv: FIFO.sv MULTIPLIER.sv Branch.sv ALU.sv
+synth/EX.vg: FIFO.sv MULTIPLIER.sv Branch.sv ALU.sv
 
 # this make rule will generate <name>_simv targets from the TESTED_MODULES variable e.g. 'make rob_simv'
 # it expects a <name>_tb.sv file in the testbench folder
