@@ -95,7 +95,7 @@ always_comb begin
     rob_entry_wr_value = 0;
 	if (cdb_packet_in.reg_tag.valid) begin
         for (int i = 0; i < `ROB_LEN; i++) begin
-            if (i == cdb_packet_in.reg_tag.tag)
+            if ((i == cdb_packet_in.reg_tag.tag) && cdb_packet_in.reg_tag.valid)
                 rob_entry_wr_value [cdb_packet_in.reg_tag.tag] = 1'b1; 
         end
     end

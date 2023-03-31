@@ -13,16 +13,26 @@
 `include "sys_defs.svh"
 
 module rt_stage (
-	input CDB_PACKET  cdb_packet_in,
+	input clock,
+	input reset,
+	input CDB_PACKET cdb_packet_in,
 
-	output RT_PACKET rt_packet_out
+	output logic [`XLEN-1:0] rt_npc_out
 );
+	logic [`XLEN-1:0] next_rt_npc;
+	logic mispredict; // 1 - mispredict
 
+	assign mispredict = cdb_packet_in.take_branch;
 	
-	assign rt_packet_out.NPC = cdb_packet_in.NPC;
-	assign rt_packet_out.reg_value = cdb_packet_in.reg_value;
-	assign rt_packet_out.reg_tag = cdb_packet_in.reg_tag;
-	assign rt_packet_out.take_branch = cdb_packet_in.NPC;
+	assign next_rt_npc = (mispredict) ? cdb_packet_in.NPC : rt_packet_out.NPC;
+
+	// synopsys sync_set_reset "reset"
+	always_ff @(posedge clock) begin
+		if (reset)
+			rt_npc_out <= `SD 0;
+		else
+			rt_npc_out <= `SD next_rt_npc;
+	end
 
 endmodule // module wb_stage
 `endif // __WB_STAGE_SV__

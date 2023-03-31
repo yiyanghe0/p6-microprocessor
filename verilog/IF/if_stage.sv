@@ -22,6 +22,7 @@ module if_stage (
     input [`XLEN-1:0] rt_npc,             // from retire stage
 
 	input [63:0]      Imem2proc_data,     // Data coming back from instruction-memory
+	input [1:0]		  proc2Dmem_command,
 
 	output logic [`XLEN-1:0] proc2Imem_addr, // Address sent to Instruction memory
 	output IF_ID_PACKET      if_packet_out   // Output data packet from IF going to ID, see sys_defs for signal information
@@ -57,15 +58,12 @@ module if_stage (
 	// to stall until the previous instruction has completed
 	// For project 3, start by setting this to always be 1
 	// synopsys sync_set_reset "reset"
-	// always_ff @(posedge clock) begin
-	// 	if (reset) begin
-	// 		// start valid, other stages (id,ex,mem,wb) start as invalid
-	// 		if_packet_out.valid <= `SD 1;
-	// 	end else begin
-	// 		// valid bit will cycle through the pipeline and come back from the wb stage
-	// 		if_packet_out.valid <= `SD mem_wb_valid_inst;
-	// 	end
-	// end
+	always_comb begin
+		if (proc2Dmem_command == BUS_NONE)
+			if_packet_out.valid = 1;
+		else
+			if_packet_out.valid = 0;
+	end
 
 endmodule // module if_stage
 `endif // __IF_STAGE_SV__

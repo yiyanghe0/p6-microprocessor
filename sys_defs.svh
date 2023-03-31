@@ -506,20 +506,4 @@ typedef struct packed {
 	logic valid;
 } ROB2REG_PACKET;
 
-
-//////////////////////////////////////////////
-//
-// RT_PACKET:
-// Data from RT to REG
-//
-//////////////////////////////////////////////
-
-typedef struct packed {
-	TAG_PACKET reg_tag;
-	logic [`XLEN-1:0] reg_value;
-	logic [`XLEN-1:0] NPC;         // pc + 4, forwarded
-	logic             take_branch; // is this a taken branch?, forwarded
-} RT_PACKET;
-
-
 `endif // __SYS_DEFS_SVH__

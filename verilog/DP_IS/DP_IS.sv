@@ -12,7 +12,8 @@ module DP_IS (
     input CDB_PACKET     cdb_packet_in,
 
     output IS_PACKET is_packet_out,
-    output logic struc_hazard
+    output logic struc_hazard,
+    output logic squash
 );
 
 // instantiate ID_STAGE
@@ -31,6 +32,8 @@ logic rob_struc_hazard; // 0 - no structural hazard; 1 - structural hazard
 
 // instantiate MT
 MT2RS_PACKET mt2rs_packet;
+
+assign squash = rob2rs_packet.squash;
 
 id_stage id_stage_0 (
     .clock(clock),
