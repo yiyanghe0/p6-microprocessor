@@ -58,11 +58,8 @@ assign rob2reg_packet_out.valid = (retire && (dest_reg_idx_in != `ZERO_REG)) ? 1
 // ROB2RS delivery packet
 assign rob2rs_packet_out.rob_entry = tail_idx - 1'b1;
 assign rob2rs_packet_out.rob_head_idx = head_idx;
-
-assign index_rs1 = rs2rob_packet_in.rs1_idx;
-assign index_rs2 = rs2rob_packet_in.rs2_idx;
-assign rob2rs_packet_out.rs1_value = rob_entry[index_rs1].rob_entry_packet_out.dest_reg_value;
-assign rob2rs_packet_out.rs2_value = rob_entry[index_rs2].rob_entry_packet_out.dest_reg_value;
+assign rob2rs_packet_out.rs1_value = rob_entry_packet_out[rs2rob_packet_in.rs1_idx].dest_reg_value;
+assign rob2rs_packet_out.rs2_value = rob_entry_packet_out[rs2rob_packet_in.rs2_idx].dest_reg_value;
 
 // ROB2MT delivery packet
 assign rob2mt_packet_out.head_idx = head_idx;

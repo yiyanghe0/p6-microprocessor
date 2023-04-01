@@ -15,11 +15,11 @@
 `define PS_DEFAULT_N_BITS 8
 
 module ps #(parameter N_BITS = `PS_DEFAULT_N_BITS) (
-	input [N_BITS-1:0] req;
-	input              en;
+	input [N_BITS-1:0] req,
+	input              en,
 
-	output [N_BITS-1:0] gnt;
-	output              req_up;
+	output [N_BITS-1:0] gnt,
+	output              req_up
 );
 
 	wire [N_BITS-2:0] req_ups;
@@ -63,11 +63,11 @@ endmodule // module ps
 
 
 module ps2 (
-	input [1:0] req;
-	input       en;
+	input [1:0] req,
+	input       en,
 
-	output [1:0] gnt;
-	output       req_up;
+	output [1:0] gnt,
+	output       req_up
 );
 
 	assign gnt[1] = en & req[1];

@@ -35,6 +35,9 @@ module ALU (
 	assign signed_opb = opb;
 
 	always_comb begin
+
+		$display ("@@@Entered ALU@@@");
+
 		case (func)
 			ALU_ADD:      result = opa + opb;
 			ALU_SUB:      result = opa - opb;

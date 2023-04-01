@@ -29,7 +29,7 @@ module 	ROB_tb;
    ROB2MT_PACKET rob2mt_packet_out;    // update tag in MT 
    ROB2REG_PACKET rob2reg_packet_out;   // retire 
    ROB_entry_PACKET [`ROB_LEN-1:0] rob_entry_packet_out;
-	MISPREDICT_ROB_PACKET mispredict_packet_in;
+   //MISPREDICT_ROB_PACKET mispredict_packet_in;
 
 	ROB ROB_0(
 		.clock(clock),
@@ -159,8 +159,8 @@ module 	ROB_tb;
 		
 		id_packet_in.dest_reg_idx = 5'b01010; // entry0: r10
 
-		mispredict_packet_in.mispredict_rob_entry_idx.valid = 1'b1;
-		mispredict_packet_in.mispredict_rob_entry_idx.tag = 3'b011;
+		//mispredict_packet_in.mispredict_rob_entry_idx.valid = 1'b1;
+		//mispredict_packet_in.mispredict_rob_entry_idx.tag = 3'b011;
 
 		@(negedge clock); // 110ns: assign ROB #0 to r10 & ROB #3 IS MISPREDICTED
 		check_ROB(2,1);

@@ -281,7 +281,7 @@ module id_stage (
 		.halt(id_packet_out.halt),
 		.illegal(id_packet_out.illegal),
 		.valid_inst(id_packet_out.valid),
-		.ex_channel(id_packet_out.ex_channel)
+		.ex_channel(id_packet_out.channel)
 	);
 
 	// mux to generate dest_reg_idx based on

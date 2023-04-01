@@ -216,7 +216,9 @@ Output the index of the RS_entry that issued instruction
 				1'b0, // halt
 				1'b0, // illegal
 				1'b0, // csr_op
-				1'b0  // valid
+				1'b0, // valid
+                1'b1, // is_ZEROREG
+                ALU   // channel
 			}; // or a nop instruction
         rs_entry_clear_out = 0;
         issue_inst_rs_entry = 0;

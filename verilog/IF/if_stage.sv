@@ -41,7 +41,7 @@ module if_stage (
 
 	assign if_packet_out.PC  = PC_reg;
 	assign if_packet_out.NPC = PC_plus_4; // Pass PC+4 down pipeline w/instruction
-    assign if_packet_out.valid = ~stall;
+    //assign if_packet_out.valid = ~stall;
 
 	// synopsys sync_set_reset "reset"
 	always_ff @(posedge clock) begin
@@ -59,7 +59,7 @@ module if_stage (
 	// For project 3, start by setting this to always be 1
 	// synopsys sync_set_reset "reset"
 	always_comb begin
-		if (proc2Dmem_command == BUS_NONE)
+		if (proc2Dmem_command == BUS_NONE && (!stall))
 			if_packet_out.valid = 1;
 		else
 			if_packet_out.valid = 0;

@@ -9,6 +9,7 @@
 
 `include "sys_defs.svh"
 
+
 /* PIPEPRINT_UNUSED: no pipe_print for project 4, although feel free to write your own
 // these link to the pipe_print.c file in this directory, and are used below to print
 // detailed output to the pipeline_output_file, initialized by open_pipeline_output_file()
@@ -66,12 +67,12 @@ module testbench;
 	logic [`XLEN-1:0] if_id_NPC;
 	logic [31:0]      if_id_IR;
 	logic             if_id_valid_inst;
-	logic [`XLEN-1:0] id_ex_NPC;
-	logic [31:0]      id_ex_IR;
-	logic             id_ex_valid_inst;
-	logic [`XLEN-1:0] ex_mem_NPC;
-	logic [31:0]      ex_mem_IR;
-	logic             ex_mem_valid_inst;
+	logic [`XLEN-1:0] is_ex_NPC;
+	logic [31:0]      is_ex_IR;
+	logic             is_ex_valid_inst;
+	logic [`XLEN-1:0] ex_cp_NPC;
+	logic [31:0]      ex_cp_IR;
+	logic             ex_cp_valid_inst;
 	logic [`XLEN-1:0] mem_wb_NPC;
 	logic [31:0]      mem_wb_IR;
 	logic             mem_wb_valid_inst;
@@ -94,12 +95,12 @@ module testbench;
 		.proc2mem_size    (proc2mem_size),
 `endif
 
-		.pipeline_completed_insts (pipeline_completed_insts),
-		.pipeline_error_status    (pipeline_error_status),
-		.pipeline_commit_wr_data  (pipeline_commit_wr_data),
-		.pipeline_commit_wr_idx   (pipeline_commit_wr_idx),
-		.pipeline_commit_wr_en    (pipeline_commit_wr_en),
-		.pipeline_commit_NPC      (pipeline_commit_NPC),
+		// .pipeline_completed_insts (pipeline_completed_insts),
+		// .pipeline_error_status    (pipeline_error_status),
+		// .pipeline_commit_wr_data  (pipeline_commit_wr_data),
+		// .pipeline_commit_wr_idx   (pipeline_commit_wr_idx),
+		// .pipeline_commit_wr_en    (pipeline_commit_wr_en),
+		// .pipeline_commit_NPC      (pipeline_commit_NPC),
 
 		.if_NPC_out        (if_NPC_out),
 		.if_IR_out         (if_IR_out),
@@ -107,15 +108,15 @@ module testbench;
 		.if_id_NPC         (if_id_NPC),
 		.if_id_IR          (if_id_IR),
 		.if_id_valid_inst  (if_id_valid_inst),
-		.id_ex_NPC         (id_ex_NPC),
-		.id_ex_IR          (id_ex_IR),
-		.id_ex_valid_inst  (id_ex_valid_inst),
-		.ex_mem_NPC        (ex_mem_NPC),
-		.ex_mem_IR         (ex_mem_IR),
-		.ex_mem_valid_inst (ex_mem_valid_inst),
-		.mem_wb_NPC        (mem_wb_NPC),
-		.mem_wb_IR         (mem_wb_IR),
-		.mem_wb_valid_inst (mem_wb_valid_inst)
+		.is_ex_NPC         (is_ex_NPC),
+		.is_ex_IR          (is_ex_IR),
+		.is_ex_valid_inst  (is_ex_valid_inst),
+		.ex_cp_NPC         (ex_cp_NPC),
+		.ex_cp_IR          (ex_cp_IR),
+		.ex_cp_valid_inst  (ex_cp_valid_inst)
+		// .mem_wb_NPC        (mem_wb_NPC),
+		// .mem_wb_IR         (mem_wb_IR),
+		// .mem_wb_valid_inst (mem_wb_valid_inst)
 	);
 
 
@@ -263,8 +264,8 @@ module testbench;
 			 print_cycles();
 			 print_stage(" ", if_IR_out, if_NPC_out[31:0], {31'b0,if_valid_inst_out});
 			 print_stage("|", if_id_IR,  if_id_NPC [31:0], {31'b0,if_id_valid_inst});
-			 print_stage("|", id_ex_IR,  id_ex_NPC [31:0], {31'b0,id_ex_valid_inst});
-			 print_stage("|", ex_mem_IR, ex_mem_NPC[31:0], {31'b0,ex_mem_valid_inst});
+			 print_stage("|", is_ex_IR,  is_ex_NPC [31:0], {31'b0,is_ex_valid_inst});
+			 print_stage("|", ex_cp_IR, ex_cp_NPC[31:0], {31'b0,ex_cp_valid_inst});
 			 print_stage("|", mem_wb_IR, mem_wb_NPC[31:0], {31'b0,mem_wb_valid_inst});
 			 print_reg(32'b0, pipeline_commit_wr_data[31:0],
 				{27'b0,pipeline_commit_wr_idx}, {31'b0,pipeline_commit_wr_en});
@@ -285,7 +286,7 @@ module testbench;
 			end
 
 			// deal with any halting conditions
-			if(pipeline_error_status != NO_ERROR || debug_counter > 50000000) begin
+			if(pipeline_error_status != NO_ERROR || debug_counter > 5000000) begin
 				$display("@@@ Unified Memory contents hex on left, decimal on right: ");
 				show_mem_with_decimal(0,`MEM_64BIT_LINES - 1);
 				// 8Bytes per line, 16kB total

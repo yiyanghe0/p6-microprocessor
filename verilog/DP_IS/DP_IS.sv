@@ -11,6 +11,8 @@ module DP_IS (
     input IF_ID_PACKET   if_id_packet_in,
     input CDB_PACKET     cdb_packet_in,
 
+    output ROB2REG_PACKET rob_retire_packet,
+
     output IS_PACKET is_packet_out,
     output logic struc_hazard,
     output logic squash
@@ -18,7 +20,7 @@ module DP_IS (
 
 // instantiate ID_STAGE
 ID_PACKET id_packet;
-ROB2REG_PACKET rob_retire_packet;
+// ROB2REG_PACKET rob_retire_packet;
 
 //instantiate RS
 RS2ROB_PACKET rs2rob_packet;
@@ -55,7 +57,7 @@ RS RS_0 (
     .cdb_packet_in(cdb_packet_in),
 
     .rs2rob_packet_out(rs2rob_packet),
-    .rs2mt_packet_out(rs2mt_packet)
+    .rs2mt_packet_out(rs2mt_packet),
     .is_packet_out(is_packet_out),
     .valid(RS_struc_hazard_inv)
 );
@@ -64,7 +66,7 @@ ROB ROB_0 (
     .clock(clock),
     .reset(reset),
     .stall(stall),
-    .rs2rob_packet_in(rs2rob_packet)
+    .rs2rob_packet_in(rs2rob_packet),
     .cdb_packet_in(cdb_packet_in),
     .id_packet_in(id_packet),
 
@@ -74,7 +76,7 @@ ROB ROB_0 (
     .rob_struc_hazard (rob_struc_hazard)
 );
 
-MT MT_0 (
+MAP_TABLE MT_0 (
     .clock(clock),
     .reset(reset),
     .stall(stall),
@@ -89,3 +91,4 @@ MT MT_0 (
 assign struc_hazard = ~RS_struc_hazard_inv | rob_struc_hazard; 
 
 endmodule
+`endif  // DP_IS__SV

@@ -1,4 +1,4 @@
-`ifdef CDB_SV
+`ifndef CDB_SV
 `define CDB_SV
 
 `include "sys_defs.svh"

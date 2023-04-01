@@ -256,7 +256,9 @@ Note: packets to ROB, Map Table and selection of RS_entry, issued s_x_packet sho
 				1'b0, // halt
 				1'b0, // illegal
 				1'b0, // csr_op
-				1'b0  // valid
+				1'b0, // valid
+                1'b1, // is_ZEROREG
+                ALU   // channel
 			};
             entry_rs1_tag <= `SD 0;
             entry_rs2_tag <= `SD 0;
