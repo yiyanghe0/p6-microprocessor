@@ -95,12 +95,12 @@ module testbench;
 		.proc2mem_size    (proc2mem_size),
 `endif
 
-		// .pipeline_completed_insts (pipeline_completed_insts),
-		// .pipeline_error_status    (pipeline_error_status),
-		// .pipeline_commit_wr_data  (pipeline_commit_wr_data),
-		// .pipeline_commit_wr_idx   (pipeline_commit_wr_idx),
-		// .pipeline_commit_wr_en    (pipeline_commit_wr_en),
-		// .pipeline_commit_NPC      (pipeline_commit_NPC),
+		.pipeline_completed_insts (pipeline_completed_insts),
+		.pipeline_error_status    (pipeline_error_status),
+		.pipeline_commit_wr_data  (pipeline_commit_wr_data),
+		.pipeline_commit_wr_idx   (pipeline_commit_wr_idx),
+		.pipeline_commit_wr_en    (pipeline_commit_wr_en),
+		.pipeline_commit_NPC      (pipeline_commit_NPC),
 
 		.if_NPC_out        (if_NPC_out),
 		.if_IR_out         (if_IR_out),
@@ -113,10 +113,11 @@ module testbench;
 		.is_ex_valid_inst  (is_ex_valid_inst),
 		.ex_cp_NPC         (ex_cp_NPC),
 		.ex_cp_IR          (ex_cp_IR),
-		.ex_cp_valid_inst  (ex_cp_valid_inst)
-		// .mem_wb_NPC        (mem_wb_NPC),
-		// .mem_wb_IR         (mem_wb_IR),
-		// .mem_wb_valid_inst (mem_wb_valid_inst)
+		.ex_cp_valid_inst  (ex_cp_valid_inst),
+
+		.mem_wb_NPC        (mem_wb_NPC),
+		.mem_wb_IR         (mem_wb_IR),
+		.mem_wb_valid_inst (mem_wb_valid_inst)
 	);
 
 

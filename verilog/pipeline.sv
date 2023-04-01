@@ -29,8 +29,8 @@ module pipeline (
 	output MEM_SIZE          proc2mem_size,    // data size sent to memory
 `endif
 
-	// output logic [3:0]       pipeline_completed_insts,
-	// output EXCEPTION_CODE    pipeline_error_status,
+	output logic [3:0]       pipeline_completed_insts,
+	output EXCEPTION_CODE    pipeline_error_status,
 	output logic [4:0]       pipeline_commit_wr_idx,
 	output logic [`XLEN-1:0] pipeline_commit_wr_data,
 	output logic             pipeline_commit_wr_en,
@@ -58,7 +58,12 @@ module pipeline (
 	// Outputs from EX/CP Pipeline Register
 	output logic [`XLEN-1:0] ex_cp_NPC,
 	output logic [31:0]      ex_cp_IR,
-	output logic             ex_cp_valid_inst
+	output logic             ex_cp_valid_inst,
+
+	// Outputs from MEM/WB Pipeline Register
+	output logic [`XLEN-1:0] mem_wb_NPC,
+	output logic [31:0]      mem_wb_IR,
+	output logic             mem_wb_valid_inst
 );
 
 	// Pipeline register enables
@@ -122,11 +127,11 @@ module pipeline (
 	assign proc2Dmem_addr = 0;
 
 	// Outputs from MEM/WB Pipeline Register
-	// logic             mem_wb_halt;
-	// logic             mem_wb_illegal;
-	// logic [4:0]       mem_wb_dest_reg_idx;
-	// logic [`XLEN-1:0] mem_wb_result;
-	// logic             mem_wb_take_branch;
+	logic             mem_wb_halt;
+	logic             mem_wb_illegal;
+	logic [4:0]       mem_wb_dest_reg_idx;
+	logic [`XLEN-1:0] mem_wb_result;
+	logic             mem_wb_take_branch;
 
 	// Outputs from WB-Stage (These loop back to the register file in ID)
 	// logic [`XLEN-1:0] wb_reg_wr_data_out;
@@ -139,11 +144,13 @@ module pipeline (
 //                                              //
 //////////////////////////////////////////////////
 
-	// assign pipeline_completed_insts = {3'b0, mem_wb_valid_inst};
-	// assign pipeline_error_status = mem_wb_illegal            ? ILLEGAL_INST :
-	//                                mem_wb_halt               ? HALTED_ON_WFI :
-	//                                (mem2proc_response==4'h0) ? LOAD_ACCESS_FAULT :
-	//                                NO_ERROR;
+	// !!!Need to change
+	assign pipeline_completed_insts = {3'b0, mem_wb_valid_inst};
+	// !!!Need to change
+	assign pipeline_error_status = mem_wb_illegal            ? ILLEGAL_INST :
+	                               mem_wb_halt               ? HALTED_ON_WFI :
+	                               (mem2proc_response==4'h0) ? LOAD_ACCESS_FAULT :
+	                               NO_ERROR;
 
 	 assign pipeline_commit_wr_idx  = rob_retire_packet.dest_reg_idx;
 	 assign pipeline_commit_wr_data = rob_retire_packet.dest_reg_value;
@@ -184,6 +191,8 @@ module pipeline (
 	assign if_NPC_out        = if_packet.NPC;
 	assign if_IR_out         = if_packet.inst;
 	assign if_valid_inst_out = if_packet.valid;
+
+	assign if_stall = 0; // Temp value
 
 	if_stage if_stage_0 (
 		// Inputs
@@ -230,6 +239,8 @@ module pipeline (
 //                  DP_IS-Stage                 //
 //                                              //
 //////////////////////////////////////////////////
+
+	assign dp_is_stall = 0; // Temp value
 
 	DP_IS DP_IS_0 (
 		.clock (clock),
@@ -390,33 +401,33 @@ module pipeline (
 //                                              //
 //////////////////////////////////////////////////
 
-	// assign mem_wb_enable = 1'b1; // always enabled
-	// // synopsys sync_set_reset "reset"
-	// always_ff @(posedge clock) begin
-	// 	if (reset) begin
-	// 		mem_wb_NPC          <= `SD 0;
-	// 		mem_wb_IR           <= `SD `NOP;
-	// 		mem_wb_halt         <= `SD 0;
-	// 		mem_wb_illegal      <= `SD 0;
-	// 		mem_wb_valid_inst   <= `SD 0;
-	// 		mem_wb_dest_reg_idx <= `SD `ZERO_REG;
-	// 		mem_wb_take_branch  <= `SD 0;
-	// 		mem_wb_result       <= `SD 0;
-	// 	end else begin
-	// 		if (mem_wb_enable) begin
-	// 			// these are forwarded directly from EX/MEM latches
-	// 			mem_wb_NPC          <= `SD ex_mem_packet.NPC;
-	// 			mem_wb_IR           <= `SD ex_mem_IR;
-	// 			mem_wb_halt         <= `SD ex_mem_packet.halt;
-	// 			mem_wb_illegal      <= `SD ex_mem_packet.illegal;
-	// 			mem_wb_valid_inst   <= `SD ex_mem_packet.valid;
-	// 			mem_wb_dest_reg_idx <= `SD ex_mem_packet.dest_reg_idx;
-	// 			mem_wb_take_branch  <= `SD ex_mem_packet.take_branch;
-	// 			// these are results of MEM stage
-	// 			mem_wb_result       <= `SD mem_result_out;
-	// 		end // if
-	// 	end // else: !if(reset)
-	// end // always
+	assign mem_wb_enable = 1'b1; // always enabled
+	// synopsys sync_set_reset "reset"
+	always_ff @(posedge clock) begin
+		if (reset) begin
+			mem_wb_NPC          <= `SD 0;
+			mem_wb_IR           <= `SD `NOP;
+			mem_wb_halt         <= `SD 0;
+			mem_wb_illegal      <= `SD 0;
+			mem_wb_valid_inst   <= `SD 0;
+			mem_wb_dest_reg_idx <= `SD `ZERO_REG;
+			mem_wb_take_branch  <= `SD 0;
+			mem_wb_result       <= `SD 0;
+		end else begin
+			if (mem_wb_enable) begin
+				// these are forwarded directly from EX/MEM latches
+				mem_wb_NPC          <= `SD ex_cp_packet.NPC;
+				mem_wb_IR           <= `SD ex_cp_IR;
+				mem_wb_halt         <= `SD ex_cp_packet.halt;
+				mem_wb_illegal      <= `SD ex_cp_packet.illegal;
+				mem_wb_valid_inst   <= `SD ex_cp_packet.valid;
+				mem_wb_dest_reg_idx <= `SD ex_cp_packet.dest_reg_idx;
+				mem_wb_take_branch  <= `SD ex_cp_packet.take_branch;
+				// these are results of MEM stage
+				mem_wb_result       <= `SD mem_result_out;
+			end // if
+		end // else: !if(reset)
+	end // always
 
 //////////////////////////////////////////////////
 //                                              //

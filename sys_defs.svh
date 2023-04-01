@@ -290,7 +290,7 @@ typedef struct packed {
 //////////////////////////////////////////////
 
 `define INST_LEN 32
-`define REG_LEN $clog2(`INST_LEN)
+`define REG_LEN $clog2(`INST_LEN)  // REG_LEN 5
 
 `define ROB_LEN 8
 `define RS_LEN 8
@@ -464,9 +464,9 @@ typedef struct packed {
 //////////////////////////////////////////////
 
 typedef struct packed {
-	logic [$clog2(`ROB_LEN)-1:0] dest_reg_value;  //data
-	logic [$clog2(`ROB_LEN)-1:0] dest_reg_idx;    //address
-	logic                        valid;
+	logic [`XLEN-1:0] dest_reg_value;   //data
+	logic [`REG_LEN-1:0]  dest_reg_idx; //address
+	logic                 valid;
 } ROB_entry_PACKET;
 
 //////////////////////////////////////////////

@@ -33,13 +33,14 @@ ROB_entry_PACKET [`ROB_LEN-1:0]         rob_entry_packet_out;
 
 logic            [$clog2(`ROB_LEN)-1:0] next_head;
 logic            [$clog2(`ROB_LEN)-1:0] next_tail;
-logic            [$clog2(`REG_LEN)-1:0] dest_reg_idx_in;
+logic            [`REG_LEN-1:0] dest_reg_idx_in;
 
 // Mispredict
 logic            [`ROB_LEN-1:0]         rob_entry_mispredict;
 logic            [`ROB_LEN-1:0]         next_rob_entry_mispredict;
 logic                                   squash;
 logic									retire;
+logic									next_retire;
 logic									is_init;
 
 // ROB2RS
@@ -47,16 +48,17 @@ logic [$clog2(`ROB_LEN)-1:0] index_rs1;
 logic [$clog2(`ROB_LEN)-1:0] index_rs2;
 
 // ROB structural hazard
-assign rob_struc_hazard = (head_idx == tail_idx) && (~is_init);
+// assign rob_struc_hazard = (head_idx == tail_idx) && (~is_init);
+ assign rob_struc_hazard = 1'b0;
 
 assign next_tail = squash ? 0 : ((id_packet_in.valid && (!rob_struc_hazard) && (!stall)) ? tail_idx + 1'b1 : tail_idx);
 assign next_head = squash ? 0 : (retire && (!stall)) ? head_idx +1'b1 : head_idx;
 
 assign dest_reg_idx_in = id_packet_in.dest_reg_idx;
-assign rob2reg_packet_out.valid = (retire && (dest_reg_idx_in != `ZERO_REG)) ? 1 : 0;
+assign rob2reg_packet_out.valid = (retire && (rob_entry_packet_out[head_idx].dest_reg_idx != `ZERO_REG)) ? 1 : 0;
 
 // ROB2RS delivery packet
-assign rob2rs_packet_out.rob_entry = tail_idx - 1'b1;
+assign rob2rs_packet_out.rob_entry = tail_idx;
 assign rob2rs_packet_out.rob_head_idx = head_idx;
 assign rob2rs_packet_out.rs1_value = rob_entry_packet_out[rs2rob_packet_in.rs1_idx].dest_reg_value;
 assign rob2rs_packet_out.rs2_value = rob_entry_packet_out[rs2rob_packet_in.rs2_idx].dest_reg_value;
@@ -68,6 +70,7 @@ assign rob2mt_packet_out.retire = retire;
 ROB_entry rob_entry [`ROB_LEN-1:0] (
      .clock(clock),
      .reset(reset),
+     .stall(stall),
      .wr_en(rob_entry_wr_en),
      .wr_value(rob_entry_wr_value),
      .dest_reg_cdb(cdb_packet_in.reg_value),
@@ -123,15 +126,20 @@ end
 
 // retire logic
 always_comb begin
-    retire = 0;
+    next_retire = 0;
+        if (rob_entry_packet_out[head_idx].valid) begin
+            next_retire = 1;
+    end
+end
+
+always_comb begin
     rob2reg_packet_out.dest_reg_value = 0;
     rob2reg_packet_out.dest_reg_idx = 0;
-    for (int i=0; i < `ROB_LEN; i++) begin
-        if (i == head_idx && rob_entry_packet_out[i].valid)
-            retire = 1;
-            rob2reg_packet_out.dest_reg_value = rob_entry_packet_out[i].dest_reg_value;
-            rob2reg_packet_out.dest_reg_idx   = rob_entry_packet_out[i].dest_reg_idx;
-    end
+
+    if(retire) begin
+            rob2reg_packet_out.dest_reg_value = rob_entry_packet_out[head_idx].dest_reg_value;
+            rob2reg_packet_out.dest_reg_idx = rob_entry_packet_out[head_idx].dest_reg_idx;
+        end
 end
 
 //flip flop
@@ -142,12 +150,14 @@ always_ff @(posedge clock) begin
 		head_idx <= `SD 0;
         rob_entry_mispredict <= `SD 0;
         is_init <= `SD 1;
+        retire  <= `SD 0;
 	end	 
     else begin
         tail_idx <= `SD next_tail;
 		head_idx <= `SD next_head;
         rob_entry_mispredict <= `SD next_rob_entry_mispredict;
         is_init <= `SD 0;
+        retire <= `SD next_retire;
     end
 end
 
@@ -160,22 +170,22 @@ module ROB_entry(
     input                        wr_en,
     input                        wr_value,      // high when dest_reg_value_in is ready from CDB
     input [`XLEN-1:0]            dest_reg_cdb,
-    input [$clog2(`REG_LEN)-1:0] dest_reg_idx_in,  
+    input [`REG_LEN-1:0] dest_reg_idx_in,  
 
     output ROB_entry_PACKET      rob_entry_packet_out
 );
 
 // define entry entity
 logic valid;             // dest_reg_value is valid
-logic [$clog2(`REG_LEN)-1:0] dest_reg_idx;
+logic [`REG_LEN-1:0] dest_reg_idx;
 logic [`XLEN-1:0] dest_reg_value;
 
-logic [$clog2(`REG_LEN)-1:0] next_dest_reg_idx;
+logic [`REG_LEN-1:0] next_dest_reg_idx;
 logic [`XLEN-1:0] next_dest_reg_value;
 // assignment
 assign next_dest_reg_idx   = (wr_en && !stall) ? dest_reg_idx_in : dest_reg_idx;
 assign next_dest_reg_value = (wr_en && !stall) ? 0 : (wr_value && !stall) ? dest_reg_cdb : dest_reg_value;
-assign next_valid          = (wr_en && !stall) ? 0 : (wr_en && !stall) ? 1'b1 : valid;
+assign next_valid          = (wr_en && !stall) ? 0 : (wr_value && !stall) ? 1'b1 : valid;
 
 assign rob_entry_packet_out.dest_reg_value = dest_reg_value;
 assign rob_entry_packet_out.dest_reg_idx   = dest_reg_idx;
