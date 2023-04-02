@@ -1,4 +1,4 @@
-`define DEBUG
+// `define DEBUG
 
 module ROB(
     input clock,
@@ -40,7 +40,6 @@ logic            [`ROB_LEN-1:0]         rob_entry_mispredict;
 logic            [`ROB_LEN-1:0]         next_rob_entry_mispredict;
 logic                                   squash;
 logic									retire;
-logic									next_retire;
 logic									is_init;
 
 // ROB2RS
@@ -95,8 +94,8 @@ always_comb begin
     rob_entry_wr_value = 0;
 	if (cdb_packet_in.reg_tag.valid) begin
         for (int i = 0; i < `ROB_LEN; i++) begin
-            if ((i == cdb_packet_in.reg_tag.tag) && cdb_packet_in.reg_tag.valid)
-                rob_entry_wr_value [cdb_packet_in.reg_tag.tag] = 1'b1; 
+            if (i == cdb_packet_in.reg_tag.tag)
+                rob_entry_wr_value [i] = 1'b1; 
         end
     end
 end
@@ -124,11 +123,11 @@ always_comb begin
     end
 end
 
-// retire logic
+// retire logic (or we should call it write back logic because head_idx is moving down next cycle)
 always_comb begin
-    next_retire = 0;
+    retire = 0;
         if (rob_entry_packet_out[head_idx].valid) begin
-            next_retire = 1;
+            retire = 1;
     end
 end
 
@@ -150,14 +149,12 @@ always_ff @(posedge clock) begin
 		head_idx <= `SD 0;
         rob_entry_mispredict <= `SD 0;
         is_init <= `SD 1;
-        retire  <= `SD 0;
 	end	 
     else begin
         tail_idx <= `SD next_tail;
 		head_idx <= `SD next_head;
         rob_entry_mispredict <= `SD next_rob_entry_mispredict;
         is_init <= `SD 0;
-        retire <= `SD next_retire;
     end
 end
 
@@ -181,7 +178,9 @@ logic [`REG_LEN-1:0] dest_reg_idx;
 logic [`XLEN-1:0] dest_reg_value;
 
 logic [`REG_LEN-1:0] next_dest_reg_idx;
-logic [`XLEN-1:0] next_dest_reg_value;
+logic [`XLEN-1:0]    next_dest_reg_value;
+logic                next_valid;
+
 // assignment
 assign next_dest_reg_idx   = (wr_en && !stall) ? dest_reg_idx_in : dest_reg_idx;
 assign next_dest_reg_value = (wr_en && !stall) ? 0 : (wr_value && !stall) ? dest_reg_cdb : dest_reg_value;
@@ -189,7 +188,7 @@ assign next_valid          = (wr_en && !stall) ? 0 : (wr_value && !stall) ? 1'b1
 
 assign rob_entry_packet_out.dest_reg_value = dest_reg_value;
 assign rob_entry_packet_out.dest_reg_idx   = dest_reg_idx;
-assign rob_entry_packet_out.valid 		   = next_valid;
+assign rob_entry_packet_out.valid 		   = valid;
 //sequential logic
 // synopsys sync_set_reset "reset"
 always_ff @(posedge clock) begin

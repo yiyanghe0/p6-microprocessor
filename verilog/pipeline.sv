@@ -155,7 +155,7 @@ module pipeline (
 	 assign pipeline_commit_wr_idx  = rob_retire_packet.dest_reg_idx;
 	 assign pipeline_commit_wr_data = rob_retire_packet.dest_reg_value;
 	 assign pipeline_commit_wr_en   = rob_retire_packet.valid;
-	 assign pipeline_commit_NPC     = rt_npc;
+	 assign pipeline_commit_NPC     = if_stage_0.PC_reg;
 
 //////////////////////////////////////////////////
 //                                              //
@@ -415,7 +415,7 @@ module pipeline (
 			mem_wb_result       <= `SD 0;
 		end else begin
 			if (mem_wb_enable) begin
-				// these are forwarded directly from EX/MEM latches
+				// these are should come from retire stage!!!
 				mem_wb_NPC          <= `SD ex_cp_packet.NPC;
 				mem_wb_IR           <= `SD ex_cp_IR;
 				mem_wb_halt         <= `SD ex_cp_packet.halt;
