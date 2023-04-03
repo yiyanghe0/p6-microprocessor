@@ -425,6 +425,9 @@ typedef struct packed {
 	logic [`XLEN-1:0] reg_value;
 	logic [`XLEN-1:0] NPC;         // pc + 4, forwarded
 	logic             take_branch; // is this a taken branch?, forwarded
+	logic 			  no_output;
+	logic       	  halt;          // is this a halt?
+	logic       	  illegal;       // is this instruction illegal?
 } CDB_PACKET;
 
 //////////////////////////////////////////////
@@ -464,9 +467,12 @@ typedef struct packed {
 //////////////////////////////////////////////
 
 typedef struct packed {
-	logic [`XLEN-1:0] dest_reg_value;   //data
+	logic [`XLEN-1:0] 	  dest_reg_value;   //data
 	logic [`REG_LEN-1:0]  dest_reg_idx; //address
 	logic                 valid;
+	logic       	  	  is_halt;          // is this a halt?
+	logic       	  	  is_illegal;       // is this instruction illegal? 
+	logic [`XLEN-1:0]	  NPC;
 } ROB_entry_PACKET;
 
 //////////////////////////////////////////////
@@ -504,6 +510,9 @@ typedef struct packed {
 	logic [`XLEN-1:0]    dest_reg_value;
 	logic [`REG_LEN-1:0] dest_reg_idx;
 	logic valid;
+	logic halt;
+	logic illegal;
+	logic [`XLEN-1:0] NPC;
 } ROB2REG_PACKET;
 
 `endif // __SYS_DEFS_SVH__

@@ -147,15 +147,15 @@ module pipeline (
 	// !!!Need to change
 	assign pipeline_completed_insts = {3'b0, mem_wb_valid_inst};
 	// !!!Need to change
-	assign pipeline_error_status = mem_wb_illegal            ? ILLEGAL_INST :
-	                               mem_wb_halt               ? HALTED_ON_WFI :
+	assign pipeline_error_status = rob_retire_packet.illegal            ? ILLEGAL_INST :
+	                               rob_retire_packet.halt               ? HALTED_ON_WFI :
 	                               (mem2proc_response==4'h0) ? LOAD_ACCESS_FAULT :
 	                               NO_ERROR;
 
 	 assign pipeline_commit_wr_idx  = rob_retire_packet.dest_reg_idx;
 	 assign pipeline_commit_wr_data = rob_retire_packet.dest_reg_value;
 	 assign pipeline_commit_wr_en   = rob_retire_packet.valid;
-	 assign pipeline_commit_NPC     = if_stage_0.PC_reg;
+	 assign pipeline_commit_NPC     = rob_retire_packet.NPC;
 
 //////////////////////////////////////////////////
 //                                              //

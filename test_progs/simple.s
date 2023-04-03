@@ -5,4 +5,8 @@ start: addi a1, x0, 2
 loop: add a1, a1, a1
     add a2, a2, a2
     bne a1, a4, loop
+nop
+nop
+nop 
+nop
 wfi

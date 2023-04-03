@@ -84,9 +84,9 @@ Note: packets to ROB, Map Table and selection of RS_entry, issued s_x_packet sho
     assign next_entry_packet.illegal          = wr_en ? id_packet_in.illegal        : entry_packet.illegal;
     assign next_entry_packet.csr_op           = wr_en ? id_packet_in.csr_op         : entry_packet.csr_op;
     assign next_entry_packet.valid            = wr_en ? id_packet_in.valid          : entry_packet.valid;
-    assign next_entry_packet.dest_reg_idx     = wr_en ? ((id_packet_in.dest_reg_idx == `ZERO_REG && id_packet_in.cond_branch == 1'b0 ) ? 0 : rob2rs_packet_in.rob_entry) : entry_packet.dest_reg_idx; // changed
+    assign next_entry_packet.dest_reg_idx     = wr_en ? rob2rs_packet_in.rob_entry  : entry_packet.dest_reg_idx; // changed
     assign next_entry_packet.channel          = wr_en ? id_packet_in.channel        : entry_packet.channel;
-    assign next_entry_packet.is_ZEROREG       = wr_en ? ((id_packet_in.dest_reg_idx == `ZERO_REG && id_packet_in.cond_branch == 1'b0) ? 1 : 0) : entry_packet.is_ZEROREG;
+    assign next_entry_packet.is_ZEROREG       = wr_en ? ((id_packet_in.dest_reg_idx == `ZERO_REG) ? 1 : 0) : entry_packet.is_ZEROREG;
 
     // register values for next rs1 and rs2 tags
     // assign next_entry_rs1_tag = wr_en ? (mt2rs_packet_in.rs1_ready ? 0 :
@@ -102,7 +102,7 @@ Note: packets to ROB, Map Table and selection of RS_entry, issued s_x_packet sho
                 next_entry_rs1_tag.valid = 0;
             end
             // Map table not ready until next cycle when cdb broadcasts
-            else if ((cdb_packet_in.reg_tag.tag == mt2rs_packet_in.rs1_tag.tag) && (cdb_packet_in.reg_tag.valid != 0)) begin
+            else if ((cdb_packet_in.reg_tag.tag == mt2rs_packet_in.rs1_tag.tag) && (cdb_packet_in.reg_tag.valid != 0) && (mt2rs_packet_in.rs1_tag.valid != 0)) begin
                 next_entry_rs1_tag.tag = 0;
                 next_entry_rs1_tag.valid = 0;
             end
@@ -134,7 +134,7 @@ Note: packets to ROB, Map Table and selection of RS_entry, issued s_x_packet sho
                 next_entry_rs2_tag.valid = 0;
             end
             // Map table not ready until next cycle when cdb broadcasts
-            else if ((cdb_packet_in.reg_tag.tag == mt2rs_packet_in.rs2_tag.tag) && (cdb_packet_in.reg_tag.valid != 0)) begin
+            else if ((cdb_packet_in.reg_tag.tag == mt2rs_packet_in.rs2_tag.tag) && (cdb_packet_in.reg_tag.valid != 0) && (mt2rs_packet_in.rs2_tag.valid != 0)) begin
                 next_entry_rs2_tag.tag = 0;
                 next_entry_rs2_tag.valid = 0;
             end
@@ -163,7 +163,7 @@ Note: packets to ROB, Map Table and selection of RS_entry, issued s_x_packet sho
         if (wr_en) begin
             if (mt2rs_packet_in.rs1_ready && mt2rs_packet_in.rs1_tag.valid != 0)
                 next_entry_packet.rs1_value = rob2rs_packet_in.rs1_value;
-            else if (!mt2rs_packet_in.rs1_ready && (cdb_packet_in.reg_tag.tag == mt2rs_packet_in.rs1_tag.tag) && (cdb_packet_in.reg_tag.valid != 0))
+            else if (!mt2rs_packet_in.rs1_ready && (cdb_packet_in.reg_tag.tag == mt2rs_packet_in.rs1_tag.tag) && (cdb_packet_in.reg_tag.valid != 0) && (mt2rs_packet_in.rs1_tag.valid != 0))
                 next_entry_packet.rs1_value = cdb_packet_in.reg_value;
             else
                 next_entry_packet.rs1_value = id_packet_in.rs1_value;  
@@ -185,7 +185,7 @@ Note: packets to ROB, Map Table and selection of RS_entry, issued s_x_packet sho
         if (wr_en) begin
             if (mt2rs_packet_in.rs2_ready && mt2rs_packet_in.rs2_tag.valid != 0)
                 next_entry_packet.rs2_value = rob2rs_packet_in.rs2_value;
-            else if (!mt2rs_packet_in.rs2_ready && (cdb_packet_in.reg_tag.tag == mt2rs_packet_in.rs2_tag.tag) && (cdb_packet_in.reg_tag.valid != 0))
+            else if (!mt2rs_packet_in.rs2_ready && (cdb_packet_in.reg_tag.tag == mt2rs_packet_in.rs2_tag.tag) && (cdb_packet_in.reg_tag.valid != 0) && (mt2rs_packet_in.rs2_tag.valid != 0))
                 next_entry_packet.rs2_value = cdb_packet_in.reg_value;
             else
                 next_entry_packet.rs2_value = id_packet_in.rs2_value;  

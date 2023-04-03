@@ -13,7 +13,7 @@ module ROB(
 	output logic [$clog2(`ROB_LEN)-1:0] head_idx,            // store ROB head idx
 	output logic [$clog2(`ROB_LEN)-1:0] tail_idx,            // store ROB tail idx
 	output logic [`ROB_LEN-1:0]         rob_entry_wr_en,
-	output logic [`ROB_LEN-1:0]         rob_entry_wr_value,
+	output logic [`ROB_LEN-1:0]         rob_entry_cp_sig,
 	output ROB_entry_PACKET [`ROB_LEN-1:0]         rob_entry_packet_out,
 	`endif
 
@@ -27,7 +27,7 @@ module ROB(
 logic            [$clog2(`ROB_LEN)-1:0] head_idx;            // store ROB head idx
 logic            [$clog2(`ROB_LEN)-1:0] tail_idx;            // store ROB tail idx
 logic            [`ROB_LEN-1:0]         rob_entry_wr_en;
-logic            [`ROB_LEN-1:0]         rob_entry_wr_value;
+logic            [`ROB_LEN-1:0]         rob_entry_cp_sig;
 ROB_entry_PACKET [`ROB_LEN-1:0]         rob_entry_packet_out;
 `endif
 
@@ -71,9 +71,13 @@ ROB_entry rob_entry [`ROB_LEN-1:0] (
      .reset(reset),
      .stall(stall),
      .wr_en(rob_entry_wr_en),
-     .wr_value(rob_entry_wr_value),
+     .cp_sig(rob_entry_cp_sig),
      .dest_reg_cdb(cdb_packet_in.reg_value),
+     .cdb_valid_bit(cdb_packet_in.reg_tag.valid),
      .dest_reg_idx_in(dest_reg_idx_in),
+     .halt_in(id_packet_in.halt),
+     .illegal_in(id_packet_in.illegal),
+     .NPC_in(cdb_packet_in.NPC),
      .rob_entry_packet_out(rob_entry_packet_out)
 );
 
@@ -91,11 +95,11 @@ end
 // complete logic
 // dest_reg_value value comes from CDB
 always_comb begin
-    rob_entry_wr_value = 0;
-	if (cdb_packet_in.reg_tag.valid) begin
+    rob_entry_cp_sig = 0;
+	if (!cdb_packet_in.no_output) begin
         for (int i = 0; i < `ROB_LEN; i++) begin
             if (i == cdb_packet_in.reg_tag.tag)
-                rob_entry_wr_value [i] = 1'b1; 
+                rob_entry_cp_sig [i] = 1'b1; 
         end
     end
 end
@@ -104,7 +108,7 @@ end
 always_comb begin
     next_rob_entry_mispredict = rob_entry_mispredict;
     for (int i=0; i < `ROB_LEN; i++) begin
-        if (i == cdb_packet_in.reg_tag.tag && cdb_packet_in.reg_tag.valid && cdb_packet_in.take_branch) // !!!Assume predict not taken
+        if (i == cdb_packet_in.reg_tag.tag && cdb_packet_in.take_branch) // !!!Assume predict not taken
             next_rob_entry_mispredict[i+1] = 1;
     end
     if (squash) next_rob_entry_mispredict = 0;
@@ -134,10 +138,16 @@ end
 always_comb begin
     rob2reg_packet_out.dest_reg_value = 0;
     rob2reg_packet_out.dest_reg_idx = 0;
+    rob2reg_packet_out.halt = 0;
+    rob2reg_packet_out.illegal = 0;
+    rob2reg_packet_out.NPC = 0;
 
     if(retire) begin
             rob2reg_packet_out.dest_reg_value = rob_entry_packet_out[head_idx].dest_reg_value;
             rob2reg_packet_out.dest_reg_idx = rob_entry_packet_out[head_idx].dest_reg_idx;
+            rob2reg_packet_out.halt = rob_entry_packet_out[head_idx].is_halt;
+            rob2reg_packet_out.illegal = rob_entry_packet_out[head_idx].is_illegal;
+            rob2reg_packet_out.NPC = rob_entry_packet_out[head_idx].NPC;
         end
 end
 
@@ -165,9 +175,13 @@ module ROB_entry(
     input						 stall,
     input                        reset,
     input                        wr_en,
-    input                        wr_value,      // high when dest_reg_value_in is ready from CDB
+    input                        cp_sig,      // high when dest_reg_value_in is ready from CDB
     input [`XLEN-1:0]            dest_reg_cdb,
-    input [`REG_LEN-1:0] dest_reg_idx_in,  
+    input                        cdb_valid_bit,
+    input [`REG_LEN-1:0]         dest_reg_idx_in,  
+    input                        halt_in,
+    input                        illegal_in, 
+    input [`XLEN-1:0]            NPC_in,
 
     output ROB_entry_PACKET      rob_entry_packet_out
 );
@@ -176,19 +190,36 @@ module ROB_entry(
 logic valid;             // dest_reg_value is valid
 logic [`REG_LEN-1:0] dest_reg_idx;
 logic [`XLEN-1:0] dest_reg_value;
+logic             is_halt;
+logic             is_illegal;
+logic [`XLEN-1:0] NPC;
+
 
 logic [`REG_LEN-1:0] next_dest_reg_idx;
 logic [`XLEN-1:0]    next_dest_reg_value;
 logic                next_valid;
+logic                next_is_halt;
+logic                next_is_illegal;
+logic [`XLEN-1:0]    next_NPC;
+
 
 // assignment
 assign next_dest_reg_idx   = (wr_en && !stall) ? dest_reg_idx_in : dest_reg_idx;
-assign next_dest_reg_value = (wr_en && !stall) ? 0 : (wr_value && !stall) ? dest_reg_cdb : dest_reg_value;
-assign next_valid          = (wr_en && !stall) ? 0 : (wr_value && !stall) ? 1'b1 : valid;
+assign next_dest_reg_value = (wr_en && !stall) ? 0 : (cp_sig && cdb_valid_bit && !stall) ? dest_reg_cdb : dest_reg_value;
+assign next_valid          = (wr_en && !stall) ? 0 : (cp_sig && !stall) ? 1'b1 : valid;
+assign next_is_halt        = (wr_en && !stall) ? halt_in : is_halt;
+assign next_is_illegal     = (wr_en && !stall) ? illegal_in : is_illegal;
+assign next_NPC            = (wr_en && !stall) ? NPC_in : NPC;
+
 
 assign rob_entry_packet_out.dest_reg_value = dest_reg_value;
 assign rob_entry_packet_out.dest_reg_idx   = dest_reg_idx;
 assign rob_entry_packet_out.valid 		   = valid;
+assign rob_entry_packet_out.is_halt 	   = is_halt;
+assign rob_entry_packet_out.is_illegal 	   = is_illegal;
+assign rob_entry_packet_out.NPC 	       = NPC;
+ 
+
 //sequential logic
 // synopsys sync_set_reset "reset"
 always_ff @(posedge clock) begin
@@ -196,12 +227,17 @@ always_ff @(posedge clock) begin
             valid <= `SD 1'b0;
             dest_reg_idx <= `SD 0;
             dest_reg_value <= `SD 0;
-
+            is_halt <= `SD 0;
+            is_illegal <= `SD 0;
+            NPC        <= `SD 0;
         end
         else begin
             valid <= `SD next_valid;
             dest_reg_idx <= `SD next_dest_reg_idx;
             dest_reg_value <= `SD next_dest_reg_value;
+            is_halt <= `SD next_is_halt;
+            is_illegal <= `SD next_is_illegal;
+            NPC        <= `SD next_NPC;
         end
     end
 
