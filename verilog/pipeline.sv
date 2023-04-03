@@ -145,7 +145,7 @@ module pipeline (
 //////////////////////////////////////////////////
 
 	// !!!Need to change
-	assign pipeline_completed_insts = {3'b0, mem_wb_valid_inst};
+	assign pipeline_completed_insts = {3'b0, rob_retire_packet.inst_valid};
 	// !!!Need to change
 	assign pipeline_error_status = rob_retire_packet.illegal            ? ILLEGAL_INST :
 	                               rob_retire_packet.halt               ? HALTED_ON_WFI :
@@ -222,7 +222,7 @@ module pipeline (
 	assign if_id_enable = 1'b1; // always enabled
 	// synopsys sync_set_reset "reset"
 	always_ff @(posedge clock) begin
-		if (reset) begin
+		if (reset || squash) begin
 			if_id_packet.inst  <= `SD `NOP;
 			if_id_packet.valid <= `SD `FALSE;
 			if_id_packet.NPC   <= `SD 0;
@@ -268,7 +268,7 @@ module pipeline (
 	assign is_ex_enable = 1'b1; // always enabled
 	// synopsys sync_set_reset "reset"
 	always_ff @(posedge clock) begin
-		if (reset) begin
+		if (reset || squash) begin
 			is_ex_packet <= `SD '{{`XLEN{1'b0}},
 				{`XLEN{1'b0}},
 				{`XLEN{1'b0}},
@@ -326,7 +326,7 @@ module pipeline (
 	assign ex_cp_enable = 1'b1; // always enabled
 	// synopsys sync_set_reset "reset"
 	always_ff @(posedge clock) begin
-		if (reset) begin
+		if (reset || squash) begin
 			ex_cp_IR     <= `SD `NOP;
 			ex_cp_packet <= `SD 0;
 			ex_cp_no_output <= `SD 1;

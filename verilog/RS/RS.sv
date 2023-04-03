@@ -247,7 +247,7 @@ Output the index of the RS_entry that issued instruction
         rs_entry_enable = 0; // default: all 0
         valid           = 0;
         for (int i = 0; i < `RS_LEN; i++) begin
-            if (~rs_entry_busy[i] || ((issue_inst_rs_entry == i) && rs_entry_ready[i] && !stall)) begin
+            if ((~rs_entry_busy[i] || ((issue_inst_rs_entry == i) && rs_entry_ready[i] && !stall)) && id_packet_in.valid) begin
                 rs_entry_enable[i]  = 1; // set this rs_entry to load instruction
                 valid               = 1;
                 break;

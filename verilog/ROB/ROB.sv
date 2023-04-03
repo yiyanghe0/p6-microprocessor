@@ -48,10 +48,10 @@ logic [$clog2(`ROB_LEN)-1:0] index_rs2;
 
 // ROB structural hazard
 // assign rob_struc_hazard = (head_idx == tail_idx) && (~is_init);
- assign rob_struc_hazard = 1'b0;
+assign rob_struc_hazard = 1'b0;
 
-assign next_tail = squash ? 0 : ((id_packet_in.valid && (!rob_struc_hazard) && (!stall)) ? tail_idx + 1'b1 : tail_idx);
-assign next_head = squash ? 0 : (retire && (!stall)) ? head_idx +1'b1 : head_idx;
+assign next_tail = squash ? head_idx : ((id_packet_in.valid && (!rob_struc_hazard) && (!stall)) ? tail_idx + 1'b1 : tail_idx);
+assign next_head = (retire && (!stall) && (!squash)) ? head_idx +1'b1 : head_idx;
 
 assign dest_reg_idx_in = id_packet_in.dest_reg_idx;
 assign rob2reg_packet_out.valid = (retire && (rob_entry_packet_out[head_idx].dest_reg_idx != `ZERO_REG)) ? 1 : 0;
@@ -70,6 +70,7 @@ ROB_entry rob_entry [`ROB_LEN-1:0] (
      .clock(clock),
      .reset(reset),
      .stall(stall),
+     .squash(squash),
      .wr_en(rob_entry_wr_en),
      .cp_sig(rob_entry_cp_sig),
      .dest_reg_cdb(cdb_packet_in.reg_value),
@@ -77,7 +78,9 @@ ROB_entry rob_entry [`ROB_LEN-1:0] (
      .dest_reg_idx_in(dest_reg_idx_in),
      .halt_in(id_packet_in.halt),
      .illegal_in(id_packet_in.illegal),
-     .NPC_in(cdb_packet_in.NPC),
+     .NPC_in(id_packet_in.NPC),
+     .id_inst_valid(id_packet_in.valid),
+
      .rob_entry_packet_out(rob_entry_packet_out)
 );
 
@@ -141,13 +144,16 @@ always_comb begin
     rob2reg_packet_out.halt = 0;
     rob2reg_packet_out.illegal = 0;
     rob2reg_packet_out.NPC = 0;
+    rob2reg_packet_out.inst_valid = 0;
 
     if(retire) begin
             rob2reg_packet_out.dest_reg_value = rob_entry_packet_out[head_idx].dest_reg_value;
             rob2reg_packet_out.dest_reg_idx = rob_entry_packet_out[head_idx].dest_reg_idx;
-            rob2reg_packet_out.halt = rob_entry_packet_out[head_idx].is_halt;
+            rob2reg_packet_out.halt = squash ? 1'b0 : rob_entry_packet_out[head_idx].is_halt;
             rob2reg_packet_out.illegal = rob_entry_packet_out[head_idx].is_illegal;
             rob2reg_packet_out.NPC = rob_entry_packet_out[head_idx].NPC;
+            rob2reg_packet_out.inst_valid = rob_entry_packet_out[head_idx].inst_valid;
+
         end
 end
 
@@ -173,6 +179,7 @@ endmodule
 module ROB_entry(
     input                        clock,
     input						 stall,
+    input                        squash,
     input                        reset,
     input                        wr_en,
     input                        cp_sig,      // high when dest_reg_value_in is ready from CDB
@@ -182,6 +189,7 @@ module ROB_entry(
     input                        halt_in,
     input                        illegal_in, 
     input [`XLEN-1:0]            NPC_in,
+    input                        id_inst_valid,
 
     output ROB_entry_PACKET      rob_entry_packet_out
 );
@@ -193,6 +201,7 @@ logic [`XLEN-1:0] dest_reg_value;
 logic             is_halt;
 logic             is_illegal;
 logic [`XLEN-1:0] NPC;
+logic             inst_valid;
 
 
 logic [`REG_LEN-1:0] next_dest_reg_idx;
@@ -201,6 +210,7 @@ logic                next_valid;
 logic                next_is_halt;
 logic                next_is_illegal;
 logic [`XLEN-1:0]    next_NPC;
+logic                next_inst_valid;
 
 
 // assignment
@@ -210,6 +220,7 @@ assign next_valid          = (wr_en && !stall) ? 0 : (cp_sig && !stall) ? 1'b1 :
 assign next_is_halt        = (wr_en && !stall) ? halt_in : is_halt;
 assign next_is_illegal     = (wr_en && !stall) ? illegal_in : is_illegal;
 assign next_NPC            = (wr_en && !stall) ? NPC_in : NPC;
+assign next_inst_valid     = (wr_en && !halt_in && !stall) ? id_inst_valid : inst_valid;
 
 
 assign rob_entry_packet_out.dest_reg_value = dest_reg_value;
@@ -218,18 +229,20 @@ assign rob_entry_packet_out.valid 		   = valid;
 assign rob_entry_packet_out.is_halt 	   = is_halt;
 assign rob_entry_packet_out.is_illegal 	   = is_illegal;
 assign rob_entry_packet_out.NPC 	       = NPC;
+assign rob_entry_packet_out.inst_valid 	   = inst_valid;
  
 
 //sequential logic
 // synopsys sync_set_reset "reset"
 always_ff @(posedge clock) begin
-        if (reset) begin
+        if (reset || squash) begin
             valid <= `SD 1'b0;
             dest_reg_idx <= `SD 0;
             dest_reg_value <= `SD 0;
             is_halt <= `SD 0;
             is_illegal <= `SD 0;
             NPC        <= `SD 0;
+            inst_valid <= `SD 0;
         end
         else begin
             valid <= `SD next_valid;
@@ -238,6 +251,7 @@ always_ff @(posedge clock) begin
             is_halt <= `SD next_is_halt;
             is_illegal <= `SD next_is_illegal;
             NPC        <= `SD next_NPC;
+            inst_valid <= `SD next_inst_valid;
         end
     end
 

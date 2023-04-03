@@ -473,6 +473,7 @@ typedef struct packed {
 	logic       	  	  is_halt;          // is this a halt?
 	logic       	  	  is_illegal;       // is this instruction illegal? 
 	logic [`XLEN-1:0]	  NPC;
+	logic			      inst_valid;
 } ROB_entry_PACKET;
 
 //////////////////////////////////////////////
@@ -513,6 +514,7 @@ typedef struct packed {
 	logic halt;
 	logic illegal;
 	logic [`XLEN-1:0] NPC;
+	logic inst_valid;
 } ROB2REG_PACKET;
 
 `endif // __SYS_DEFS_SVH__
