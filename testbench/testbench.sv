@@ -142,9 +142,13 @@ module testbench;
 
 	function pipeline_output;
 
+		$fdisplay(pipe_output, "\n ---------------------------Cycle %d---------------------------", clock_count);
+		$fdisplay(pipe_output, "\n System Halt is: %b", core.rob_retire_packet.halt);
+		$fdisplay(pipe_output, "\n squash is: %b", core.squash);
+
 		$fdisplay(pipe_output, "\n ----------------------PC----------------------");
-		$fdisplay(pipe_output, "IF_PC: %h, DP_PC: %h, IS_PC: %h, EX_PC: %h, CP_PC: %h, RT_PC: %h",
-				  core.if_packet.PC, core.DP_IS_0.id_packet.PC, core.is_packet.NPC-4, core.ex_packet.NPC-4, core.cp_packet.NPC-4, core.rt_npc-4);
+		$fdisplay(pipe_output, "IF_PC: %h, IF/ID PC: %h, DP_PC: %h, IS_PC: %h, EX_PC: %h, CP_PC: %h, RT_PC: %h",
+				  core.if_packet.PC, core.if_id_packet.PC, core.DP_IS_0.id_packet.PC, core.is_packet.NPC-4, core.ex_packet.NPC-4, core.cp_packet.NPC-4, core.rt_npc-4);
 
 
 		$fdisplay(pipe_output, "\n ----------------------Memory----------------------");
@@ -152,8 +156,8 @@ module testbench;
 		$fdisplay(pipe_output, "mem2proc => response: %d, tag: %d, data: %h", mem2proc_response, mem2proc_tag, mem2proc_data);
 
 		$fdisplay(pipe_output, "\n ----------------------ROB-----------------------");
-		$fdisplay(pipe_output, "ROB_head: %d, ROB_tail: %d Structural Hazard: %b", core.DP_IS_0.ROB_0.head_idx, core.DP_IS_0.ROB_0.tail_idx, core.DP_IS_0.ROB_0.rob_struc_hazard);  
-		$fdisplay(pipe_output, "ROB Index | Tag | Value |  PC   |  Complete | Halt | Illegal");
+		$fdisplay(pipe_output, "ROB_head: %d, ROB_tail: %d ROB Structural Hazard: %b", core.DP_IS_0.ROB_0.head_idx, core.DP_IS_0.ROB_0.tail_idx, core.DP_IS_0.rob_struc_hazard);  
+		$fdisplay(pipe_output, "ROB Index | REG ID | Value |  PC   |  Complete | Halt | Illegal");
 		for(int i=0; i<`ROB_LEN; i=i+1) begin
 			$fdisplay(pipe_output, "%d | %d | %h |   %h   |  %b   |   %b   |   %b | ",
 				i,
@@ -165,7 +169,9 @@ module testbench;
 				core.DP_IS_0.ROB_0.rob_entry_packet_out[i].is_illegal);
 		end
 
+		$fdisplay(pipe_output, "DP_IS_Structural_Hazard: %b", core.dp_is_structural_hazard);
 		$fdisplay(pipe_output, "\n ----------------------RS------------------------");	
+		$fdisplay(pipe_output, "RS Structural Hazard: %b", core.DP_IS_0.RS_struc_hazard_inv);
 		$fdisplay(pipe_output, "RS Index | ROB Index | Wr_en | Busy |    Inst    |    PC     | Ready   |   Clear   |   Tag1   |   T1_v    |   Tag2   |   T2_v   |");
 
 		for (int i = 0; i < `RS_LEN; i++) begin
@@ -377,7 +383,7 @@ module testbench;
 			end
 
 			// deal with any halting conditions
-			if(pipeline_error_status != NO_ERROR || debug_counter > 500000) begin
+			if(pipeline_error_status != NO_ERROR || debug_counter > 50000) begin
 				$display("@@@ Unified Memory contents hex on left, decimal on right: ");
 				show_mem_with_decimal(0,`MEM_64BIT_LINES - 1);
 				// 8Bytes per line, 16kB total

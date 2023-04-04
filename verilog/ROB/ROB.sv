@@ -17,7 +17,7 @@ module ROB(
 	output ROB_entry_PACKET [`ROB_LEN-1:0]         rob_entry_packet_out,
 	`endif
 
-	output logic           rob_struc_hazard,    // structural hazard in ROB
+	output logic          rob_struc_hazard_out, // structural hazard in ROB, output into DP_IS, same as next_hazard
     output ROB2RS_PACKET  rob2rs_packet_out,    // transfer rs1 & rs2 & Tag 
     output ROB2MT_PACKET  rob2mt_packet_out,    // update tag in MT 
     output ROB2REG_PACKET rob2reg_packet_out   // retire 
@@ -33,6 +33,7 @@ ROB_entry_PACKET [`ROB_LEN-1:0]         rob_entry_packet_out;
 
 logic            [$clog2(`ROB_LEN)-1:0] next_head;
 logic            [$clog2(`ROB_LEN)-1:0] next_tail;
+logic                                   rob_struc_hazard;
 logic            [`REG_LEN-1:0] dest_reg_idx_in;
 
 // Mispredict
@@ -40,15 +41,22 @@ logic            [`ROB_LEN-1:0]         rob_entry_mispredict;
 logic            [`ROB_LEN-1:0]         next_rob_entry_mispredict;
 logic                                   squash;
 logic									retire;
-logic									is_init;
+logic			 [1:0]					is_init;
+logic			 [1:0]					next_is_init;
+
+
 
 // ROB2RS
 logic [$clog2(`ROB_LEN)-1:0] index_rs1;
 logic [$clog2(`ROB_LEN)-1:0] index_rs2;
 
+
+
 // ROB structural hazard
-// assign rob_struc_hazard = (head_idx == tail_idx) && (~is_init);
-assign rob_struc_hazard = 1'b0;
+assign next_is_init = squash ? 1 : (is_init < 3) ? is_init + 1 : is_init;
+assign rob_struc_hazard = (head_idx == tail_idx) && (is_init == 2'b11);
+assign rob_struc_hazard_out = rob_struc_hazard;
+// assign rob_struc_hazard = 1'b0;
 
 assign next_tail = squash ? head_idx : ((id_packet_in.valid && (!rob_struc_hazard) && (!stall)) ? tail_idx + 1'b1 : tail_idx);
 assign next_head = (retire && (!stall) && (!squash)) ? head_idx +1'b1 : head_idx;
@@ -170,7 +178,7 @@ always_ff @(posedge clock) begin
         tail_idx <= `SD next_tail;
 		head_idx <= `SD next_head;
         rob_entry_mispredict <= `SD next_rob_entry_mispredict;
-        is_init <= `SD 0;
+        is_init <= `SD next_is_init;
     end
 end
 

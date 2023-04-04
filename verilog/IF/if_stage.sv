@@ -51,7 +51,10 @@ module if_stage (
 			PC_reg <= `SD rt_npc; // update to a taken branch
 		end else if (if_packet_out.valid) begin
 			PC_reg <= `SD PC_plus_4;        // or transition to next PC if valid
+		end else begin
+			PC_reg <= `SD PC_reg;
 		end
+			
 	end
 
 	// This state controls the stall signal that artificially forces fetch

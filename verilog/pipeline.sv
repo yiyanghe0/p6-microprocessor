@@ -192,7 +192,9 @@ module pipeline (
 	assign if_IR_out         = if_packet.inst;
 	assign if_valid_inst_out = if_packet.valid;
 
-	assign if_stall = 0; // Temp value
+	// assign if_stall = 0; // Temp value
+	assign if_stall = dp_is_structural_hazard; // Temp value
+
 
 	if_stage if_stage_0 (
 		// Inputs
@@ -211,7 +213,7 @@ module pipeline (
 
 //////////////////////////////////////////////////
 //                                              //
-//            IF/ID Pipeline Register           //
+//            IF/DP Pipeline Register           //
 //                                              //
 //////////////////////////////////////////////////
 
@@ -219,7 +221,8 @@ module pipeline (
 	assign if_id_IR         = if_id_packet.inst;
 	assign if_id_valid_inst = if_id_packet.valid;
 
-	assign if_id_enable = 1'b1; // always enabled
+	assign if_id_enable = !dp_is_structural_hazard; // always enabled
+
 	// synopsys sync_set_reset "reset"
 	always_ff @(posedge clock) begin
 		if (reset || squash) begin
@@ -227,11 +230,11 @@ module pipeline (
 			if_id_packet.valid <= `SD `FALSE;
 			if_id_packet.NPC   <= `SD 0;
 			if_id_packet.PC    <= `SD 0;
-		end else begin // if (reset)
-			if (if_id_enable) begin
+		end else if (if_id_enable) begin
 				if_id_packet <= `SD if_packet;
-			end // if (if_id_enable)
-		end
+		end else begin
+				if_id_packet <= `SD if_id_packet;
+			end
 	end // always
 
 //////////////////////////////////////////////////

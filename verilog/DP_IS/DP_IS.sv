@@ -50,7 +50,8 @@ RS RS_0 (
     .clock(clock),
     .reset(reset),
     .squash(rob2rs_packet.squash),
-    .stall(stall),
+    // .stall(stall),
+    .stall(stall || rob_struc_hazard),
     .id_packet_in(id_packet),
     .rob2rs_packet_in(rob2rs_packet),
     .mt2rs_packet_in(mt2rs_packet),
@@ -65,6 +66,7 @@ RS RS_0 (
 ROB ROB_0 (
     .clock(clock),
     .reset(reset),
+    // .stall(stall),
     .stall(stall),
     .rs2rob_packet_in(rs2rob_packet),
     .cdb_packet_in(cdb_packet_in),
@@ -73,13 +75,14 @@ ROB ROB_0 (
     .rob2rs_packet_out(rob2rs_packet),
     .rob2mt_packet_out(rob2mt_packet),
     .rob2reg_packet_out(rob_retire_packet),
-    .rob_struc_hazard (rob_struc_hazard)
+    .rob_struc_hazard_out (rob_struc_hazard)
 );
 
 MAP_TABLE MT_0 (
     .clock(clock),
     .reset(reset),
-    .stall(stall),
+    // .stall(stall),
+    .stall(stall || struc_hazard),
     .rs2mt_packet_in(rs2mt_packet),
     .cdb_packet_in(cdb_packet_in),
     .rob2mt_packet_in(rob2mt_packet),
@@ -88,7 +91,7 @@ MAP_TABLE MT_0 (
 );
 
 // structural hazard signal to IF/ID pipeline register
-assign struc_hazard = ~RS_struc_hazard_inv | rob_struc_hazard; 
+assign struc_hazard = rob_struc_hazard; 
 
 endmodule
 `endif  // DP_IS__SV
