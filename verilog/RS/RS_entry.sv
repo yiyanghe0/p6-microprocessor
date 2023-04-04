@@ -169,7 +169,7 @@ Note: packets to ROB, Map Table and selection of RS_entry, issued s_x_packet sho
                 next_entry_packet.rs1_value = id_packet_in.rs1_value;  
         end
         else begin
-            if (busy && (cdb_packet_in.reg_tag.tag == entry_rs1_tag.tag) && (cdb_packet_in.reg_tag.valid != 0))
+            if (busy && (cdb_packet_in.reg_tag.tag == entry_rs1_tag.tag) && entry_rs1_tag.valid && cdb_packet_in.reg_tag.valid )
                 next_entry_packet.rs1_value = cdb_packet_in.reg_value;
             else
                 next_entry_packet.rs1_value = entry_packet.rs1_value;
@@ -191,7 +191,7 @@ Note: packets to ROB, Map Table and selection of RS_entry, issued s_x_packet sho
                 next_entry_packet.rs2_value = id_packet_in.rs2_value;  
         end
         else begin
-            if (busy && (cdb_packet_in.reg_tag.tag == entry_rs2_tag.tag) && (cdb_packet_in.reg_tag.valid != 0))
+            if (busy && (cdb_packet_in.reg_tag.tag == entry_rs2_tag.tag) && entry_rs2_tag.valid && cdb_packet_in.reg_tag.valid)
                 next_entry_packet.rs2_value = cdb_packet_in.reg_value;
             else
                 next_entry_packet.rs2_value = entry_packet.rs2_value;

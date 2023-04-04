@@ -32,6 +32,7 @@ module testbench;
 	// use +WRITEBACK=<my_program>.wb and +PIPELINE=<my_program>.ppln for those outputs as well
 	string program_memory_file;
 	string writeback_output_file;
+	string pipeline_output_file;
 	/* PIPEPRINT_UNUSED
 	string pipeline_output_file;
 	*/
@@ -42,6 +43,7 @@ module testbench;
 	logic [31:0] clock_count;
 	logic [31:0] instr_count;
 	int          wb_fileno;
+	int          pipe_output;   // used for function pipeline_output
 	logic [63:0] debug_counter; // counter used for when pipeline infinite loops, forces termination
 
 	logic [1:0]       proc2mem_command;
@@ -138,6 +140,88 @@ module testbench;
 		.mem2proc_tag      (mem2proc_tag)
 	);
 
+	function pipeline_output;
+
+		$fdisplay(pipe_output, "\n ----------------------PC----------------------");
+		$fdisplay(pipe_output, "IF_PC: %h, DP_PC: %h, IS_PC: %h, EX_PC: %h, CP_PC: %h, RT_PC: %h",
+				  core.if_packet.PC, core.DP_IS_0.id_packet.PC, core.is_packet.NPC-4, core.ex_packet.NPC-4, core.cp_packet.NPC-4, core.rt_npc-4);
+
+
+		$fdisplay(pipe_output, "\n ----------------------Memory----------------------");
+		$fdisplay(pipe_output, "proc2mem => command: %b, addr: %5d, data: %h", proc2mem_command, proc2mem_addr, proc2mem_data);
+		$fdisplay(pipe_output, "mem2proc => response: %d, tag: %d, data: %h", mem2proc_response, mem2proc_tag, mem2proc_data);
+
+		$fdisplay(pipe_output, "\n ----------------------ROB-----------------------");
+		$fdisplay(pipe_output, "ROB_head: %d, ROB_tail: %d Structural Hazard: %b", core.DP_IS_0.ROB_0.head_idx, core.DP_IS_0.ROB_0.tail_idx, core.DP_IS_0.ROB_0.rob_struc_hazard);  
+		$fdisplay(pipe_output, "ROB Index | Tag | Value |  PC   |  Complete | Halt | Illegal");
+		for(int i=0; i<`ROB_LEN; i=i+1) begin
+			$fdisplay(pipe_output, "%d | %d | %h |   %h   |  %b   |   %b   |   %b | ",
+				i,
+				core.DP_IS_0.ROB_0.rob_entry_packet_out[i].dest_reg_idx,
+				core.DP_IS_0.ROB_0.rob_entry_packet_out[i].dest_reg_value,
+				core.DP_IS_0.ROB_0.rob_entry_packet_out[i].NPC-4,
+				core.DP_IS_0.ROB_0.rob_entry_packet_out[i].valid,
+				core.DP_IS_0.ROB_0.rob_entry_packet_out[i].is_halt,
+				core.DP_IS_0.ROB_0.rob_entry_packet_out[i].is_illegal);
+		end
+
+		$fdisplay(pipe_output, "\n ----------------------RS------------------------");	
+		$fdisplay(pipe_output, "RS Index | ROB Index | Wr_en | Busy |    Inst    |    PC     | Ready   |   Clear   |   Tag1   |   T1_v    |   Tag2   |   T2_v   |");
+
+		for (int i = 0; i < `RS_LEN; i++) begin
+                $fdisplay(pipe_output, "|   [%1d]     |   %d   |   %d   |  %d   |   %h    |   %h    |   %d   |   %d   |    %d    |    %d    |     %d     |     %d     |",
+                         i, 
+						 core.DP_IS_0.RS_0.rs_entry_packet_out[i].dest_reg_idx,
+						 core.DP_IS_0.RS_0.rs_entry_enable[i], 
+						 core.DP_IS_0.RS_0.rs_entry_busy[i], 
+						 core.DP_IS_0.RS_0.rs_entry_packet_out[i].inst.inst, 
+						 core.DP_IS_0.RS_0.rs_entry_packet_out[i].NPC-4,
+						 core.DP_IS_0.RS_0.rs_entry_ready[i], 
+						 core.DP_IS_0.RS_0.rs_entry_clear[i], 
+						 core.DP_IS_0.RS_0.entry_rs1_tags[i].tag, 
+						 core.DP_IS_0.RS_0.entry_rs1_tags[i].valid, 
+						 core.DP_IS_0.RS_0.entry_rs2_tags[i].tag,
+						 core.DP_IS_0.RS_0.entry_rs2_tags[i].valid);
+        end
+
+		$fdisplay(pipe_output, "\n ----------------------IS_PACKET------------------------");	
+		$fdisplay(pipe_output, "| rs1_value  |  rs2_value  |  OPA  |  OPB  | alu_func  |  channel |");
+		$fdisplay(pipe_output, " %d  | %d  | %d  |   %d   |   %d  |  %d   |",
+						core.is_packet.rs1_value,
+						core.is_packet.rs2_value,
+						core.is_packet.opa_select,
+						core.is_packet.opb_select,
+						core.is_packet.alu_func,
+						core.is_packet.channel);
+
+
+		$fdisplay(pipe_output, "\n ----------------------EX_PACKET------------------------");	
+		$fdisplay(pipe_output, "| alu_result  |  take_branch  | ROB Index  |  rd_mem  | wr_mem  |");
+		$fdisplay(pipe_output, " %d  |    %d    |    %d    |    %d    |    %d   |",
+						core.ex_packet.alu_result,
+						core.ex_packet.take_branch,
+						core.ex_packet.dest_reg_idx,
+						core.ex_packet.rd_mem,
+						core.ex_packet.wr_mem);
+
+		$fdisplay(pipe_output, "\n ----------------------CDB------------------------");	
+		$fdisplay(pipe_output, "| ROB Index  |  Value  | take_branch  |  halt  | illegal  |");
+		$fdisplay(pipe_output, " %d   |   %d   |   %d   |    %d   |   %d  |",
+						core.cp_packet.reg_tag.tag,
+						core.cp_packet.reg_value,
+						core.cp_packet.take_branch,
+						core.cp_packet.halt,
+						core.cp_packet.illegal);
+
+
+		$fdisplay(pipe_output, "\n -------------------REG------------------------");	
+		$fdisplay(pipe_output, "        Index | Data |");
+		for(int i=0; i<32; i=i+1) begin
+			$fdisplay(pipe_output, " %d |  %h |", i,  core.DP_IS_0.id_stage_0.regf_0.registers[i]);
+		end
+	endfunction
+
+
 
 	// Generate System Clock
 	always begin
@@ -198,14 +282,14 @@ module testbench;
 			writeback_output_file = "writeback.out";
 		end
 		
-		/* PIPEPRINT_UNUSED
+		// PIPEPRINT_UNUSED
 		if ($value$plusargs("PIPELINE=%s", pipeline_output_file)) begin
 			$display("Using pipeline output file: %s", pipeline_output_file);
 		end else begin
 			$display("Using default pipeline output file: pipeline.out");
 			pipeline_output_file = "pipeline.out";
 		end
-		*/
+		
 
 		clock = 1'b0;
 		reset = 1'b0;
@@ -228,6 +312,7 @@ module testbench;
 		$display("@@  %t  Deasserting System reset......\n@@\n@@", $realtime);
 
 		wb_fileno = $fopen(writeback_output_file);
+		pipe_output = $fopen(pipeline_output_file);		
 
 		/* PIPEPRINT_UNUSED
 		// Open pipeline output file AFTER throwing the reset otherwise the reset state is displayed
@@ -249,6 +334,11 @@ module testbench;
 			instr_count <= `SD (instr_count + pipeline_completed_insts);
 		end
 	end
+
+	always @(negedge clock) begin
+		#1;
+		pipeline_output();
+	end	
 
 
 	always @(negedge clock) begin
@@ -287,7 +377,7 @@ module testbench;
 			end
 
 			// deal with any halting conditions
-			if(pipeline_error_status != NO_ERROR || debug_counter > 5000000) begin
+			if(pipeline_error_status != NO_ERROR || debug_counter > 500000) begin
 				$display("@@@ Unified Memory contents hex on left, decimal on right: ");
 				show_mem_with_decimal(0,`MEM_64BIT_LINES - 1);
 				// 8Bytes per line, 16kB total
@@ -311,6 +401,8 @@ module testbench;
 				print_close(); // close the pipe_print output file
 				*/
 				$fclose(wb_fileno);
+				$fclose(pipe_output);
+
 				#100 $finish;
 			end
 			debug_counter <= debug_counter + 1;
