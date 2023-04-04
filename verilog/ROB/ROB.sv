@@ -120,7 +120,7 @@ always_comb begin
     next_rob_entry_mispredict = rob_entry_mispredict;
     for (int i=0; i < `ROB_LEN; i++) begin
         if (i == cdb_packet_in.reg_tag.tag && cdb_packet_in.take_branch) // !!!Assume predict not taken
-            next_rob_entry_mispredict[i+1] = 1;
+            next_rob_entry_mispredict[i] = 1;
     end
     if (squash) next_rob_entry_mispredict = 0;
 end
