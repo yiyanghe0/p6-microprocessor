@@ -76,7 +76,7 @@
 
 # this is a built-in Make variable that lets Make search folders to find dependencies and targets
 # it can greatly simplify make rules and increase readability
-VPATH = synth:testbench:test_progs:verilog:output:verilog/RS:verilog/ROB:verilog/MAP_TABLE
+VPATH = synth:testbench:test_progs:verilog:output:verilog/RS:verilog/ROB:verilog/MAP_TABLE:verilog/BTB
 
 ###############################################
 # ---- Compilation Commands and Variables ----
@@ -222,7 +222,7 @@ all: mult_no_lsq.out
 # delete this comment area when you want to
 # TODO TODO TODO TODO
 
-TESTED_MODULES = RS RS_entry ROB MAP_TABLE
+TESTED_MODULES = RS RS_entry ROB MAP_TABLE BTB
 
 # if a module includes other modules, add the dependencies explicitly here
 # this works due to the targets using the $^ automatic variable
