@@ -343,8 +343,15 @@ typedef enum logic [2:0] {ALU, MULT, BR, LD, ST} CHANNEL;
 typedef struct packed {
 	logic [$clog2(`ROB_LEN)-1:0] tag;   //ROB entry number
 	logic 						 valid; //valid bit (e.g. tag = 0 && valid = 1 => ROB#0, tag = 0 && valid = 0 => tag is empty)
+
 } TAG_PACKET;
 
+typedef enum logic[1:0]{
+		NOTTAKE = 0,
+		WEAK_NOTTAKE = 1,
+		WEAK_TAKEN = 2,
+		TAKEN = 3
+} BTB_PREDICT;
 //////////////////////////////////////////////
 //
 // ID_packet:
@@ -593,6 +600,6 @@ typedef struct packed {
 	logic [`XLEN-1:0] target_pc;
 } BTB_ENTRY;
 
-typedef enum {TAKEN, WEAK_TAKEN, WEAK_NOTTAKE, NOTTAKE} BTB_PREDICT;
+//typedef enum {TAKEN, WEAK_TAKEN, WEAK_NOTTAKE, NOTTAKE} BTB_PREDICT;
 
 `endif // __SYS_DEFS_SVH__

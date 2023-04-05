@@ -5,21 +5,23 @@ module BTB(
     input reset,
     input IFID2BTB_PACKET if_packet_in, // valid indicates instruction is valid
     input IFID2BTB_PACKET id_packet_in, // valid indicates currently on branch instruction
-    input FU2BTB_PACKET fu_packet_in; // valid indicates branch complete
+    input FU2BTB_PACKET fu_packet_in, // valid indicates branch complete
 
 	`ifdef DEBUG
-
+    output BTB_ENTRY [`BTB_LEN-1:0] bp_entries_display,
 	`endif
 
-    output BTB_PACKET btb_packet_out;
+    output BTB_PACKET btb_packet_out
 );
 
-// `ifndef DEBUG
-
-// `endif
+   
 
     BTB_ENTRY [`BTB_LEN-1:0] btb_entrys;
     BTB_ENTRY [`BTB_LEN-1:0] next_btb_entrys;
+
+    `ifndef DEBUG
+        assign bp_entries_display = btb_entrys;
+   `endif
 
 // prediction
 always_comb begin
@@ -38,9 +40,9 @@ always_comb begin
     next_btb_entrys = btb_entrys;
     // initialization
     if (id_packet_in.valid) begin
-        if ((btb_entrys[id_packet_in.inst[$clog2(`BTB_LEN)-1:0]].tag != id_packet_in.inst[`XLEN-1:$clog2(`BTB_LEN)] && btb_entrys[id_packet_in.inst[$clog2(`BTB_LEN)-1:0]]).busy || 
+        if ((btb_entrys[id_packet_in.inst[$clog2(`BTB_LEN)-1:0]].tag != id_packet_in.inst[`XLEN-1:$clog2(`BTB_LEN)]) && btb_entrys[id_packet_in.inst[$clog2(`BTB_LEN)-1:0]].busy || 
             btb_entrys[id_packet_in.inst[$clog2(`BTB_LEN)-1:0]].busy) begin // btb entry not hit or is not in use 
-            next_btb_entrys[id_packet_in.inst[$clog2(`BTB_LEN)-1:0]].valid = 1;
+            next_btb_entrys[id_packet_in.inst[$clog2(`BTB_LEN)-1:0]].busy = 1;
             next_btb_entrys[id_packet_in.inst[$clog2(`BTB_LEN)-1:0]].tag = id_packet_in.inst[`XLEN-1:$clog2(`BTB_LEN)];
             next_btb_entrys[id_packet_in.inst[$clog2(`BTB_LEN)-1:0]].target_pc = 0; 
             next_btb_entrys[id_packet_in.inst[$clog2(`BTB_LEN)-1:0]].state = TAKEN;
@@ -48,7 +50,7 @@ always_comb begin
     end
     // update 
     if (fu_packet_in.valid) begin
-        if (btb_entrys[fu_packet_in.inst[$clog2(`BTB_LEN)-1:0]].tag == fu_packet_in.inst[`XLEN-1:$clog2(`BTB_LEN)] && btb_entrys[fu_packet_in.inst[$clog2(`BTB_LEN)-1:0]].valid) begin
+        if (btb_entrys[fu_packet_in.inst[$clog2(`BTB_LEN)-1:0]].tag == fu_packet_in.inst[`XLEN-1:$clog2(`BTB_LEN)] && btb_entrys[fu_packet_in.inst[$clog2(`BTB_LEN)-1:0]].busy) begin
             next_btb_entrys[fu_packet_in.inst[$clog2(`BTB_LEN)-1:0]].target_pc = fu_packet_in.target_pc;
             case (btb_entrys[fu_packet_in.inst[$clog2(`BTB_LEN)-1:0]].state)
                 TAKEN:          next_btb_entrys[fu_packet_in.inst[$clog2(`BTB_LEN)-1:0]].state = fu_packet_in.taken ? TAKEN         : WEAK_TAKEN;
