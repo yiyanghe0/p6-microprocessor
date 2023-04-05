@@ -61,9 +61,16 @@ module EX (
 	logic [`MUL_NUM-1:0]				MUL_busy;
 	IS_PACKET [`MUL_NUM-1:0]			MUL_is_packet;
 
+	//store and load parameter
+	logic								STORE_start;
+	logic [`XLEN-1:0]					STORE_addr;
+	logic 								STORE_done;
+	IS_PACKET							STORE_is_packet;
+
 	//mux to determine if mutiplier or ALU
 	assign ALU_start = (is_packet_in.channel == ALU) ? 1 : 0;
 	assign BRANCH_start = (is_packet_in.channel == BR) ? 1 : 0;
+	assign STORE_start = (is_packet_in.channel == ST) ? 1 : 0;
 
 	always_comb begin
 		MUL_start = 0;
@@ -159,31 +166,56 @@ module EX (
 
 	// Pass-throughs
 	assign ex_packet1.NPC          = (ALU_done) ? ALU_is_packet.NPC :
-												  (BRANCH_done) ? BRANCH_is_packet.NPC : 0;
+												  (BRANCH_done) ? BRANCH_is_packet.NPC : 
+												  (STORE_done) ? STORE_is_packet.NPC : 0;
+
 	assign ex_packet1.rs2_value    = (ALU_done) ? ALU_is_packet.rs2_value :
-												  (BRANCH_done) ? BRANCH_is_packet.rs2_value : 0;
+												  (BRANCH_done) ? BRANCH_is_packet.rs2_value : 
+												  (STORE_done) ? STORE_is_packet.rs2_value : 0;
+
 	assign ex_packet1.rd_mem       = (ALU_done) ? ALU_is_packet.rd_mem :
-												  (BRANCH_done) ? BRANCH_is_packet.rd_mem : 0;
+												  (BRANCH_done) ? BRANCH_is_packet.rd_mem : 
+												  (STORE_done) ? STORE_is_packet.rd_mem : 0;
+
 	assign ex_packet1.wr_mem       = (ALU_done) ? ALU_is_packet.wr_mem :
-												  (BRANCH_done) ? BRANCH_is_packet.wr_mem : 0;
+												  (BRANCH_done) ? BRANCH_is_packet.wr_mem : 
+												  (STORE_done) ? STORE_is_packet.wr_mem : 0;
+
 	assign ex_packet1.dest_reg_idx = (ALU_done) ? ALU_is_packet.dest_reg_idx :
-												  (BRANCH_done) ? BRANCH_is_packet.dest_reg_idx : 0;
+												  (BRANCH_done) ? BRANCH_is_packet.dest_reg_idx : 
+												  (STORE_done) ? STORE_is_packet.dest_reg_idx : 0;
+
 	assign ex_packet1.halt         = (ALU_done) ? ALU_is_packet.halt :
-												  (BRANCH_done) ? BRANCH_is_packet.halt : 0;
+												  (BRANCH_done) ? BRANCH_is_packet.halt : 
+												  (STORE_done) ? STORE_is_packet.halt : 0;
+
 	assign ex_packet1.illegal      = (ALU_done) ? ALU_is_packet.illegal :
-												  (BRANCH_done) ? BRANCH_is_packet.illegal : 0;
+												  (BRANCH_done) ? BRANCH_is_packet.illegal : 
+												  (STORE_done) ? STORE_is_packet.illegal : 0;
+												  
 	assign ex_packet1.csr_op       = (ALU_done) ? ALU_is_packet.csr_op :
-												  (BRANCH_done) ? BRANCH_is_packet.csr_op : 0;
+												  (BRANCH_done) ? BRANCH_is_packet.csr_op : 
+												  (STORE_done) ? STORE_is_packet.csr_op : 0;
+
 	assign ex_packet1.valid        = (ALU_done) ? ALU_is_packet.valid :
-												  (BRANCH_done) ? BRANCH_is_packet.valid : 0;
+												  (BRANCH_done) ? BRANCH_is_packet.valid : 
+												  (STORE_done) ? STORE_is_packet.valid : 0;
+
 	assign ex_packet1.mem_size     = (ALU_done) ? ALU_is_packet.inst.r.funct3 :
-												  (BRANCH_done) ? BRANCH_is_packet.inst.r.funct3 : 0;
+												  (BRANCH_done) ? BRANCH_is_packet.inst.r.funct3 : 
+												  (STORE_done) ? STORE_is_packet.inst.r.funct3 : 0;
+
 	assign ex_packet1.take_branch  = (ALU_done) ? 0 :
-												  (BRANCH_done) ? (is_packet_in.uncond_branch | (is_packet_in.cond_branch & brcond_result)) : 0;
+												  (BRANCH_done) ? (is_packet_in.uncond_branch | (is_packet_in.cond_branch & brcond_result)) : 
+												  (STORE_done) ? 0 : 0;
+
 	assign ex_packet1.alu_result   = (ALU_done) ? ALU_result :
-												  (BRANCH_done) ? BRANCH_addr : 0;
+												  (BRANCH_done) ? BRANCH_addr : 
+												  (STORE_done) ? STORE_addr : 0;
+
 	assign ex_packet1.is_ZEROREG   = (ALU_done) ? ALU_is_packet.is_ZEROREG :
-												  (BRANCH_done) ? BRANCH_is_packet.is_ZEROREG : 1;
+												  (BRANCH_done) ? BRANCH_is_packet.is_ZEROREG : 
+												  (STORE_done) ? STORE_is_packet.is_ZEROREG : 1;
 
 	always_comb begin
 		ex_packet2.NPC          = 0;
@@ -230,6 +262,24 @@ module EX (
 		.ex_packet_out(ex_packet_out),
 		.no_output(no_output)
 	);
+
+
+
+	// instantiate the STORE address generator
+	STORE STORE_0 (
+		.opa(opa_mux_out),
+		.opb(opb_mux_out),
+		.is_packet_in(is_packet_in),
+		.start(STORE_start),
+
+
+		.addr_result(STORE_addr),
+		.STORE_is_packet(STORE_is_packet),
+		.done(STORE_done)
+	);
+
+
+
 
 
 endmodule // module ex_stage
