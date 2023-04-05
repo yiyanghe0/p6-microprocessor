@@ -8,6 +8,7 @@ module DP_IS (
 	input                clock,              // system clock
 	input                reset,              // system reset
     input                stall,              // 1 - stall DP_IS stage;
+    input                is_stall,
     input IF_ID_PACKET   if_id_packet_in,
     input CDB_PACKET     cdb_packet_in,
 
@@ -52,6 +53,7 @@ RS RS_0 (
     .squash(rob2rs_packet.squash),
     // .stall(stall),
     .stall(stall || rob_struc_hazard),
+    .is_stall(is_stall),
     .id_packet_in(id_packet),
     .rob2rs_packet_in(rob2rs_packet),
     .mt2rs_packet_in(mt2rs_packet),
@@ -67,7 +69,7 @@ ROB ROB_0 (
     .clock(clock),
     .reset(reset),
     // .stall(stall),
-    .stall(stall),
+    .stall(stall ||(~RS_struc_hazard_inv)),
     .rs2rob_packet_in(rs2rob_packet),
     .cdb_packet_in(cdb_packet_in),
     .id_packet_in(id_packet),
@@ -91,7 +93,7 @@ MAP_TABLE MT_0 (
 );
 
 // structural hazard signal to IF/ID pipeline register
-assign struc_hazard = rob_struc_hazard; 
+assign struc_hazard = rob_struc_hazard | (~RS_struc_hazard_inv); 
 
 endmodule
 `endif  // DP_IS__SV

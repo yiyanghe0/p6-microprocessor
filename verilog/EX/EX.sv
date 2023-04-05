@@ -35,7 +35,7 @@ module EX (
 	input IS_PACKET is_packet_in,
 
 	output EX_PACKET ex_packet_out,
-	output logic valid, // if valid = 0, rs encountered structural hazard and has to stall
+	output logic valid, // if valid = 0, mult encountered structural hazard and has to stall
 	output logic no_output  // no_output = 1 -> nothing output; no_output = 0 -> valid output
 );
 
@@ -70,9 +70,9 @@ module EX (
 		valid = 0;
 
 		for (int i = 0; i < `MUL_NUM; i++) begin
-			if (!MUL_busy[i] && (is_packet_in.channel == MULT)) begin
-				MUL_start[i] = 1;
-				valid = 1;
+			if ((MUL_busy[i] == 0)) begin
+				MUL_start[i] = (is_packet_in.channel == MULT);
+				valid = (((MUL_busy | MUL_start) & ~MUL_done) == {`MUL_NUM{1'b1}}) ? 0 : 1;
 				break;
 			end
 		end

@@ -243,12 +243,15 @@ module pipeline (
 //                                              //
 //////////////////////////////////////////////////
 
+	logic is_stall;
 	assign dp_is_stall = 0; // Temp value
+	assign is_stall = ((is_packet.channel == MULT) && (ex_valid == 0)) ? 1 : 0;
 
 	DP_IS DP_IS_0 (
 		.clock (clock),
 		.reset (reset),
 		.stall (dp_is_stall),
+		.is_stall(is_stall),
 		.if_id_packet_in(if_id_packet),
 		.cdb_packet_in(cp_packet),
 
@@ -293,7 +296,7 @@ module pipeline (
                 ALU   // channel
 			};
 		end else begin // if (reset)
-			if (is_ex_enable) begin
+			if (is_ex_enable && !is_stall) begin
 				is_ex_packet <= `SD is_packet;
 			end // if
 		end // else: !if(reset)
@@ -313,7 +316,7 @@ module pipeline (
 
 		// Outputs
 		.ex_packet_out(ex_packet),
-		.valid(ex_valid),
+		.valid(ex_valid),         // 0 - has structural hazard in mult, need to stall RS issue only, currently mult_num =4, no need
 		.no_output(ex_no_output)
 	);
 

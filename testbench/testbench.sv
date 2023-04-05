@@ -171,7 +171,7 @@ module testbench;
 
 		$fdisplay(pipe_output, "DP_IS_Structural_Hazard: %b", core.dp_is_structural_hazard);
 		$fdisplay(pipe_output, "\n ----------------------RS------------------------");	
-		$fdisplay(pipe_output, "RS Structural Hazard: %b", core.DP_IS_0.RS_struc_hazard_inv);
+		$fdisplay(pipe_output, "RS Structural Hazard: %b", ~core.DP_IS_0.RS_struc_hazard_inv);
 		$fdisplay(pipe_output, "RS Index | ROB Index | Wr_en | Busy |    Inst    |    PC     | Ready   |   Clear   |   Tag1   |   T1_v    |   Tag2   |   T2_v   |");
 
 		for (int i = 0; i < `RS_LEN; i++) begin
@@ -191,17 +191,23 @@ module testbench;
         end
 
 		$fdisplay(pipe_output, "\n ----------------------IS_PACKET------------------------");	
-		$fdisplay(pipe_output, "| rs1_value  |  rs2_value  |  OPA  |  OPB  | alu_func  |  channel |");
-		$fdisplay(pipe_output, " %d  | %d  | %d  |   %d   |   %d  |  %d   |",
+		$fdisplay(pipe_output, "| rs1_value  |  rs2_value  |  OPA  |  OPB  | alu_func  |  channel |   valid   |");
+		$fdisplay(pipe_output, " %d  | %d  | %d  |   %d   |   %d  |  %d   |   %b   |",
 						core.is_packet.rs1_value,
 						core.is_packet.rs2_value,
 						core.is_packet.opa_select,
 						core.is_packet.opb_select,
 						core.is_packet.alu_func,
-						core.is_packet.channel);
+						core.is_packet.channel,
+						core.is_packet.valid);
 
 
 		$fdisplay(pipe_output, "\n ----------------------EX_PACKET------------------------");	
+		$fdisplay(pipe_output, " issue stall due to ex stage hazard: %b", core.is_stall);
+		$fdisplay(pipe_output, " ex stage valid: %b", core.ex_valid); 
+		$fdisplay(pipe_output, " ex stage no output: %b", core.ex_no_output); 
+		$fdisplay(pipe_output, " ex stage mul busy: %b", core.ex_stage_0.MUL_busy);
+		$fdisplay(pipe_output, " ex stage mul start: %b", core.ex_stage_0.MUL_start);
 		$fdisplay(pipe_output, "| alu_result  |  take_branch  | ROB Index  |  rd_mem  | wr_mem  |");
 		$fdisplay(pipe_output, " %d  |    %d    |    %d    |    %d    |    %d   |",
 						core.ex_packet.alu_result,

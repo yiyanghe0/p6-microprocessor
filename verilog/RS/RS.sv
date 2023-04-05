@@ -45,7 +45,8 @@ module RS(
     input clock,
     input reset,
     input squash,
-    input stall,
+    input stall, // stop inputting RS entry, can keep issue
+    input is_stall, // current issued RS entry won't be cleared
     input ID_PACKET id_packet_in,
     input ROB2RS_PACKET rob2rs_packet_in,
     input MT2RS_PACKET mt2rs_packet_in,
@@ -231,9 +232,13 @@ Output the index of the RS_entry that issued instruction
                 
                 if ((rs_flags[i] == TAGCDB) || (rs_flags[i] == CDBCDB))
                     is_packet_out.rs2_value = cdb_packet_in.reg_value;
-                
-                if (!stall)
+
+                if (!is_stall)
                     rs_entry_clear_out[i] = 1;
+
+                if (is_stall)
+                    is_packet_out.valid = 0;
+
                 issue_inst_rs_entry = i;
                 break;
             end
@@ -247,8 +252,9 @@ Output the index of the RS_entry that issued instruction
         rs_entry_enable = 0; // default: all 0
         valid           = 0;
         for (int i = 0; i < `RS_LEN; i++) begin
-            if ((~rs_entry_busy[i] || ((issue_inst_rs_entry == i) && rs_entry_ready[i] && !stall)) && id_packet_in.valid) begin
-                rs_entry_enable[i]  = 1; // set this rs_entry to load instruction
+            if (~rs_entry_busy[i] || ((issue_inst_rs_entry == i) && rs_entry_ready[i] && !is_stall)) begin
+                if (id_packet_in.valid && !stall)
+                    rs_entry_enable[i]  = 1; // set this rs_entry to load instruction
                 valid               = 1;
                 break;
             end
