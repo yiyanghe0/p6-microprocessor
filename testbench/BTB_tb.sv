@@ -5,7 +5,7 @@
 //`define RS_ALLOCATE_DEBUG // test only allocating new entry in rs
 `define DEBUG
 
-
+`include "sys_defs.svh"
 module testbench;
 
     logic 				            clock;
@@ -15,11 +15,12 @@ module testbench;
     IFID2BTB_PACKET id_packet_in; // valid indicates currently on branch instruction
     FU2BTB_PACKET fu_packet_in; // valid indicates branch complete
     BTB_ENTRY [`BTB_LEN-1:0] bp_entries_display;
+    BTB_ENTRY [`BTB_LEN-1:0] next_bp_entries_display;
     logic [31:0]                    cycle_count;
     BTB_PACKET btb_packet_out;
 
 
-    BTB tbp(.clock(clock), .reset(reset), .if_packet_in(if_packet_in), .id_packet_in(id_packet_in), .id_packet_in(id_packet_in), .fu_packet_in(fu_packet_in), .bp_entries_display(bp_entries_display), .btb_packet_out(btb_packet_out));
+    BTB tbp(.clock(clock), .reset(reset), .if_packet_in(if_packet_in), .id_packet_in(id_packet_in), .id_packet_in(id_packet_in), .fu_packet_in(fu_packet_in), .bp_entries_display(bp_entries_display), .next_bp_entries_display(next_bp_entries_display), .btb_packet_out(btb_packet_out));
 
     always begin
 		#5;
@@ -29,8 +30,15 @@ module testbench;
 
     task show_branch_predictor;
         $display("####### Cycle %d ##########", cycle_count);
+        $display("Current BP");
         for(int i=`BTB_LEN - 1; i>=0; i--) begin
+            if (~bp_entries_display[i].busy) continue;
             $display("Index: %2d  Busy: %2d  Tag: %5d  State: %1d  Target_pc: %5d", i, bp_entries_display[i].busy, bp_entries_display[i].tag, bp_entries_display[i].state, bp_entries_display[i].target_pc);
+        end
+        $display("Next BP");
+        for(int i=`BTB_LEN - 1; i>=0; i--) begin
+            if (~next_bp_entries_display[i].busy) continue;
+            $display("Index: %2d  Busy: %2d  Tag: %5d  State: %1d  Target_pc: %5d", i, next_bp_entries_display[i].busy, next_bp_entries_display[i].tag, next_bp_entries_display[i].state, next_bp_entries_display[i].target_pc);
         end
     endtask; // show_rs_table
 
@@ -83,12 +91,13 @@ module testbench;
         reset = 0;
 
         @(posedge clock);
-        if_packet_in.valid = 3'b111;
+        if_packet_in.valid = 1'b1;
         if_packet_in.inst = 4;
 
         @(posedge clock);
+        
         if_packet_in.inst = 16;
-        id_packet_in.valid = 3'b111;
+        id_packet_in.valid = 1'b1;
         id_packet_in.inst = 4;
 
         @(posedge clock);
@@ -97,17 +106,19 @@ module testbench;
         fu_packet_in.inst = 4;
         fu_packet_in.taken = 1'b1;
         fu_packet_in.target_pc = 80;
+        #1
         id_packet_in.valid = 3'b101;
         id_packet_in.inst = 16;
 
         @(posedge clock);
         if_packet_in.valid = 3'b111;
         if_packet_in.inst = 4;
+        #1
         id_packet_in.valid = 0;
 
         @(posedge clock);
         if_packet_in.valid = 0;
-        id_packet_in.valid = 3'b001;
+        id_packet_in.valid = 1'b1;
         id_packet_in.inst = 4;
 
         @(posedge clock);
@@ -118,7 +129,7 @@ module testbench;
         fu_packet_in.target_pc = 80;
 
         @(posedge clock);
-        if_packet_in.valid = 3'b111;
+        if_packet_in.valid = 1'b1;
         if_packet_in.inst = 4;
         fu_packet_in.valid = 1'b0;
         
