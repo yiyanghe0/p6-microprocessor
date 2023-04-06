@@ -34,7 +34,8 @@ module dcache(
 
 	// to ex stage
 	output logic [63:0] Dcache_data_out, // value is memory[proc2Dcache_addr]
-	output logic        Dcache_valid_out // when this is high
+	output logic        Dcache_valid_out, // when this is high
+	output logic 		finished		// finished current instruction
 );
 
     DCACHE_PACKET [`DCACHE_LINES-1:0] dcache_data;
@@ -98,6 +99,7 @@ module dcache(
 			miss_outstanding <= `SD 0;
 			dcache_data      <= `SD 0; // set all cache data to 0 (including valid bits)
 			store_finished   <= `SD 0;
+			finished 		 <= `SD 0;
 		end else begin
 			last_index       <= `SD current_index;
 			last_tag         <= `SD current_tag;
@@ -111,17 +113,20 @@ module dcache(
 				dcache_data[current_index].tags   <= `SD current_tag;
 				dcache_data[current_index].valid  <= `SD 1;
 				dcache_data[current_index].dirty  <= `SD 0;
+				finished 						  <= `SD 1;
 			end
 			if (store_nwrite) begin
 				dcache_data[current_index].data   <= `SD proc2Dmem_data;
 				dcache_data[current_index].dirty  <= `SD 1;
 				store_finished					  <= `SD 1;
+				finished 						  <= `SD 1;
 			end
 			if (!hit && dcache[current_index].dirty && Dmem2proc_response != 0) begin //Finished writing back
 				dcache[current_index].dirty 	  <= `SD 0;
 				if (proc2Dcache_command == BUS_STORE)
 					dcache[current_index].tags	  <= `SD current_tag; //If it is a store command, do not request from memory
 			end
+			if (!got_mem_tag && !store_nwrite) finished <= `SD 0;
 		end
 	end
 

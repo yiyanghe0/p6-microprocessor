@@ -76,12 +76,4 @@ endmodule
 
 
 
-
-
-
-
-
-
-
-
 `endif // __CACHE_CONTROLLER_SV__
