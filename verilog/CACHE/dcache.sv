@@ -1,18 +1,6 @@
 `define TEST_MODE
+`include "sys_defs.svh"
 
-`timescale 1ns/100ps
-
-// internal macros, no other file should need these
-`define DCACHE_LINES 32
-`define DCACHE_LINE_BITS $clog2(`DCACHE_LINES)
-
-typedef struct packed {
-	logic [63:0]                  data;
-	// 12:0 (13 bits) since only 16 bits of address exist in mem - and 3 are the block offset
-	logic [12-`CACHE_LINE_BITS:0] tags;
-	logic                         valid;
-    logic                         dirty;
-} DCACHE_PACKET;
 
 module dcache(
     input clock,
@@ -32,14 +20,22 @@ module dcache(
 	output logic [`XLEN-1:0] proc2Dmem_addr,
     output logic [63:0]      proc2Dmem_data,
 
+	`ifdef TEST_MODE
+		output DCACHE_PACKET [`DCACHE_LINES-1:0] show_dcache_data;
+	`endif 
+
 	// to ex stage
 	output logic [63:0] Dcache_data_out, // value is memory[proc2Dcache_addr]
 	output logic        Dcache_valid_out, // when this is high
 	output logic 		finished		// finished current instruction
+
+
 );
 
     DCACHE_PACKET [`DCACHE_LINES-1:0] dcache_data;
-
+	`ifdef TEST_MODE
+		assign show_dcache_data = dcache_data;
+	`endif 
 
     // note: cache tags, not memory tags
 	logic [`DCACHE_LINE_BITS - 1:0] current_index, last_index;
@@ -59,12 +55,16 @@ module dcache(
 	// Including hit store, and miss store with dirty == 0 (including not valid)
 	assign store_nwrite = ((hit || !dcache_data[current_index].dirty || !dcache_data[current_index].valid) && proc2Dcache_command == BUS_STORE);
 	
+
+	assign proc2Dmem_command = (miss_outstanding && !changed_addr && !store_nwrite) ? 
+                                (((proc2Dcache_command == BUS_LOAD && dcache_data[current_index].dirty) || (proc2Dcache_command == BUS_STORE)) ? BUS_STORE : BUS_LOAD) : BUS_NONE;
+    assign proc2Dmem_addr    = (proc2Dcache_command == BUS_LOAD && dcache_data[current_index].dirty) ? {dcache_data[current_index].tags,current_index,3'b0} : {proc2Icache_addr[31:3],3'b0};
+    assign proc2Dmem_data    = (proc2Dcache_command == BUS_LOAD && dcache_data[current_index].dirty) ? dcache_data[current_index].data : proc2Dcache_data;
 	// miss
 	// keep sending memory requests until we receive a response tag or change addresses
 	// command = dealing with previous command -> keep working on it / stop sending memory request
 	//			 previous command -> response tag because dcache has priority over icache
-	assign unanswered_miss = (proc2Dcache_command == BUS_NONE) ? 0 
-									the current memory tag we might be waiting on
+	logic [3:0] current_mem_tag;
 	logic miss_outstanding; // whether a miss has received its response tag to wait on
 
 	logic got_mem_data;
