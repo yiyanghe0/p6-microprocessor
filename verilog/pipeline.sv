@@ -72,8 +72,15 @@ module pipeline (
 	// Stall logic
 	logic if_stall, dp_is_stall;
 
+	//output from icache
+	logic [1:0]       Icache2Imem_command;
+	logic [`XLEN-1:0] Icache2Imem_addr;
+
+	logic [63:0] Icache_data_out;
+	logic		 Icache_valid_out;
+
 	// Outputs from IF-Stage
-	logic [`XLEN-1:0] proc2Imem_addr;
+	logic [`XLEN-1:0] proc2Icache_addr;
 	IF_ID_PACKET if_packet;
 
 	// Outputs from IF/DP Pipeline Register
@@ -83,7 +90,7 @@ module pipeline (
 	ROB2REG_PACKET rob_retire_packet;
 	IS_PACKET is_packet;
 	logic squash;
-	logic dp_is_structural_hazard;		// 1 - structural hazard
+	logic next_dp_is_structural_hazard;		// 1 - RS/ROB will have structural hazard next cycle
 
 	// Outputs from DP_IS/EX Pipeline Register
 	IS_PACKET is_ex_packet;
@@ -119,7 +126,9 @@ module pipeline (
 	assign proc2Dmem_command = BUS_NONE;
 
 	// only the 2 LSB to determine the size;
+`ifndef CACHE_MODE
 	assign proc2Dmem_size = MEM_SIZE'(ex_cp_packet.mem_size[1:0]);
+`endif
 
 	// The memory address is calculated by the ALU
 	assign proc2Dmem_data = 0;
@@ -149,7 +158,7 @@ module pipeline (
 	// !!!Need to change
 	assign pipeline_error_status = rob_retire_packet.illegal            ? ILLEGAL_INST :
 	                               rob_retire_packet.halt               ? HALTED_ON_WFI :
-	                               (mem2proc_response==4'h0) ? LOAD_ACCESS_FAULT :
+	                            //    (mem2proc_response==4'h0) ? LOAD_ACCESS_FAULT :
 	                               NO_ERROR;
 
 	 assign pipeline_commit_wr_idx  = rob_retire_packet.dest_reg_idx;
@@ -165,8 +174,8 @@ module pipeline (
 
 	always_comb begin
 		if (proc2Dmem_command == BUS_NONE) begin // load an instruction from memory
-			proc2mem_command = BUS_LOAD;
-			proc2mem_addr    = proc2Imem_addr;
+			proc2mem_command = Icache2Imem_command;
+			proc2mem_addr    = Icache2Imem_addr;
 `ifndef CACHE_MODE
 			proc2mem_size    = DOUBLE; // if it's an instruction, then load a double word (64 bits)
 `endif
@@ -179,6 +188,27 @@ module pipeline (
 		end
 		proc2mem_data = {32'b0, proc2Dmem_data};
 	end
+
+
+//////////////////////////////////////////////////
+//                                              //
+//                  icache                      //
+//                                              //
+//////////////////////////////////////////////////
+icache icache_0 (
+	.clock (clock),
+	.reset (reset),
+	.Imem2proc_response(mem2proc_response),
+	.Imem2proc_data(mem2proc_data),
+	.Imem2proc_tag(mem2proc_tag),     			// from memory
+	.proc2Icache_addr(proc2Icache_addr),        // from processor
+
+	.proc2Imem_command(Icache2Imem_command),
+	.proc2Imem_addr(Icache2Imem_addr),          // to memory
+	.Icache_data_out(Icache_data_out),
+	.Icache_valid_out(Icache_valid_out)         // to processor
+);
+
 
 //////////////////////////////////////////////////
 //                                              //
@@ -193,7 +223,7 @@ module pipeline (
 	assign if_valid_inst_out = if_packet.valid;
 
 	// assign if_stall = 0; // Temp value
-	assign if_stall = dp_is_structural_hazard; // Temp value
+	assign if_stall = next_dp_is_structural_hazard; // Temp value
 
 
 	if_stage if_stage_0 (
@@ -203,11 +233,12 @@ module pipeline (
 		.squash(squash),
 		.stall (if_stall),
 		.rt_npc(rt_npc),
-		.Imem2proc_data(mem2proc_data),
-		.proc2Dmem_command(BUS_NONE),		// !!!No memory operation for now
+		.Icache2proc_data(Icache_data_out),
+		.Icache2proc_valid(Icache_valid_out),  // from Icache
+		.proc2Dmem_command(BUS_NONE),		// Prioritize DCache !!!No memory operation for now
 
 		// Outputs
-		.proc2Imem_addr(proc2Imem_addr),
+		.fetch2Icache_addr(proc2Icache_addr), // to icache
 		.if_packet_out(if_packet)
 	);
 
@@ -217,24 +248,30 @@ module pipeline (
 //                                              //
 //////////////////////////////////////////////////
 
+	logic if_id_Icache_valid_out;
+
 	assign if_id_NPC        = if_id_packet.NPC;
 	assign if_id_IR         = if_id_packet.inst;
 	assign if_id_valid_inst = if_id_packet.valid;
 
-	assign if_id_enable = !dp_is_structural_hazard; // always enabled
+	assign if_id_enable = !next_dp_is_structural_hazard; // always enabled
 
 	// synopsys sync_set_reset "reset"
 	always_ff @(posedge clock) begin
-		if (reset || squash) begin
+		if (reset || squash || !Icache_valid_out) begin
 			if_id_packet.inst  <= `SD `NOP;
 			if_id_packet.valid <= `SD `FALSE;
 			if_id_packet.NPC   <= `SD 0;
 			if_id_packet.PC    <= `SD 0;
-		end else if (if_id_enable) begin
+			if_id_Icache_valid_out <= `SD 0;
+		end 
+		else if (if_id_enable) begin
 				if_id_packet <= `SD if_packet;
-		end else begin
-				if_id_packet <= `SD if_id_packet;
-			end
+				if_id_Icache_valid_out <= `SD Icache_valid_out;
+		end 
+		// else begin
+		// 		if_id_packet <= `SD if_id_packet;
+		// 	end
 	end // always
 
 //////////////////////////////////////////////////
@@ -244,7 +281,7 @@ module pipeline (
 //////////////////////////////////////////////////
 
 	logic is_stall;
-	assign dp_is_stall = 0; // Temp value
+	assign dp_is_stall = !if_id_Icache_valid_out; // Stop assigning RS/ROB when there is icache miss, but can still issue
 	assign is_stall = ((is_packet.channel == MULT) && (ex_valid == 0)) ? 1 : 0;
 
 	DP_IS DP_IS_0 (
@@ -257,7 +294,7 @@ module pipeline (
 
 		.is_packet_out(is_packet),
 		.rob_retire_packet(rob_retire_packet),
-		.struc_hazard(dp_is_structural_hazard),
+		.next_struc_hazard(next_dp_is_structural_hazard),
 		.squash(squash)
 	);
 

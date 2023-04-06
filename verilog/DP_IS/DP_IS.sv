@@ -15,9 +15,11 @@ module DP_IS (
     output ROB2REG_PACKET rob_retire_packet,
 
     output IS_PACKET is_packet_out,
-    output logic struc_hazard,
+    output logic next_struc_hazard,
     output logic squash
 );
+
+logic struc_hazard;
 
 // instantiate ID_STAGE
 ID_PACKET id_packet;
@@ -32,6 +34,8 @@ logic RS_struc_hazard_inv; // 0 - structural hazard; 1 - no structural hazard
 ROB2MT_PACKET rob2mt_packet;
 ROB2RS_PACKET rob2rs_packet;
 logic rob_struc_hazard; // 0 - no structural hazard; 1 - structural hazard
+logic next_rob_struc_hazard; // 0 - no structural hazard; 1 - structural hazard in nxt cycle
+
 
 // instantiate MT
 MT2RS_PACKET mt2rs_packet;
@@ -77,7 +81,9 @@ ROB ROB_0 (
     .rob2rs_packet_out(rob2rs_packet),
     .rob2mt_packet_out(rob2mt_packet),
     .rob2reg_packet_out(rob_retire_packet),
-    .rob_struc_hazard_out (rob_struc_hazard)
+    .rob_struc_hazard_out (rob_struc_hazard),
+    .next_rob_struc_hazard_out (next_rob_struc_hazard)
+
 );
 
 MAP_TABLE MT_0 (
@@ -94,6 +100,8 @@ MAP_TABLE MT_0 (
 
 // structural hazard signal to IF/ID pipeline register
 assign struc_hazard = rob_struc_hazard | (~RS_struc_hazard_inv); 
+assign next_struc_hazard = next_rob_struc_hazard | (~RS_struc_hazard_inv); 
+
 
 endmodule
 `endif  // DP_IS__SV

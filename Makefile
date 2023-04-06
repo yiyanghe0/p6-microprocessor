@@ -222,7 +222,7 @@ all: mult_no_lsq.out
 # delete this comment area when you want to
 # TODO TODO TODO TODO
 
-TESTED_MODULES = RS RS_entry ROB MAP_TABLE FIFO EX
+TESTED_MODULES = RS RS_entry ROB MAP_TABLE FIFO EX icache
 
 # if a module includes other modules, add the dependencies explicitly here
 # this works due to the targets using the $^ automatic variable

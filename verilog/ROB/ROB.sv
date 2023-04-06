@@ -13,11 +13,13 @@ module ROB(
 	output logic [$clog2(`ROB_LEN)-1:0] head_idx,            // store ROB head idx
 	output logic [$clog2(`ROB_LEN)-1:0] tail_idx,            // store ROB tail idx
 	output logic [`ROB_LEN-1:0]         rob_entry_wr_en,
+    output logic [`ROB_LEN-1:0]         rob_entry_retire_sig,
 	output logic [`ROB_LEN-1:0]         rob_entry_cp_sig,
 	output ROB_entry_PACKET [`ROB_LEN-1:0]         rob_entry_packet_out,
 	`endif
 
 	output logic          rob_struc_hazard_out, // structural hazard in ROB, output into DP_IS, same as next_hazard
+    output logic          next_rob_struc_hazard_out,
     output ROB2RS_PACKET  rob2rs_packet_out,    // transfer rs1 & rs2 & Tag 
     output ROB2MT_PACKET  rob2mt_packet_out,    // update tag in MT 
     output ROB2REG_PACKET rob2reg_packet_out   // retire 
@@ -27,6 +29,7 @@ module ROB(
 logic            [$clog2(`ROB_LEN)-1:0] head_idx;            // store ROB head idx
 logic            [$clog2(`ROB_LEN)-1:0] tail_idx;            // store ROB tail idx
 logic            [`ROB_LEN-1:0]         rob_entry_wr_en;
+logic            [`ROB_LEN-1:0]         rob_entry_retire_sig;
 logic            [`ROB_LEN-1:0]         rob_entry_cp_sig;
 ROB_entry_PACKET [`ROB_LEN-1:0]         rob_entry_packet_out;
 `endif
@@ -34,6 +37,7 @@ ROB_entry_PACKET [`ROB_LEN-1:0]         rob_entry_packet_out;
 logic            [$clog2(`ROB_LEN)-1:0] next_head;
 logic            [$clog2(`ROB_LEN)-1:0] next_tail;
 logic                                   rob_struc_hazard;
+logic                                   next_rob_struc_hazard;
 logic            [`REG_LEN-1:0] dest_reg_idx_in;
 
 // Mispredict
@@ -41,8 +45,8 @@ logic            [`ROB_LEN-1:0]         rob_entry_mispredict;
 logic            [`ROB_LEN-1:0]         next_rob_entry_mispredict;
 logic                                   squash;
 logic									retire;
-logic			 [1:0]					is_init;
-logic			 [1:0]					next_is_init;
+logic			 [3:0]					is_init;
+logic			 [3:0]					next_is_init;
 
 
 
@@ -53,13 +57,14 @@ logic [$clog2(`ROB_LEN)-1:0] index_rs2;
 
 
 // ROB structural hazard
-assign next_is_init = squash ? 1 : (is_init < 3) ? is_init + 1 : is_init;
-assign rob_struc_hazard = (head_idx == tail_idx) && (is_init == 2'b11);
+assign next_is_init = squash ? 1 : (is_init < 14) ? is_init + 1 : is_init;
+assign next_rob_struc_hazard = (next_head == next_tail) && (next_tail == tail_idx + 1 || id_packet_in.valid);
 assign rob_struc_hazard_out = rob_struc_hazard;
+assign next_rob_struc_hazard_out = next_rob_struc_hazard;
 // assign rob_struc_hazard = 1'b0;
 
 assign next_tail = squash ? head_idx : ((id_packet_in.valid && (!rob_struc_hazard) && (!stall)) ? tail_idx + 1'b1 : tail_idx);
-assign next_head = (retire && (!stall) && (!squash)) ? head_idx +1'b1 : head_idx;
+assign next_head = (retire && (!squash)) ? head_idx +1'b1 : head_idx;
 
 assign dest_reg_idx_in = id_packet_in.dest_reg_idx;
 assign rob2reg_packet_out.valid = (retire && (rob_entry_packet_out[head_idx].dest_reg_idx != `ZERO_REG)) ? 1 : 0;
@@ -79,6 +84,7 @@ ROB_entry rob_entry [`ROB_LEN-1:0] (
      .reset(reset),
      .stall(stall),
      .squash(squash),
+     .retire(rob_entry_retire_sig),
      .wr_en(rob_entry_wr_en),
      .cp_sig(rob_entry_cp_sig),
      .dest_reg_cdb(cdb_packet_in.reg_value),
@@ -141,10 +147,15 @@ end
 // retire logic (or we should call it write back logic because head_idx is moving down next cycle)
 always_comb begin
     retire = 0;
-        if (rob_entry_packet_out[head_idx].valid) begin
-            retire = 1;
+    rob_entry_retire_sig = 0;
+
+    if (rob_entry_packet_out[head_idx].valid) begin
+        retire = 1;
+        rob_entry_retire_sig[head_idx] = 1'b1;
     end
 end
+
+
 
 always_comb begin
     rob2reg_packet_out.dest_reg_value = 0;
@@ -173,12 +184,14 @@ always_ff @(posedge clock) begin
 		head_idx <= `SD 0;
         rob_entry_mispredict <= `SD 0;
         is_init <= `SD 1;
+        rob_struc_hazard <= `SD 0;
 	end	 
     else begin
         tail_idx <= `SD next_tail;
 		head_idx <= `SD next_head;
         rob_entry_mispredict <= `SD next_rob_entry_mispredict;
         is_init <= `SD next_is_init;
+        rob_struc_hazard <= `SD next_rob_struc_hazard;
     end
 end
 
@@ -189,6 +202,7 @@ module ROB_entry(
     input						 stall,
     input                        squash,
     input                        reset,
+    input                        retire,       // this entry is retired, need to de-assert valid(complete)
     input                        wr_en,
     input                        cp_sig,      // high when dest_reg_value_in is ready from CDB
     input [`XLEN-1:0]            dest_reg_cdb,
@@ -223,8 +237,8 @@ logic                next_inst_valid;
 
 // assignment
 assign next_dest_reg_idx   = (wr_en && !stall) ? dest_reg_idx_in : dest_reg_idx;
-assign next_dest_reg_value = (wr_en && !stall) ? 0 : (cp_sig && cdb_valid_bit && !stall) ? dest_reg_cdb : dest_reg_value;
-assign next_valid          = (wr_en && !stall) ? 0 : (cp_sig && !stall) ? 1'b1 : valid;
+assign next_dest_reg_value = (wr_en && !stall) ? 0 : (cp_sig && cdb_valid_bit) ? dest_reg_cdb : dest_reg_value;
+assign next_valid          = (retire) ? 0 : cp_sig ? 1'b1 : valid;
 assign next_is_halt        = (wr_en && !stall) ? halt_in : is_halt;
 assign next_is_illegal     = (wr_en && !stall) ? illegal_in : is_illegal;
 assign next_NPC            = (wr_en && !stall) ? NPC_in : NPC;

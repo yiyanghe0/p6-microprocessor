@@ -155,8 +155,27 @@ module testbench;
 		$fdisplay(pipe_output, "proc2mem => command: %b, addr: %5d, data: %h", proc2mem_command, proc2mem_addr, proc2mem_data);
 		$fdisplay(pipe_output, "mem2proc => response: %d, tag: %d, data: %h", mem2proc_response, mem2proc_tag, mem2proc_data);
 
+		$fdisplay(pipe_output, "\n ----------------------I cache----------------------");
+		$fdisplay(pipe_output, "Icache => memory  command: %b, addr: %h", core.Icache2Imem_command, core.Icache2Imem_addr);
+		$fdisplay(pipe_output, "Memory => Icache  response: %b, data: %h, tag: %b, ", mem2proc_response, mem2proc_data, mem2proc_tag);
+		$fdisplay(pipe_output, "Icache => core data: %h, valid; %b", core.Icache_data_out, core.Icache_valid_out); 
+		$fdisplay(pipe_output, "core => Icache address; %h", core.proc2Icache_addr); 
+
+		$fdisplay(pipe_output, "\n ----------------------IF_PACKET------------------------");
+		$fdisplay(pipe_output, "|   inst    |    PC    |    NPC    |   valid   |");
+		$fdisplay(pipe_output, "| %h  | %h  | %h  |   %b   |",
+						core.if_packet.inst.inst,
+						core.if_packet.PC,
+						core.if_packet.NPC,
+						core.if_packet.valid);	
+
+		$fdisplay(pipe_output, "\n ----------------------ID_PACKET------------------------");	
+		$fdisplay(pipe_output,"id_packet_valid: %b", core.DP_IS_0.id_packet.valid);
+
+
 		$fdisplay(pipe_output, "\n ----------------------ROB-----------------------");
-		$fdisplay(pipe_output, "ROB_head: %d, ROB_tail: %d ROB Structural Hazard: %b", core.DP_IS_0.ROB_0.head_idx, core.DP_IS_0.ROB_0.tail_idx, core.DP_IS_0.rob_struc_hazard);  
+		$fdisplay(pipe_output, "ROB_head: %d, ROB_tail: %d ROB Structural Hazard: %b, next ROB Structural Hazard: %b", core.DP_IS_0.ROB_0.head_idx, core.DP_IS_0.ROB_0.tail_idx, core.DP_IS_0.rob_struc_hazard, core.DP_IS_0.next_rob_struc_hazard);  
+		$fdisplay(pipe_output, "is_init: %d", core.DP_IS_0.ROB_0.is_init);
 		$fdisplay(pipe_output, "ROB Index | REG ID | Value |  PC   |  Complete | Halt | Illegal");
 		for(int i=0; i<`ROB_LEN; i=i+1) begin
 			$fdisplay(pipe_output, "%d | %d | %h |   %h   |  %b   |   %b   |   %b | ",
@@ -169,7 +188,7 @@ module testbench;
 				core.DP_IS_0.ROB_0.rob_entry_packet_out[i].is_illegal);
 		end
 
-		$fdisplay(pipe_output, "DP_IS_Structural_Hazard: %b", core.dp_is_structural_hazard);
+		$fdisplay(pipe_output, "DP_IS_Structural_Hazard: %b", core.next_dp_is_structural_hazard);
 		$fdisplay(pipe_output, "\n ----------------------RS------------------------");	
 		$fdisplay(pipe_output, "RS Structural Hazard: %b", ~core.DP_IS_0.RS_struc_hazard_inv);
 		$fdisplay(pipe_output, "RS Index | ROB Index | Wr_en | Busy |    Inst    |    PC     | Ready   |   Clear   |   Tag1   |   T1_v    |   Tag2   |   T2_v   |");
@@ -217,10 +236,11 @@ module testbench;
 						core.ex_packet.wr_mem);
 
 		$fdisplay(pipe_output, "\n ----------------------CDB------------------------");	
-		$fdisplay(pipe_output, "| ROB Index  |  Value  | take_branch  |  halt  | illegal  |");
-		$fdisplay(pipe_output, " %d   |   %d   |   %d   |    %d   |   %d  |",
+		$fdisplay(pipe_output, "| ROB Index  |  Value  |  Valid  | take_branch  |  halt  | illegal  |");
+		$fdisplay(pipe_output, " %d   |   %h   |   %b   |   %d   |    %d   |   %d  |",
 						core.cp_packet.reg_tag.tag,
 						core.cp_packet.reg_value,
+						core.cp_packet.reg_tag.valid,
 						core.cp_packet.take_branch,
 						core.cp_packet.halt,
 						core.cp_packet.illegal);

@@ -21,10 +21,11 @@ module if_stage (
     input             stall,              // stalls
     input [`XLEN-1:0] rt_npc,             // from retire stage
 
-	input [63:0]      Imem2proc_data,     // Data coming back from instruction-memory
+	input [63:0]      Icache2proc_data,     // Data coming back from instruction cache
+	input 			  Icache2proc_valid,	// 1 - data from Icache is valid, 0 is a icache miss
 	input [1:0]		  proc2Dmem_command,
 
-	output logic [`XLEN-1:0] proc2Imem_addr, // Address sent to Instruction memory
+	output logic [`XLEN-1:0] fetch2Icache_addr, // Address sent to Instruction cache
 	output IF_ID_PACKET      if_packet_out   // Output data packet from IF going to ID, see sys_defs for signal information
 );
 
@@ -32,10 +33,10 @@ module if_stage (
 	logic [`XLEN-1:0] PC_plus_4;
 
 	// address of the instruction we're fetching (Mem gives us 64 bits, so 3 0s at the end)
-	assign proc2Imem_addr = {PC_reg[`XLEN-1:3], 3'b0};
+	assign fetch2Icache_addr = {PC_reg[`XLEN-1:3], 3'b0};
 
 	// this mux is because the Imem gives us 64 bits not 32 bits
-	assign if_packet_out.inst = PC_reg[2] ? Imem2proc_data[63:32] : Imem2proc_data[31:0];
+	assign if_packet_out.inst = PC_reg[2] ? Icache2proc_data[63:32] : Icache2proc_data[31:0];
 
 	assign PC_plus_4 = PC_reg + 4; // default next PC value
 
@@ -62,7 +63,7 @@ module if_stage (
 	// For project 3, start by setting this to always be 1
 	// synopsys sync_set_reset "reset"
 	always_comb begin
-		if (proc2Dmem_command == BUS_NONE && (!stall))
+		if (proc2Dmem_command == BUS_NONE && (!stall) && Icache2proc_valid)
 			if_packet_out.valid = 1;
 		else
 			if_packet_out.valid = 0;
