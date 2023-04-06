@@ -35,6 +35,7 @@ module EX (
 	input IS_PACKET is_packet_in,
 
 	output EX_PACKET ex_packet_out,
+	output EX2BTB_PACKET ex2btb_packet_out,
 	output logic valid, // if valid = 0, mult encountered structural hazard and has to stall
 	output logic no_output  // no_output = 1 -> nothing output; no_output = 0 -> valid output
 );
@@ -230,6 +231,11 @@ module EX (
 		.ex_packet_out(ex_packet_out),
 		.no_output(no_output)
 	);
+
+	assign ex2btb_packet_out.PC = ex_packet_out.PC;
+	assign ex2btb_packet_out.target_pc = ex_packet_out.alu_result;
+	assign ex2btb_packet_out.valid = ex2btb_packet_out.valid;
+	assign ex2btb_packet_out.taken = ex2btb_packet_out.take_branch;
 
 
 endmodule // module ex_stage

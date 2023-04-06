@@ -38,7 +38,8 @@ module decoder (
 	                        // keeping track of when to allow the next
 	                        // instruction out of fetch
 	                        // 0 for HALT and illegal instructions (die on halt)
-	output CHANNEL ex_channel
+	output CHANNEL ex_channel,
+	output IFID2BTB_PACKET id2btb_packet_out
 );
 
 	INST inst;
@@ -283,7 +284,8 @@ module id_stage (
 		.valid_inst(id_packet_out.valid),
 		.ex_channel(id_packet_out.channel)
 	);
-
+	assign id2btb_packet_out.PC = id_packet_out.PC;
+	assign id2btb_packet_out.valid = id_packet_out.valid && (id_packet_out.cond_branch || id_packet_out.uncond_branch);
 	// mux to generate dest_reg_idx based on
 	// the dest_reg_select output from decoder
 	always_comb begin

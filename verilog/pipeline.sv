@@ -76,6 +76,12 @@ module pipeline (
 	logic [`XLEN-1:0] proc2Imem_addr;
 	IF_ID_PACKET if_packet;
 
+	// Inputs and Outputs from BTB
+	IFID2BTB_PACKET if2btb_packet;
+	IFID2BTB_PACKET id2btb_packet;
+	EX2BTB_PACKET	ex2btb_packet;
+	BTB_PACKET		btb_packet;
+
 	// Outputs from IF/DP Pipeline Register
 	IF_ID_PACKET if_id_packet;
 
@@ -181,9 +187,10 @@ module pipeline (
 	end
 
 //////////////////////////////////////////////////
-//                                              //
-//                  IF-Stage                    //
-//                                              //
+//                                  IFID2BTB_PACKET if2btb_packet;
+	IFID2BTB_PACKET id2btb_packet;
+	EX2BTB_PACKET	ex2btb_packet;
+	BTB_PACKET		btb_packet;            //
 //////////////////////////////////////////////////
 
 	// these are debug signals that are now included in the packet,
@@ -203,12 +210,30 @@ module pipeline (
 		.squash(squash),
 		.stall (if_stall),
 		.rt_npc(rt_npc),
+		.btb_packet_in(btb_packet),
 		.Imem2proc_data(mem2proc_data),
 		.proc2Dmem_command(BUS_NONE),		// !!!No memory operation for now
 
 		// Outputs
 		.proc2Imem_addr(proc2Imem_addr),
-		.if_packet_out(if_packet)
+		.if_packet_out(if_packet),
+		.if2btb_packet_out(if2btb_packet)
+	);
+
+//////////////////////////////////////////////////
+//                                              //
+//                  BTB                         //
+//                                              //
+//////////////////////////////////////////////////
+
+	BTB BTB_0(
+		.clock(clock),
+		.reset(reset),
+		.if_packet_in(if2btb_packet),
+    	.id_packet_in(id2btb_packet),
+    	.ex_packet_in(ex2btb_packet),
+
+    	.btb_packet_out(btb_packet)
 	);
 
 //////////////////////////////////////////////////
@@ -258,7 +283,8 @@ module pipeline (
 		.is_packet_out(is_packet),
 		.rob_retire_packet(rob_retire_packet),
 		.struc_hazard(dp_is_structural_hazard),
-		.squash(squash)
+		.squash(squash),
+		.id2btb_packet_out(id2btb_packet)
 	);
 
 //////////////////////////////////////////////////
@@ -317,7 +343,8 @@ module pipeline (
 		// Outputs
 		.ex_packet_out(ex_packet),
 		.valid(ex_valid),         // 0 - has structural hazard in mult, need to stall RS issue only, currently mult_num =4, no need
-		.no_output(ex_no_output)
+		.no_output(ex_no_output),
+		.ex_packet_out(ex2btb_packet)
 	);
 
 //////////////////////////////////////////////////
