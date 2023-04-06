@@ -77,6 +77,17 @@ module dcache_testbench;
         cycle_count <= cycle_count + 1;
     end
 
+    task wait_until_finish;
+		forever begin : wait_loop
+			@(posedge finished);
+			@(negedge clock);
+			if(finished) begin
+				$display("@@@Finish one value calculation");
+				disable wait_until_done;
+			end
+		end
+	endtask
+
 //////////////////////////////////////////////////////////////
 //////////////                  DISPLAY
 /////////////////////////////////////////////////////////////
@@ -163,50 +174,64 @@ initial begin
     @(negedge clock);
     reset = 0;
     LD(1);
+    wait_until_finish();
     @(negedge clock);
     LD(2);
-    @(negedge clock);
-    LD(3);
+    wait_until_finish();
     @(negedge clock);
     ST(3);
+    wait_until_finish();
     @(negedge clock);
     ST(4);
+    wait_until_finish();
     @(negedge clock);
     ST(1);
+    wait_until_finish();
     @(negedge clock);
     NONE();
-    @(negedge clock);
-    LD(6);
-    @(negedge clock);
-    LD(8);
+    wait_until_finish();
     @(negedge clock);
     LD(2);
+    wait_until_finish();
     @(negedge clock);
     ST(1);
+    wait_until_finish();
     @(negedge clock);
     ST(5);
+    wait_until_finish();
     @(negedge clock);
     ST(4);
+    wait_until_finish();
     @(negedge clock);
     NONE();
+    wait_until_finish();
     @(negedge clock);
     LD(1);
+    wait_until_finish();
     @(negedge clock);
     LD(4);
+    wait_until_finish();
     @(negedge clock);
     LD(4);
+    wait_until_finish();
     @(negedge clock);
     ST(3);
+    wait_until_finish();
     @(negedge clock);
     ST(4);
+    wait_until_finish();
     @(negedge clock);
     ST(1);
+    wait_until_finish();
     @(negedge clock);
     NONE();
+    wait_until_finish();
     @(negedge clock);
     LD(1);
+    wait_until_finish();
     @(negedge clock);
     LD(2);
+    wait_until_finish();
     @(negedge clock);
     LD(3);
     @(negedge clock);
@@ -215,12 +240,16 @@ initial begin
     ST(4);
     @(negedge clock);
     ST(1);
+    wait_until_finish();
     @(negedge clock);
     NONE();
     @(negedge clock);
     LD(1);
+    wait_until_finish();
     @(negedge clock);
     NONE();
+    wait_until_finish();
+    $finish;
 end
 
 
