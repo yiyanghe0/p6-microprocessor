@@ -61,16 +61,23 @@ module EX (
 	logic [`MUL_NUM-1:0]				MUL_busy;
 	IS_PACKET [`MUL_NUM-1:0]			MUL_is_packet;
 
-	//store and load parameter
+	//Store parameter
 	logic								STORE_start;
 	logic [`XLEN-1:0]					STORE_addr;
 	logic 								STORE_done;
 	IS_PACKET							STORE_is_packet;
 
+	//Load parameter
+	logic								LOAD_start;
+	logic 								LOAD_done;
+	IS_PACKET							LOAD_is_packet;
+	logic [63:0]						LOAD_result;
+
 	//mux to determine if mutiplier or ALU
-	assign ALU_start = (is_packet_in.channel == ALU) ? 1 : 0;
-	assign BRANCH_start = (is_packet_in.channel == BR) ? 1 : 0;
-	assign STORE_start = (is_packet_in.channel == ST) ? 1 : 0;
+	assign ALU_start 	= (is_packet_in.channel == ALU) ? 1 : 0;
+	assign BRANCH_start = (is_packet_in.channel == BR)  ? 1 : 0;
+	assign STORE_start  = (is_packet_in.channel == ST)  ? 1 : 0;
+	assign LOAD_start	= (is_packet_in.channel == LD)  ? 1 : 0;
 
 	always_comb begin
 		MUL_start = 0;
@@ -161,8 +168,8 @@ module EX (
 		.is_packet_out(MUL_is_packet)
 	);
 
-	// ex_packet1 - one of alu or branch; ex_packet2 - one of multiplier
-	EX_PACKET ex_packet1, ex_packet2;
+	// ex_packet1 - one of alu or branch; ex_packet2 - one of multiplier -one of Load
+	EX_PACKET ex_packet1, ex_packet2, ex_packet3;
 
 	// Pass-throughs
 	assign ex_packet1.NPC          = (ALU_done) ? ALU_is_packet.NPC :
@@ -253,6 +260,38 @@ module EX (
 		end
 	end
 
+	always_comb begin
+		ex_packet3.NPC          = 0;
+		ex_packet3.rs2_value    = 0;
+		ex_packet3.rd_mem       = 0;
+		ex_packet3.wr_mem       = 0;
+		ex_packet3.dest_reg_idx = 0;
+		ex_packet3.halt         = 0;
+		ex_packet3.illegal      = 0;
+		ex_packet3.csr_op       = 0;
+		ex_packet3.valid        = 0;
+		ex_packet3.mem_size     = 0;
+		ex_packet3.take_branch  = 0;
+		ex_packet3.alu_result   = 0;
+		ex_packet3.is_ZEROREG	= 1;
+
+		if (LOAD_done) begin
+			ex_packet3.NPC          = LOAD_is_packet.NPC;
+			ex_packet3.rs2_value    = LOAD_is_packet.rs2_value;
+			ex_packet3.rd_mem       = LOAD_is_packet.rd_mem;
+			ex_packet3.wr_mem       = LOAD_is_packet.wr_mem;
+			ex_packet3.dest_reg_idx = LOAD_is_packet.dest_reg_idx;
+			ex_packet3.halt         = LOAD_is_packet.halt;
+			ex_packet3.illegal      = LOAD_is_packet.illegal;
+			ex_packet3.csr_op       = LOAD_is_packet.csr_op;
+			ex_packet3.valid        = LOAD_is_packet.valid;
+			ex_packet3.mem_size     = LOAD_is_packet.mem_size;
+			ex_packet3.take_branch  = 0;
+			ex_packet3.alu_result   = LOAD_result
+			ex_packet3.is_ZEROREG	= LOAD_is_packet.is_ZEROREG;
+		end
+	end
+
 	FIFO f0(
 		.clock(clock),
 		.reset(reset),
@@ -267,15 +306,37 @@ module EX (
 
 	// instantiate the STORE address generator
 	STORE STORE_0 (
+		//input
 		.opa(opa_mux_out),
 		.opb(opb_mux_out),
 		.is_packet_in(is_packet_in),
 		.start(STORE_start),
 
-
+		//output
 		.addr_result(STORE_addr),
 		.STORE_is_packet(STORE_is_packet),
 		.done(STORE_done)
+	);
+	
+	// instantiate the LOAD module
+	LOAD LOAD_0 (
+		//input
+		.clock(clock),
+		.reset(reset),
+		.opa(opa_mux_out),
+		.opb(opb_mux_out),
+		.is_packet_in(is_packet_in),
+		.start(LOAD_start),
+		.Dcache2proc_data(),
+		.finish(),
+
+		//output
+		.proc2Dcache_command(),
+		.proc2Dcache_addr(),
+		.Dcache_result_out(LOAD_result),
+		.is_packet_out(LOAD_is_packet),
+		.busy(),
+		.done(LOAD_done)
 	);
 
 

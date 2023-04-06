@@ -11,15 +11,13 @@ module LOAD (
     input [`XLEN-1:0]           opb,
     input IS_PACKET             is_packet_in,
     input                       start,
-    input [`XLEN-1:0]           Dcache2proc_data, //could be wrong length
+    input [63:0]           		Dcache2proc_data, //could be wrong length
 	input 						finish,
 
     //outout
     output logic [1:0]          proc2Dcache_command,
-    output MEM_SIZE             proc2Dcache_size,
     output logic [`XLEN-1:0]    proc2Dcache_addr, // Address sent to data-memory
-
-    output logic [`XLEN-1:0]    Dcache_result_out, //the result from the mem
+    output logic [63:0]    		Dcache_result_out, //the result from the mem
     output IS_PACKET            is_packet_out,
     output logic                busy,
     output logic                done   
@@ -42,6 +40,8 @@ assign proc2Dcache_addr  	= addr;
 //sign proc2Dcache_addr     = opa + opb;
 
 assign done = finish & (busy | start);
+
+assign Dcache_result_out = Dcache2proc_data;
 
 //if Dcache hits, pass through the is_packet_in
 always_comb begin
@@ -135,25 +135,6 @@ always_ff @(posedge clock) begin
 		is_packet	<= `SD next_is_packet;
 		command 	<= `SD next_command;
 		addr 		<= `SD next_addr;
-	end
-end
-
-always_comb begin
-	Dcache_result_out = 0;
-	if (done) begin
-		if (~is_packet_out.mem_size[2]) begin //is this an signed/unsigned load?
-			if (is_packet_out.mem_size[1:0] == 2'b0)
-				Dcache_result_out = {{(`XLEN-8){Dcache2proc_data[7]}}, Dcache2proc_data[7:0]};
-			else if (is_packet_out.mem_size[1:0] == 2'b01)
-				Dcache_result_out = {{(`XLEN-16){Dcache2proc_data[15]}}, Dcache2proc_data[15:0]};
-			else Dcache_result_out = Dcache2proc_data;
-		end else begin
-			if (is_packet_out.mem_size[1:0] == 2'b0)
-				Dcache_result_out = {{(`XLEN-8){1'b0}}, Dcache2proc_data[7:0]};
-			else if (is_packet_out.mem_size[1:0] == 2'b01)
-				Dcache_result_out = {{(`XLEN-16){1'b0}}, Dcache2proc_data[15:0]};
-			else Dcache_result_out = Dcache2proc_data;
-		end
 	end
 end
 
