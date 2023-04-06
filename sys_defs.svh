@@ -553,24 +553,24 @@ typedef struct packed {
 //////////////////////////////////////////////
 
 typedef struct packed {
-	logic [`XLEN-1:0] inst;
+	logic [`XLEN-1:0] PC;
 	logic valid;
 } IFID2BTB_PACKET;
 
 
 //////////////////////////////////////////////
 //
-// FU2BTB_PACKET:
+// EX2BTB_PACKET:
 // Data from Brcond FU to BTB
 //
 //////////////////////////////////////////////
 
 typedef struct packed {
-	logic [`XLEN-1:0] inst;
+	logic [`XLEN-1:0] PC;
 	logic [`XLEN-1:0] target_pc;
 	logic valid;
 	logic taken;
-} FU2BTB_PACKET;
+} EX2BTB_PACKET;
 
 
 //////////////////////////////////////////////
