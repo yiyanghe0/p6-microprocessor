@@ -14,55 +14,27 @@
 // have all files `include "sys_defs.svh" from now on (why weren't we doing this before?)
 `timescale 1ns/100ps
 
-// Synthesis testing definition for parameterized modules tested at multiple sizes
-// see lab 6 CAM for example usage
-`ifdef SYNTH_TEST
-`define INSTANCE(mod) mod``_svsim
-`else
-`define INSTANCE(mod) mod
-`endif
-
 //////////////////////////////////////////////
 //
 // Memory/testbench attribute definitions
 //
 //////////////////////////////////////////////
 
-// NOTE: the CLOCK_PERIOD definition has been moved to the Makefile
+`define NUM_MEM_TAGS           8
+`define MEM_LATENCY_IN_CYCLES  0
 
-// cache mode removes the byte-level interface from memory, so it always returns a double word
-// the original processor won't work with this defined
-// so your new processor will have to account for our changes to mem
-`define CACHE_MODE // MUST BE DEFINED FOR FINAL PROCESSOR
+`define MEM_SIZE_IN_BYTES      (64*1024)
+`define MEM_64BIT_LINES        (`MEM_SIZE_IN_BYTES/8)
 
-// you are not allowed to change this definition for your final processor
-`define MEM_LATENCY_IN_CYCLES (100.0/`CLOCK_PERIOD+0.49999)
-// the 0.49999 is to force ceiling(100/period). The default behavior for
-// float to integer conversion is rounding to nearest
-
-// the original p3 definition - can be useful for temporarily testing non-memory functionality
-// `define MEM_LATENCY_IN_CYCLES 0
-
-
-`define NUM_MEM_TAGS 15
-
-`define MEM_SIZE_IN_BYTES (64*1024)
-`define MEM_64BIT_LINES   (`MEM_SIZE_IN_BYTES/8)
+// you can change the clock period to whatever, 10 is just fine
+`define VERILOG_CLOCK_PERIOD   10.0
 
 typedef union packed {
-    logic [7:0][7:0]  byte_level;
+    logic [7:0][7:0] byte_level;
     logic [3:0][15:0] half_level;
     logic [1:0][31:0] word_level;
 } EXAMPLE_CACHE_BLOCK;
 
-`ifndef CACHE_MODE
-typedef enum logic [1:0] {
-	BYTE = 2'h0,
-	HALF = 2'h1,
-	WORD = 2'h2,
-	DOUBLE = 2'h3
-} MEM_SIZE;
-`endif
 
 //////////////////////////////////////////////
 // Exception codes
@@ -464,6 +436,7 @@ typedef struct packed {
 typedef struct packed {
 	TAG_PACKET reg_tag;
 	logic [`XLEN-1:0] reg_value;
+	logic [`XLEN-1:0] PC;
 	logic [`XLEN-1:0] NPC;         // pc + 4, forwarded
 	logic             take_branch; // is this a taken branch?, forwarded
 	logic 			  no_output;
@@ -526,6 +499,7 @@ typedef struct packed {
 
 typedef struct packed {
 	logic [`XLEN-1:0] alu_result;  // alu_result
+	logic [`XLEN-1:0] PC;
 	logic [`XLEN-1:0] NPC;         // pc + 4
 	logic             take_branch; // is this a taken branch?
 	logic [$clog2(`ROB_LEN)-1:0] dest_reg_idx;

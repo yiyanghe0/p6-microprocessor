@@ -16,7 +16,8 @@ module DP_IS (
 
     output IS_PACKET is_packet_out,
     output logic struc_hazard,
-    output logic squash
+    output logic squash,
+    output IFID2BTB_PACKET id2btb_packet_out
 );
 
 // instantiate ID_STAGE
@@ -44,7 +45,8 @@ id_stage id_stage_0 (
     .rob_retire_packet_in(rob_retire_packet),
     .if_id_packet_in(if_id_packet_in),
 
-    .id_packet_out(id_packet)
+    .id_packet_out(id_packet),
+    .id2btb_packet_out(id2btb_packet_out)
 );
 
 RS RS_0 (

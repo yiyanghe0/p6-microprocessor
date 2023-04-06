@@ -148,7 +148,15 @@ module testbench;
 
 		$fdisplay(pipe_output, "\n ----------------------PC----------------------");
 		$fdisplay(pipe_output, "IF_PC: %h, IF/ID PC: %h, DP_PC: %h, IS_PC: %h, EX_PC: %h, CP_PC: %h, RT_PC: %h",
-				  core.if_packet.PC, core.if_id_packet.PC, core.DP_IS_0.id_packet.PC, core.is_packet.NPC-4, core.ex_packet.NPC-4, core.cp_packet.NPC-4, core.rt_npc-4);
+				  core.if_packet.PC, core.if_id_packet.PC, core.DP_IS_0.id_packet.PC, core.is_packet.PC, core.ex_packet.PC, core.cp_packet.NPC-4, core.rt_npc-4);
+
+		$fdisplay(pipe_output, "\n ----------------------BTB-----------------------");
+		$fdisplay(pipe_output, "if_packet_in.PC: %h, if_packet_in.valid: %d", core.BTB_0.if_packet_in.PC, core.BTB_0.if_packet_in.valid);  
+		$fdisplay(pipe_output, "id_packet_in.PC: %h, id_packet_in.valid: %d", core.BTB_0.id_packet_in.PC, core.BTB_0.id_packet_in.valid);  
+		$fdisplay(pipe_output, "ex_packet_in.PC: %h ex_packet_in.valid: %d ex_packet_in.taken: %b ex_packet_in.target_pc: %h", core.BTB_0.ex_packet_in.PC, core.BTB_0.ex_packet_in.valid, 
+																														core.BTB_0.ex_packet_in.taken, core.BTB_0.ex_packet_in.target_pc);  
+		$fdisplay(pipe_output, "btb_packet_out.prediction: %b btb_packet_out.valid: %b btb_packet_out.target_pc: %h", core.BTB_0.btb_packet_out.prediction, core.BTB_0.btb_packet_out.valid, 
+																														core.BTB_0.btb_packet_out.target_pc);  
 
 
 		$fdisplay(pipe_output, "\n ----------------------Memory----------------------");
@@ -158,6 +166,7 @@ module testbench;
 		$fdisplay(pipe_output, "\n ----------------------ROB-----------------------");
 		$fdisplay(pipe_output, "ROB_head: %d, ROB_tail: %d ROB Structural Hazard: %b", core.DP_IS_0.ROB_0.head_idx, core.DP_IS_0.ROB_0.tail_idx, core.DP_IS_0.rob_struc_hazard);  
 		$fdisplay(pipe_output, "ROB Index | REG ID | Value |  PC   |  Complete | Halt | Illegal");
+
 		for(int i=0; i<`ROB_LEN; i=i+1) begin
 			$fdisplay(pipe_output, "%d | %d | %h |   %h   |  %b   |   %b   |   %b | ",
 				i,

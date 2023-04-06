@@ -38,8 +38,7 @@ module decoder (
 	                        // keeping track of when to allow the next
 	                        // instruction out of fetch
 	                        // 0 for HALT and illegal instructions (die on halt)
-	output CHANNEL ex_channel,
-	output IFID2BTB_PACKET id2btb_packet_out
+	output CHANNEL ex_channel
 );
 
 	INST inst;
@@ -240,7 +239,8 @@ module id_stage (
 	input  IF_ID_PACKET if_id_packet_in,
 
 
-	output ID_PACKET id_packet_out
+	output ID_PACKET id_packet_out,
+	output IFID2BTB_PACKET id2btb_packet_out
 );
 
 

@@ -161,6 +161,8 @@ module EX (
 	// Pass-throughs
 	assign ex_packet1.NPC          = (ALU_done) ? ALU_is_packet.NPC :
 												  (BRANCH_done) ? BRANCH_is_packet.NPC : 0;
+	assign ex_packet1.PC           = (ALU_done) ? ALU_is_packet.PC :
+												  (BRANCH_done) ? BRANCH_is_packet.PC : 0;
 	assign ex_packet1.rs2_value    = (ALU_done) ? ALU_is_packet.rs2_value :
 												  (BRANCH_done) ? BRANCH_is_packet.rs2_value : 0;
 	assign ex_packet1.rd_mem       = (ALU_done) ? ALU_is_packet.rd_mem :
@@ -188,6 +190,7 @@ module EX (
 
 	always_comb begin
 		ex_packet2.NPC          = 0;
+		ex_packet2.PC           = 0;
 		ex_packet2.rs2_value    = 0;
 		ex_packet2.rd_mem       = 0;
 		ex_packet2.wr_mem       = 0;
@@ -204,6 +207,7 @@ module EX (
 		for (int i = 0; i < `MUL_NUM; i++) begin
 			if (MUL_done[i]) begin
 				ex_packet2.NPC          = MUL_is_packet[i].NPC;
+				ex_packet2.PC           = MUL_is_packet[i].PC;
 				ex_packet2.rs2_value    = MUL_is_packet[i].rs2_value;
 				ex_packet2.rd_mem       = MUL_is_packet[i].rd_mem;
 				ex_packet2.wr_mem       = MUL_is_packet[i].wr_mem;
@@ -234,8 +238,8 @@ module EX (
 
 	assign ex2btb_packet_out.PC = ex_packet_out.PC;
 	assign ex2btb_packet_out.target_pc = ex_packet_out.alu_result;
-	assign ex2btb_packet_out.valid = ex2btb_packet_out.valid;
-	assign ex2btb_packet_out.taken = ex2btb_packet_out.take_branch;
+	assign ex2btb_packet_out.valid = ex_packet_out.valid;
+	assign ex2btb_packet_out.taken = ex_packet_out.take_branch;
 
 
 endmodule // module ex_stage

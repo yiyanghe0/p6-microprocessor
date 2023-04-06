@@ -39,6 +39,7 @@ module FIFO(
     assign empty = (pointer == `FIFO_LEN) ? 1 : 0;
 
     assign is_empty1 = ((ex_packet1.NPC          == 0) &&
+                        (ex_packet1.PC           == 0) &&
                         (ex_packet1.rs2_value    == 0) &&
                         (ex_packet1.rd_mem       == 0) &&
                         (ex_packet1.wr_mem       == 0) &&
@@ -53,6 +54,7 @@ module FIFO(
                         (ex_packet1.is_ZEROREG   == 1)) ? 1 : 0;
 
     assign is_empty2 = ((ex_packet2.NPC          == 0) &&
+                        (ex_packet2.PC           == 0) &&
                         (ex_packet2.rs2_value    == 0) &&
                         (ex_packet2.rd_mem       == 0) &&
                         (ex_packet2.wr_mem       == 0) &&
@@ -108,6 +110,7 @@ module FIFO(
             if (is_empty1 && is_empty2) begin
                 no_output = 1;
                 ex_packet_out.NPC          = 0;
+                ex_packet_out.PC           = 0;
                 ex_packet_out.rs2_value    = 0;
                 ex_packet_out.rd_mem       = 0;
                 ex_packet_out.wr_mem       = 0;
@@ -148,6 +151,7 @@ module FIFO(
             pointer <= `SD `FIFO_LEN; // empty
             for (int i = 0; i < `FIFO_LEN; i++) begin
                 fifo_storage[i].NPC          <= `SD 0;
+                fifo_storage[i].PC           <= `SD 0;
                 fifo_storage[i].rs2_value    <= `SD 0;
                 fifo_storage[i].rd_mem       <= `SD 0;
                 fifo_storage[i].wr_mem       <= `SD 0;

@@ -76,7 +76,7 @@
 
 # this is a built-in Make variable that lets Make search folders to find dependencies and targets
 # it can greatly simplify make rules and increase readability
-VPATH = synth:testbench:test_progs:verilog:output:verilog/RS:verilog/ROB:verilog/MAP_TABLE:verilog/EX
+VPATH = synth:testbench:test_progs:verilog:output:verilog/RS:verilog/ROB:verilog/MAP_TABLE:verilog/EX:verilog/BTB
 
 ###############################################
 # ---- Compilation Commands and Variables ----
@@ -386,6 +386,7 @@ SIMFILES = pipeline.sv \
 		   $(wildcard verilog/ROB/*.sv) \
 		   $(wildcard verilog/RS/*.sv) \
 		   $(wildcard verilog/RT/*.sv) \
+		   $(wildcard verilog/BTB/*.sv) \
 
 		
 simv: $(HEADERS) $(TESTBENCH) $(SIMFILES)

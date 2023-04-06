@@ -344,7 +344,7 @@ module pipeline (
 		.ex_packet_out(ex_packet),
 		.valid(ex_valid),         // 0 - has structural hazard in mult, need to stall RS issue only, currently mult_num =4, no need
 		.no_output(ex_no_output),
-		.ex_packet_out(ex2btb_packet)
+		.ex2btb_packet_out(ex2btb_packet)
 	);
 
 //////////////////////////////////////////////////
