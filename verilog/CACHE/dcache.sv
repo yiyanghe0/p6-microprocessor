@@ -84,8 +84,25 @@ module dcache(
 
 	// case 1
 	// data always comes from dcache
-	assign Dcache_data_out = dcache_data[current_index].data; // !!! change according to mem_size
+	logic [63:0] loaded_data;
+	assign loaded_data = dcache_data[current_index].data; // !!! change according to mem_size
 	assign Dcache_valid_out = hit && (proc2Dcache_command == BUS_LOAD);
+	always_comb begin
+		Dcache_data_out = loaded_data;
+		case(mem_size)
+			2'b00: begin
+				Dcache_data_out = {56'b0, loaded_data[proc2Dcache_addr[2:0]]};
+			end
+			2'b01: begin
+				Dcache_data_out = {48'b0, loaded_data[proc2Dcache_addr[2:1]]};
+			end
+			2'b10: begin
+				Dcache_data_out = {32'b0, loaded_data[proc2Dcache_addr[2]]};
+			end
+			2'b11:
+				Dcache_data_out = loaded_data;
+		endcase
+	end
 
 	// signals to memory
 	always_comb begin

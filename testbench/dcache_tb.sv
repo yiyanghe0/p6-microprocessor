@@ -2,33 +2,37 @@
 `include "sys_defs.svh"
 module dcache_testbench;
 
+    int          pipe_output;   // used for function pipeline_output
+    logic [63:0] debug_counter; // counter used for when pipeline infinite loops, forces termination
+    string pipeline_output_file;
+
     logic clock;
     logic reset;
     logic [10:0] cycle_count;
 
     // from memory
-	logic [3:0]  Dmem2proc_response, // this should be zero unless we got a response
-    logic  [63:0] Dmem2proc_data,
-	logic [3:0]  Dmem2proc_tag,
+	logic [3:0]  Dmem2proc_response; // this should be zero unless we got a response
+    logic  [63:0] Dmem2proc_data;
+	logic [3:0]  Dmem2proc_tag;
 
 	// from ex stage
-	logic [`XLEN-1:0] proc2Dcache_addr,
-    logic [63:0]      proc2Dcache_data,
-    logic [1:0]       proc2Dcache_command, // 0: None, 1: Load, 2: Store
-    logic [1:0]       proc2Dcache_size,
+	logic [`XLEN-1:0] proc2Dcache_addr;
+    logic [63:0]      proc2Dcache_data;
+    logic [1:0]       proc2Dcache_command; // 0: None, 1: Load, 2: Store
+    logic [1:0]       proc2Dcache_size;
 
 	// to memory
-	logic [1:0]       proc2Dmem_command,
-	logic [`XLEN-1:0] proc2Dmem_addr,
-    logic [63:0]      proc2Dmem_data,
+	logic [1:0]       proc2Dmem_command;
+	logic [`XLEN-1:0] proc2Dmem_addr;
+    logic [63:0]      proc2Dmem_data;
 
 	// to ex stage
-	logic [63:0] Dcache_data_out, // value is memory[proc2Dcache_addr]
-	logic        Dcache_valid_out, // when this is high
-	logic 		finished		// finished current instruction
+	logic [63:0] Dcache_data_out; // value is memory[proc2Dcache_addr]
+	logic        Dcache_valid_out; // when this is high
+	logic 		finished;		// finished current instruction
 
     `ifdef TEST_MODE
-		output DCACHE_PACKET [`DCACHE_LINES-1:0] show_dcache_data;
+		DCACHE_PACKET [`DCACHE_LINES-1:0] show_dcache_data;
 	`endif 
 
     dcache cache(
@@ -40,7 +44,7 @@ module dcache_testbench;
         .proc2Dcache_addr(proc2Dcache_addr),
         .proc2Dcache_data(proc2Dcache_data),
         .proc2Dcache_command(proc2Dcache_command),
-        .proc2Dcache_size(proc2Dcache_size),
+        .mem_size(proc2Dcache_size),
         .proc2Dmem_command(proc2Dmem_command),
         .proc2Dmem_addr(proc2Dmem_addr),
         .proc2Dmem_data(proc2Dmem_data),
@@ -85,7 +89,7 @@ module dcache_testbench;
 			@(negedge clock);
 			if(finished) begin
 				$display("@@@Finish one value calculation");
-				disable wait_until_done;
+				// disable wait_until_done;
 			end
 		end
 	endtask
@@ -96,45 +100,45 @@ module dcache_testbench;
 
 task show_cache;
     begin
-        $display("=====   Cache ram   =====");
-        $display("|Entry(idx)|valid|dirty|      Tag |             data |");
+        $fdisplay(pipe_output,"=====   Cache ram   =====");
+        $fdisplay(pipe_output,"|Entry(idx)|valid|dirty|      Tag |             data |");
         for (int i=0; i<32; ++i) begin
-            $display("| %d | %b | %b | %d | %h |", i, show_dcache_data[i].valid, show_dcache_data[i].dirty, show_dcache_data[i].tags, show_dcache_data[i].data);
+            $fdisplay(pipe_output,"| %d | %b | %b | %d | %h |", i, show_dcache_data[i].valid, show_dcache_data[i].dirty, show_dcache_data[i].tags, show_dcache_data[i].data);
         end
-        $display("-------------------------------------------------");
+        $fdisplay(pipe_output,"-------------------------------------------------");
     end
 endtask
 
 task show_input;
     begin
-        $display("=====   Mem2proc Input   =====");
-        $display("response: %d,  tag: %d,  data: %h", Dmem2proc_response, Dmem2proc_tag, Dmem2proc_data);
-        $display("----------------------------------------------------------------- ");
-        $display("=====   EX Input   =====");
-        $display("command: %d,  addr: %d,  data: %h", proc2Dcache_command, proc2Dcache_addr, proc2Dcache_data);
-        $display("----------------------------------------------------------------- ");
+        $fdisplay(pipe_output,"=====   Mem2proc Input   =====");
+        $fdisplay(pipe_output,"response: %d,  tag: %d,  data: %h", Dmem2proc_response, Dmem2proc_tag, Dmem2proc_data);
+        $fdisplay(pipe_output,"----------------------------------------------------------------- ");
+        $fdisplay(pipe_output,"=====   EX Input   =====");
+        $fdisplay(pipe_output,"command: %d,  addr: %d,  data: %h", proc2Dcache_command, proc2Dcache_addr, proc2Dcache_data);
+        $fdisplay(pipe_output,"----------------------------------------------------------------- ");
     end
 endtask
 
 task show_output;
     begin
-        $display("=====  Cache2Memory Output   =====");
-        $display("command: %d,  addr: %d,  data: %h", proc2Dmem_command, proc2Dmem_addr, proc2Dmem_data);
-        $display("---------------------");
-        $display("=====  Cache2EX Output   =====");
-        $display("valid: %b , data: %h, finished: %b", Dcache_valid_out, Dcache_data_out, finished);
-        $display("---------------------");
+        $fdisplay(pipe_output,"=====  Cache2Memory Output   =====");
+        $fdisplay(pipe_output,"command: %d,  addr: %d,  data: %h", proc2Dmem_command, proc2Dmem_addr, proc2Dmem_data);
+        $fdisplay(pipe_output,"---------------------");
+        $fdisplay(pipe_output,"=====  Cache2EX Output   =====");
+        $fdisplay(pipe_output,"valid: %b , data: %h, finished: %b", Dcache_valid_out, Dcache_data_out, finished);
+        $fdisplay(pipe_output,"---------------------");
     end
 endtask
 
 always @(negedge clock) begin
     #1;
     if (!reset)  begin
-        $display("====  Cycle  %4d  ====", cycle_count);
+        $fdisplay(pipe_output,"====  Cycle  %4d  ====", cycle_count);
         show_input();
         show_output();
         show_cache();
-        $display("--------------------------------------------------------------------------------");
+        $fdisplay(pipe_output,"--------------------------------------------------------------------------------");
     end
 end
 
@@ -175,6 +179,16 @@ endtask
 
 initial begin
     $dumpvars;
+
+    // PIPEPRINT_UNUSED
+    if ($value$plusargs("PIPELINE=%s", pipeline_output_file)) begin
+        $display("Using pipeline output file: %s", pipeline_output_file);
+    end else begin
+        $display("Using default pipeline output file: dcache.out");
+        pipeline_output_file = "dcache.out";
+    end
+
+
     clock = 0;
     reset = 1;
     @(negedge clock);
@@ -257,9 +271,26 @@ initial begin
     @(negedge clock);
     NONE();
     wait_until_finish();
+
+    pipe_output = $fopen(pipeline_output_file);	
     $finish;
 end
 
+
+    always @(negedge clock) begin
+		if(reset) begin
+			$display("@@\n@@  %t : System STILL at reset, can't show anything\n@@",
+			         $realtime);
+            debug_counter <= 0;
+		end else begin
+            if(debug_counter > 50000) begin
+                $display("@@ : System halted\n@@");
+                $fclose(pipe_output);
+                #100 $finish;
+            end
+            debug_counter <= debug_counter + 1;
+        end
+    end
 
 
 endmodule
