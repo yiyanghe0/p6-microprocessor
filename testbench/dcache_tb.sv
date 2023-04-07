@@ -169,11 +169,12 @@ end
 task ST;
     input [`XLEN-1:0] addr;
     input [1:0] size;
+    input [63:0] data;
         begin
             proc2Dcache_command = 2'b10;
             proc2Dcache_addr = addr;
             proc2Dcache_size = size;
-            proc2Dcache_data = $random(64);
+            proc2Dcache_data = data;
         end
 endtask
 
@@ -216,15 +217,35 @@ initial begin
     reset = 1;
     @(negedge clock);
     reset = 0;
-    ST(8'h10,3);
-    wait_until_finish();
-    NONE();
-    @(negedge clock);
-    @(negedge clock);
-    LD(8'h10,3);
+
+    // testcase 1, store without writeback
+    ST(12'h010,3, 64'hFFFF_1234_4321_FFFF);
     wait_until_finish();
     @(negedge clock);
     NONE();
+    @(negedge clock);
+
+    // testcase 2, store with writeback
+    ST(12'h810,3, 64'habcd_0110_1001_abcd);
+    wait_until_finish();
+    @(negedge clock);
+    NONE();
+    @(negedge clock);
+
+    // testcase 3, load without writeback
+    LD(12'h810,3);
+    wait_until_finish();
+    @(negedge clock);
+    NONE();
+    @(negedge clock);
+
+    // testcase 4, load with writeback
+    @(negedge clock);
+    LD(12'h010,3);
+    wait_until_finish();
+    @(negedge clock);
+    NONE();
+    @(negedge clock);
 
     $finish;
 end

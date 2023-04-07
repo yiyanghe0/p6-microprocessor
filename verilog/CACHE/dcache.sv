@@ -152,8 +152,7 @@ module dcache(
 				dcache_data[current_index].dirty  <= `SD 0;
 			end
 
-			if (proc2Dcache_command == BUS_STORE && (hit || !dcache_data[current_index].valid)) begin
-				$display();
+			if (proc2Dcache_command == BUS_STORE && (hit || !dcache_data[current_index].valid || !dcache_data[current_index].dirty)) begin
 				case(mem_size)
 					2'b00:
 						dcache_data[current_index].data[proc2Dcache_addr[2:0]] <= `SD proc2Dcache_data[7:0];
@@ -164,7 +163,7 @@ module dcache(
 					2'b11:
 						dcache_data[current_index].data <= `SD proc2Dcache_data;
 				endcase
-				// dcache_data[current_index].data   <= `SD proc2Dcache_data;
+				dcache_data[current_index].tags   <= `SD current_tag;
 				dcache_data[current_index].dirty  <= `SD 1;
 				dcache_data[current_index].valid  <= `SD 1;
 				// finished <= `SD 1;
