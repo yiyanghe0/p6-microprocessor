@@ -11,7 +11,6 @@ module FIFO(
     input reset,
     input EX_PACKET ex_packet1,
     input EX_PACKET ex_packet2,
-    input EX_PACKET ex_packet3,
 
     `ifdef DEBUG
     output EX_PACKET [`FIFO_LEN-1:0] fifo_storage,
@@ -34,7 +33,6 @@ module FIFO(
 
     logic is_empty1;
     logic is_empty2;
-    logic is_empty3;
 
     logic empty;
 
@@ -68,42 +66,17 @@ module FIFO(
                         (ex_packet2.alu_result   == 0) &&
                         (ex_packet2.is_ZEROREG   == 1)) ? 1 : 0;
 
-    assign is_empty3 = ((ex_packet3.NPC          == 0) &&
-                        (ex_packet3.rs2_value    == 0) &&
-                        (ex_packet3.rd_mem       == 0) &&
-                        (ex_packet3.wr_mem       == 0) &&
-                        (ex_packet3.dest_reg_idx == 0) &&
-                        (ex_packet3.halt         == 0) &&
-                        (ex_packet3.illegal      == 0) &&
-                        (ex_packet3.csr_op       == 0) &&
-                        (ex_packet3.valid        == 0) &&
-                        (ex_packet3.mem_size     == 0) &&
-                        (ex_packet3.take_branch  == 0) &&
-                        (ex_packet3.alu_result   == 0) &&
-                        (ex_packet3.is_ZEROREG   == 1)) ? 1 : 0;
-    
-    
-
     always_comb begin
-        //all the packets are empty
-        if (is_empty1 && is_empty2 && is_empty3) begin
+        if (is_empty1 && is_empty2) begin
             next_pointer = (empty) ? pointer :
                                      (pointer == 0) ? `FIFO_LEN : (pointer - 1);
         end
-        //two packets are empty
-        else if ((!is_empty1 && is_empty2 && is_empty3) || (is_empty1 && !is_empty2 && is_empty3) || 
-        (is_empty1 && is_empty2 && !is_empty3)) begin
+        else if (is_empty1 || is_empty2) begin
             next_pointer = pointer;
         end
-        //one packet is empty
-        else if ((is_empty1 && !is_empty2 && !is_empty3) || (!is_empty1 && is_empty2 && !is_empty3) || 
-        (!is_empty1 && !is_empty2 && is_empty3)) begin
-            next_pointer = (empty) ? 0 : (pointer + 1);
-        end
-        //three packets are not empty
         else begin
             // should not fill up the fifo!!!
-            next_pointer = (empty) ? 1 : (pointer + 2);
+            next_pointer = (empty) ? 0 : (pointer + 1);
         end
     end
 
@@ -111,70 +84,28 @@ module FIFO(
         next_fifo_storage = fifo_storage;
 
         if (empty) begin
-            //three packaets are not empty and the storage is empty
-            if (!is_empty1 && !is_empty2 && !is_empty3) begin
+            if (!is_empty1 && !is_empty2)
                 next_fifo_storage[0] = ex_packet2;
-                next_fifo_storage[1] = ex_packet3;
-            end
-            //packet1 is empty and others are not
-            else if (is_empty1 && !is_empty2 && !is_empty3) begin
-                next_fifo_storage[0] = ex_packet3;
-            end
-            //packet2 is empty and others are not
-            else if (!is_empty1 && is_empty2 && !is_empty3) begin
-                next_fifo_storage[0] = ex_packet3;
-            end
-            //packet3 is empty and others are not
-            else if (!is_empty1 && !is_empty2 && is_empty3) begin
-                next_fifo_storage[0] = ex_packet2;
-            end
-        //the storage is not empty
         end
         else begin
             for (int i = 0; i < pointer; i++) begin
                 next_fifo_storage[i] = fifo_storage[i+1];
             end
-            //packet1 is not empty and others are empty
-            if (!is_empty1 && is_empty2 && is_empty3) begin
+
+            if (!is_empty1 && is_empty2)
                 next_fifo_storage[pointer] = ex_packet1;
-            end
-            //packet2 is not empty and others are empty
-            else if (is_empty1 && !is_empty2 && is_empty3) begin
+            else if (is_empty1 && !is_empty2)
                 next_fifo_storage[pointer] = ex_packet2;
-            end
-            //packet3 is not empty and others are empty
-            else if (is_empty1 && is_empty2 && !is_empty3) begin
-                next_fifo_storage[pointer] = ex_packet3;
-            end
-            //pakcet1 and packet2 are not empty, and packet3 is empty
-            else if (!is_empty1 && !is_empty2 && is_empty3) begin
+            else if (!is_empty1 && !is_empty2) begin
                 next_fifo_storage[pointer] = ex_packet1;
                 next_fifo_storage[pointer+1] = ex_packet2;
-            end
-            //pakcet1 and packet3 are not empty, and packet2 is empty
-            else if (!is_empty1 && is_empty2 && !is_empty3) begin
-                next_fifo_storage[pointer] = ex_packet1;
-                next_fifo_storage[pointer+1] = ex_packet3;
-            end
-            //pakcet2 and packet3 are not empty, and packet1 is empty
-            else if (is_empty1 && !is_empty2 && !is_empty3) begin
-                next_fifo_storage[pointer] = ex_packet2;
-                next_fifo_storage[pointer+1] = ex_packet3;
-            end
-            //All the packets are not empty
-            else if (!is_empty1 && !is_empty2 && !is_empty3) begin
-                next_fifo_storage[pointer] = ex_packet1;
-                next_fifo_storage[pointer+1] = ex_packet2;
-                next_fifo_storage[pointer+2] = ex_packet3;
             end
         end
     end
 
-    //select which packet should be popped out
     always_comb begin
         if (empty) begin
-            //no input and the FIFO is empty
-            if (is_empty1 && is_empty2 && is_empty3) begin
+            if (is_empty1 && is_empty2) begin
                 no_output = 1;
                 ex_packet_out.NPC          = 0;
                 ex_packet_out.rs2_value    = 0;
@@ -190,41 +121,18 @@ module FIFO(
                 ex_packet_out.alu_result   = 0;
                 ex_packet_out.is_ZEROREG   = 1;
             end
-            //packet1 is not empty and others are empty
-            else if (!is_empty1 && is_empty2 && is_empty3) begin
+            else if (is_empty2) begin
                 no_output = 0;
                 ex_packet_out = ex_packet1;
             end
-            //packet2 is not empty and others are empty
-            else if (is_empty1 && !is_empty2 && is_empty3) begin
+            else if (is_empty1) begin
                 no_output = 0;
                 ex_packet_out = ex_packet2;
             end
-            //packet3 is not empty and others are empty
-            else if (is_empty1 && is_empty2 && !is_empty3) begin
-                no_output = 0;
-                ex_packet_out = ex_packet3;
-            end
-            //pakcet1 and packet2 are not empty, and packet3 is empty => pop out packet1
-            else if (!is_empty1 && !is_empty2 && is_empty3) begin
-                no_output = 0;
-                ex_packet_out = ex_packet1;
-            end
-            //pakcet1 and packet3 are not empty, and packet2 is empty => pop out packet1
-            else if (!is_empty1 && is_empty2 && !is_empty3) begin
-                no_output = 0;
-                ex_packet_out = ex_packet1;
-            end
-            //pakcet2 and packet3 are not empty, and packet1 is empty => pop out packet2
-            else if (is_empty1 && !is_empty2 && !is_empty3) begin
-                no_output = 0;
-                ex_packet_out = ex_packet2;
-            end
-            //All the packets are not empty => pop out packet1
             else begin
                 no_output = 0;
                 // Always assume ex_packet1 first out
-                // Put ex_packet2 and ex_packet3 into fifo_storage
+                // Put ex_packet2 into fifo_storage
                 ex_packet_out = ex_packet1;
             end
         end
@@ -251,7 +159,6 @@ module FIFO(
                 fifo_storage[i].mem_size     <= `SD 0;
                 fifo_storage[i].take_branch  <= `SD 0;
                 fifo_storage[i].alu_result   <= `SD 0;
-                fifo_storage[i].is_ZEROREG   <= `SD 1;
             end
         end
         else begin
