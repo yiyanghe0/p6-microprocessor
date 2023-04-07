@@ -1,5 +1,7 @@
 `define TEST_MODE
 `include "sys_defs.svh"
+
+
 module dcache_testbench;
 
     int          pipe_output;   // used for function pipeline_output
@@ -88,8 +90,12 @@ module dcache_testbench;
 			@(posedge finished);
 			@(negedge clock);
 			if(finished) begin
-				$display("@@@Finish one value calculation");
-				// disable wait_until_done;
+                $fdisplay(pipe_output,"-------------------------------------------------");
+                $fdisplay(pipe_output,"-------------------------------------------------");
+				$fdisplay(pipe_output, "@@@Finish one value calculation");
+                $fdisplay(pipe_output,"-------------------------------------------------");
+                $fdisplay(pipe_output,"-------------------------------------------------");
+				disable wait_until_finish;
 			end
 		end
 	endtask
@@ -131,12 +137,26 @@ task show_output;
     end
 endtask
 
+task show_cache_controls;
+    begin
+        $fdisplay(pipe_output,"=====  Cache Controls   =====");
+        $fdisplay(pipe_output,"clock: %d,  reset: %d", cache.clock, cache.reset);
+        $fdisplay(pipe_output,"hit: %d,  writeback: %d,  writeback_finished: %d", cache.hit, cache.writeback, cache.writeback_finished);
+        $fdisplay(pipe_output,"current_index: %d,  current_tag: %d,  last_index: %d, last_tag: %d", cache.current_index, cache.current_tag, cache.last_index, cache.last_tag);
+        $fdisplay(pipe_output,"changed_addr: %d,  current_mem_tag: %d,  update_mem_tag: %d", cache.changed_addr, cache.current_mem_tag, cache.update_mem_tag);
+        $fdisplay(pipe_output,"got_mem_data: %d,  unanswered_miss: %d,  miss_outstanding: %d", cache.got_mem_data, cache.unanswered_miss, cache.miss_outstanding);
+        $fdisplay(pipe_output,"command: %d,  addr: %d,  data: %h, mem_size: %d", cache.proc2Dcache_command, cache.proc2Dcache_addr, cache.proc2Dcache_data, cache.mem_size);
+        $fdisplay(pipe_output,"---------------------");
+    end
+endtask
+
 always @(negedge clock) begin
     #1;
     if (!reset)  begin
         $fdisplay(pipe_output,"====  Cycle  %4d  ====", cycle_count);
         show_input();
         show_output();
+        show_cache_controls();
         show_cache();
         $fdisplay(pipe_output,"--------------------------------------------------------------------------------");
     end
@@ -184,95 +204,28 @@ initial begin
     if ($value$plusargs("PIPELINE=%s", pipeline_output_file)) begin
         $display("Using pipeline output file: %s", pipeline_output_file);
     end else begin
-        $display("Using default pipeline output file: dcache.out");
-        pipeline_output_file = "dcache.out";
+        $display("Using default pipeline output file: pipeline.out");
+        pipeline_output_file = "pipeline.out";
     end
+
+
+    pipe_output = $fopen(pipeline_output_file);
 
 
     clock = 0;
     reset = 1;
     @(negedge clock);
     reset = 0;
-    LD(1,0);
+    ST(8'h10,3);
     wait_until_finish();
+    NONE();
     @(negedge clock);
-    ST(3,2);
-    wait_until_finish();
     @(negedge clock);
-    ST(4,1);
-    wait_until_finish();
-    @(negedge clock);
-    ST(1,0);
+    LD(8'h10,3);
     wait_until_finish();
     @(negedge clock);
     NONE();
-    wait_until_finish();
-    @(negedge clock);
-    LD(1,0);
-    wait_until_finish();
-    @(negedge clock);
-    ST(1,2);
-    wait_until_finish();
-    @(negedge clock);
-    ST(5,3);
-    wait_until_finish();
-    @(negedge clock);
-    ST(4,4);
-    wait_until_finish();
-    @(negedge clock);
-    NONE();
-    wait_until_finish();
-    @(negedge clock);
-    LD(1,4);
-    wait_until_finish();
-    @(negedge clock);
-    LD(4,2);
-    wait_until_finish();
-    @(negedge clock);
-    LD(4,3);
-    wait_until_finish();
-    @(negedge clock);
-    ST(3,2);
-    wait_until_finish();
-    @(negedge clock);
-    ST(4,3);
-    wait_until_finish();
-    @(negedge clock);
-    ST(1,2);
-    wait_until_finish();
-    @(negedge clock);
-    NONE();
-    wait_until_finish();
-    @(negedge clock);
-    LD(1,4);
-    wait_until_finish();
-    @(negedge clock);
-    LD(2,4);
-    wait_until_finish();
-    @(negedge clock);
-    LD(3,2);
-    wait_until_finish();
-    @(negedge clock);
-    ST(3,3);
-    @(negedge clock);
-    LD(4,2);
-    wait_until_finish();
-    @(negedge clock);
-    ST(1,3);
-    wait_until_finish();
-    @(negedge clock);
-    NONE();
-    @(negedge clock);
-    LD(1,2);
-    wait_until_finish();
-    @(negedge clock);
-    LD(3,2);
-    wait_until_finish();
-    @(negedge clock);
-    NONE();
-    wait_until_finish();
 
-    pipe_output = $fopen(pipeline_output_file);	
     $finish;
 end
 
@@ -283,7 +236,7 @@ end
 			         $realtime);
             debug_counter <= 0;
 		end else begin
-            if(debug_counter > 50000) begin
+            if(debug_counter > 1000) begin
                 $display("@@ : System halted\n@@");
                 $fclose(pipe_output);
                 #100 $finish;

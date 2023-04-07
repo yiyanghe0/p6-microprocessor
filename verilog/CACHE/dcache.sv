@@ -76,11 +76,11 @@ module dcache(
 	assign update_mem_tag = changed_addr || miss_outstanding || got_mem_data;
 
 	logic unanswered_miss; // if we have a new miss or still waiting for the response tag
-	assign unanswered_miss = (proc2Dcache_command == BUS_NONE) ? 0 : changed_addr ? (!(hit || (proc2Dcache_command == BUS_STORE && !dcache_data[current_index].dirty)))
-	                            													: miss_outstanding && (Dmem2proc_response == 0);
+	assign unanswered_miss = (proc2Dcache_command == BUS_NONE) ? 0 : (changed_addr ? (!(hit || (proc2Dcache_command == BUS_STORE && !dcache_data[current_index].dirty)))
+	                            													: miss_outstanding && (Dmem2proc_response == 0));
 
+	assign finished = hit;
 
-	
 
 	// case 1
 	// data always comes from dcache
@@ -152,10 +152,22 @@ module dcache(
 				dcache_data[current_index].dirty  <= `SD 0;
 			end
 
-			if (hit && proc2Dcache_command == BUS_STORE) begin
-				dcache_data[current_index].data   <= `SD proc2Dmem_data;
+			if (proc2Dcache_command == BUS_STORE && (hit || !dcache_data[current_index].valid)) begin
+				$display();
+				case(mem_size)
+					2'b00:
+						dcache_data[current_index].data[proc2Dcache_addr[2:0]] <= `SD proc2Dcache_data[7:0];
+					2'b01: 
+						dcache_data[current_index].data[proc2Dcache_addr[2:1]] <= `SD proc2Dcache_data[15:0];
+					2'b10: 
+						dcache_data[current_index].data[proc2Dcache_addr[2]] <= `SD proc2Dcache_data[31:0];
+					2'b11:
+						dcache_data[current_index].data <= `SD proc2Dcache_data;
+				endcase
+				// dcache_data[current_index].data   <= `SD proc2Dcache_data;
 				dcache_data[current_index].dirty  <= `SD 1;
-				finished  						  <= `SD 1;
+				dcache_data[current_index].valid  <= `SD 1;
+				// finished <= `SD 1;
 			end
 			
 			if (writeback_finished) begin
