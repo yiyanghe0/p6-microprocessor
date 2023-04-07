@@ -92,7 +92,7 @@ ROB_entry rob_entry [`ROB_LEN-1:0] (
      .dest_reg_idx_in(dest_reg_idx_in),
      .halt_in(id_packet_in.halt),
      .illegal_in(id_packet_in.illegal),
-     .NPC_in(id_packet_in.NPC),
+     .PC_in(id_packet_in.PC),
      .id_inst_valid(id_packet_in.valid),
 
      .rob_entry_packet_out(rob_entry_packet_out)
@@ -125,7 +125,7 @@ end
 always_comb begin
     next_rob_entry_mispredict = rob_entry_mispredict;
     for (int i=0; i < `ROB_LEN; i++) begin
-        if (i == cdb_packet_in.reg_tag.tag && cdb_packet_in.take_branch) // !!!Assume predict not taken
+        if (i == cdb_packet_in.reg_tag.tag && (!cdb_packet_in.correct_predict)) // !!!Assume predict not taken
             next_rob_entry_mispredict[i] = 1;
     end
     if (squash) next_rob_entry_mispredict = 0;
@@ -162,7 +162,7 @@ always_comb begin
     rob2reg_packet_out.dest_reg_idx = 0;
     rob2reg_packet_out.halt = 0;
     rob2reg_packet_out.illegal = 0;
-    rob2reg_packet_out.NPC = 0;
+    rob2reg_packet_out.PC = 0;
     rob2reg_packet_out.inst_valid = 0;
 
     if(retire) begin
@@ -170,8 +170,9 @@ always_comb begin
             rob2reg_packet_out.dest_reg_idx = rob_entry_packet_out[head_idx].dest_reg_idx;
             rob2reg_packet_out.halt = squash ? 1'b0 : rob_entry_packet_out[head_idx].is_halt;
             rob2reg_packet_out.illegal = rob_entry_packet_out[head_idx].is_illegal;
-            rob2reg_packet_out.NPC = rob_entry_packet_out[head_idx].NPC;
+            rob2reg_packet_out.PC = rob_entry_packet_out[head_idx].PC;
             rob2reg_packet_out.inst_valid = rob_entry_packet_out[head_idx].inst_valid;
+            rob2reg_packet_out.wb_en = rob_entry_packet_out[head_idx].wb_en;
 
         end
 end
@@ -210,28 +211,30 @@ module ROB_entry(
     input [`REG_LEN-1:0]         dest_reg_idx_in,  
     input                        halt_in,
     input                        illegal_in, 
-    input [`XLEN-1:0]            NPC_in,
+    input [`XLEN-1:0]            PC_in,
     input                        id_inst_valid,
 
     output ROB_entry_PACKET      rob_entry_packet_out
 );
 
 // define entry entity
-logic valid;             // dest_reg_value is valid
+logic valid;             // finished complete stage, dest_reg_value is valid
+logic wb_en;
 logic [`REG_LEN-1:0] dest_reg_idx;
 logic [`XLEN-1:0] dest_reg_value;
 logic             is_halt;
 logic             is_illegal;
-logic [`XLEN-1:0] NPC;
+logic [`XLEN-1:0] PC_value;
 logic             inst_valid;
 
 
 logic [`REG_LEN-1:0] next_dest_reg_idx;
 logic [`XLEN-1:0]    next_dest_reg_value;
 logic                next_valid;
+logic                next_wb_en;
 logic                next_is_halt;
 logic                next_is_illegal;
-logic [`XLEN-1:0]    next_NPC;
+logic [`XLEN-1:0]    next_PC;
 logic                next_inst_valid;
 
 
@@ -239,18 +242,20 @@ logic                next_inst_valid;
 assign next_dest_reg_idx   = (wr_en && !stall) ? dest_reg_idx_in : dest_reg_idx;
 assign next_dest_reg_value = (wr_en && !stall) ? 0 : (cp_sig && cdb_valid_bit) ? dest_reg_cdb : dest_reg_value;
 assign next_valid          = (retire) ? 0 : cp_sig ? 1'b1 : valid;
+assign next_wb_en          = (retire) ? 0 : cp_sig ? cdb_valid_bit : wb_en;
 assign next_is_halt        = (wr_en && !stall) ? halt_in : is_halt;
 assign next_is_illegal     = (wr_en && !stall) ? illegal_in : is_illegal;
-assign next_NPC            = (wr_en && !stall) ? NPC_in : NPC;
-assign next_inst_valid     = (wr_en && !halt_in && !stall) ? id_inst_valid : inst_valid;
+assign next_PC             = (wr_en && !stall) ? PC_in : PC_value;
+assign next_inst_valid     = (wr_en && !stall) ? id_inst_valid : inst_valid;
 
 
 assign rob_entry_packet_out.dest_reg_value = dest_reg_value;
 assign rob_entry_packet_out.dest_reg_idx   = dest_reg_idx;
 assign rob_entry_packet_out.valid 		   = valid;
+assign rob_entry_packet_out.wb_en 		   = wb_en;
 assign rob_entry_packet_out.is_halt 	   = is_halt;
 assign rob_entry_packet_out.is_illegal 	   = is_illegal;
-assign rob_entry_packet_out.NPC 	       = NPC;
+assign rob_entry_packet_out.PC 	           = PC_value;
 assign rob_entry_packet_out.inst_valid 	   = inst_valid;
  
 
@@ -259,20 +264,22 @@ assign rob_entry_packet_out.inst_valid 	   = inst_valid;
 always_ff @(posedge clock) begin
         if (reset || squash) begin
             valid <= `SD 1'b0;
+            wb_en <= `SD 1'b0;
             dest_reg_idx <= `SD 0;
             dest_reg_value <= `SD 0;
             is_halt <= `SD 0;
             is_illegal <= `SD 0;
-            NPC        <= `SD 0;
+            PC_value   <= `SD 0;
             inst_valid <= `SD 0;
         end
         else begin
             valid <= `SD next_valid;
+            wb_en <= `SD next_wb_en;
             dest_reg_idx <= `SD next_dest_reg_idx;
             dest_reg_value <= `SD next_dest_reg_value;
             is_halt <= `SD next_is_halt;
             is_illegal <= `SD next_is_illegal;
-            NPC        <= `SD next_NPC;
+            PC_value   <= `SD next_PC;
             inst_valid <= `SD next_inst_valid;
         end
     end

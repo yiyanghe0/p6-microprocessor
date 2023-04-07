@@ -378,6 +378,7 @@ TESTBENCH = testbench.sv \
 SIMFILES = pipeline.sv \
            regfile.sv \
 		   $(wildcard verilog/CDB/*.sv) \
+		   $(wildcard verilog/BTB/*.sv) \
 		   $(wildcard verilog/DP_IS/*.sv) \
 		   $(wildcard verilog/EX/*.sv) \
 		   $(wildcard verilog/ID/*.sv) \

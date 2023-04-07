@@ -24,9 +24,11 @@ module if_stage (
 	input [63:0]      Icache2proc_data,     // Data coming back from instruction cache
 	input 			  Icache2proc_valid,	// 1 - data from Icache is valid, 0 is a icache miss
 	input [1:0]		  proc2Dmem_command,
+	input BTB_PACKET btb_packet_in,
 
 	output logic [`XLEN-1:0] fetch2Icache_addr, // Address sent to Instruction cache
-	output IF_ID_PACKET      if_packet_out   // Output data packet from IF going to ID, see sys_defs for signal information
+	output IF_ID_PACKET      if_packet_out,   // Output data packet from IF going to ID, see sys_defs for signal information
+	output IFID2BTB_PACKET if2btb_packet_out
 );
 
 	logic [`XLEN-1:0] PC_reg; // PC we are currently fetching
@@ -38,11 +40,14 @@ module if_stage (
 	// this mux is because the Imem gives us 64 bits not 32 bits
 	assign if_packet_out.inst = PC_reg[2] ? Icache2proc_data[63:32] : Icache2proc_data[31:0];
 
-	assign PC_plus_4 = PC_reg + 4; // default next PC value
+	assign PC_plus_4 =  (btb_packet_in.valid && btb_packet_in.prediction) ? btb_packet_in.target_pc : PC_reg + 4; //predict taken from btb
 
 	assign if_packet_out.PC  = PC_reg;
 	assign if_packet_out.NPC = PC_plus_4; // Pass PC+4 down pipeline w/instruction
     //assign if_packet_out.valid = ~stall;
+
+	assign if2btb_packet_out.PC = PC_reg;
+	assign if2btb_packet_out.valid = if_packet_out.valid;
 
 	// synopsys sync_set_reset "reset"
 	always_ff @(posedge clock) begin

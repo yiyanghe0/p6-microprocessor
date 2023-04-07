@@ -61,7 +61,7 @@ module testbench;
 	logic [4:0]       pipeline_commit_wr_idx;
 	logic [`XLEN-1:0] pipeline_commit_wr_data;
 	logic             pipeline_commit_wr_en;
-	logic [`XLEN-1:0] pipeline_commit_NPC;
+	logic [`XLEN-1:0] pipeline_commit_PC;
 
 	logic [`XLEN-1:0] if_NPC_out;
 	logic [31:0]      if_IR_out;
@@ -102,7 +102,7 @@ module testbench;
 		.pipeline_commit_wr_data  (pipeline_commit_wr_data),
 		.pipeline_commit_wr_idx   (pipeline_commit_wr_idx),
 		.pipeline_commit_wr_en    (pipeline_commit_wr_en),
-		.pipeline_commit_NPC      (pipeline_commit_NPC),
+		.pipeline_commit_PC       (pipeline_commit_PC),
 
 		.if_NPC_out        (if_NPC_out),
 		.if_IR_out         (if_IR_out),
@@ -147,8 +147,8 @@ module testbench;
 		$fdisplay(pipe_output, "\n squash is: %b", core.squash);
 
 		$fdisplay(pipe_output, "\n ----------------------PC----------------------");
-		$fdisplay(pipe_output, "IF_PC: %h, IF/ID PC: %h, DP_PC: %h, IS_PC: %h, EX_PC: %h, CP_PC: %h, RT_PC: %h",
-				  core.if_packet.PC, core.if_id_packet.PC, core.DP_IS_0.id_packet.PC, core.is_packet.NPC-4, core.ex_packet.NPC-4, core.cp_packet.NPC-4, core.rt_npc-4);
+		$fdisplay(pipe_output, "IF_PC: %h, DP_PC: %h, IS_PC: %h, EX_PC: %h, CP_PC: %h, RT_PC: %h",
+				  core.if_packet.PC, core.DP_IS_0.id_packet.PC, core.is_packet.PC, core.ex_packet.PC, core.cp_packet.PC , pipeline_commit_PC);
 
 
 		$fdisplay(pipe_output, "\n ----------------------Memory----------------------");
@@ -169,6 +169,14 @@ module testbench;
 						core.if_packet.NPC,
 						core.if_packet.valid);	
 
+		$fdisplay(pipe_output, "\n ----------------------BTB-----------------------");
+		$fdisplay(pipe_output, "if_packet_in.PC: %h, if_packet_in.valid: %d", core.BTB_0.if_packet_in.PC, core.BTB_0.if_packet_in.valid);  
+		$fdisplay(pipe_output, "id_packet_in.PC: %h, id_packet_in.valid: %d", core.BTB_0.id_packet_in.PC, core.BTB_0.id_packet_in.valid);  
+		$fdisplay(pipe_output, "ex_packet_in.PC: %h ex_packet_in.valid: %d ex_packet_in.taken: %b ex_packet_in.target_pc: %h", core.BTB_0.ex_packet_in.PC, core.BTB_0.ex_packet_in.valid, 
+																														core.BTB_0.ex_packet_in.taken, core.BTB_0.ex_packet_in.target_pc);  
+		$fdisplay(pipe_output, "btb_packet_out.prediction: %b btb_packet_out.valid: %b btb_packet_out.target_pc: %h", core.BTB_0.btb_packet_out.prediction, core.BTB_0.btb_packet_out.valid, 
+																														core.BTB_0.btb_packet_out.target_pc);  
+
 		$fdisplay(pipe_output, "\n ----------------------ID_PACKET------------------------");	
 		$fdisplay(pipe_output,"id_packet_valid: %b", core.DP_IS_0.id_packet.valid);
 
@@ -182,7 +190,7 @@ module testbench;
 				i,
 				core.DP_IS_0.ROB_0.rob_entry_packet_out[i].dest_reg_idx,
 				core.DP_IS_0.ROB_0.rob_entry_packet_out[i].dest_reg_value,
-				core.DP_IS_0.ROB_0.rob_entry_packet_out[i].NPC-4,
+				core.DP_IS_0.ROB_0.rob_entry_packet_out[i].PC,
 				core.DP_IS_0.ROB_0.rob_entry_packet_out[i].valid,
 				core.DP_IS_0.ROB_0.rob_entry_packet_out[i].is_halt,
 				core.DP_IS_0.ROB_0.rob_entry_packet_out[i].is_illegal);
@@ -244,6 +252,12 @@ module testbench;
 						core.cp_packet.take_branch,
 						core.cp_packet.halt,
 						core.cp_packet.illegal);
+
+		$fdisplay(pipe_output, "\n ----------------------RETIRE------------------------");	
+		$fdisplay(pipe_output, "ROB retire packet PC: %h, halt: %b, illegal: %b", core.rob_retire_packet.PC, core.rob_retire_packet.halt, core.rob_retire_packet.illegal);
+		$fdisplay(pipe_output, "ROB2REG packet    addr: %h, value: %b, valid: %b", core.rob_retire_packet.dest_reg_idx, core.rob_retire_packet.dest_reg_value, core.rob_retire_packet.valid);
+		$fdisplay(pipe_output, "pipeline completed insts: %h", pipeline_completed_insts);
+
 
 
 		$fdisplay(pipe_output, "\n -------------------REG------------------------");	
@@ -401,11 +415,11 @@ module testbench;
 			if(pipeline_completed_insts>0) begin
 				if(pipeline_commit_wr_en)
 					$fdisplay(wb_fileno, "PC=%x, REG[%d]=%x",
-						pipeline_commit_NPC-4,
+						pipeline_commit_PC,
 						pipeline_commit_wr_idx,
 						pipeline_commit_wr_data);
 				else
-					$fdisplay(wb_fileno, "PC=%x, ---",pipeline_commit_NPC-4);
+					$fdisplay(wb_fileno, "PC=%x, ---",pipeline_commit_PC);
 			end
 
 			// deal with any halting conditions

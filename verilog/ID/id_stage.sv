@@ -239,7 +239,8 @@ module id_stage (
 	input  IF_ID_PACKET if_id_packet_in,
 
 
-	output ID_PACKET id_packet_out
+	output ID_PACKET id_packet_out,
+	output IFID2BTB_PACKET id2btb_packet_out
 );
 
 
@@ -255,7 +256,7 @@ module id_stage (
 		.rdb_out(id_packet_out.rs2_value),
 
 		.wr_clk(clock),
-		.wr_en(rob_retire_packet_in.valid),
+		.wr_en(rob_retire_packet_in.wb_en),
 		.wr_idx(rob_retire_packet_in.dest_reg_idx),
 		.wr_data(rob_retire_packet_in.dest_reg_value)
 	);
@@ -283,6 +284,9 @@ module id_stage (
 		.valid_inst(id_packet_out.valid),
 		.ex_channel(id_packet_out.channel)
 	);
+
+	assign id2btb_packet_out.PC = id_packet_out.PC;
+	assign id2btb_packet_out.valid = id_packet_out.valid && (id_packet_out.cond_branch || id_packet_out.uncond_branch);
 
 	// mux to generate dest_reg_idx based on
 	// the dest_reg_select output from decoder

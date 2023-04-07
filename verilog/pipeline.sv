@@ -34,7 +34,7 @@ module pipeline (
 	output logic [4:0]       pipeline_commit_wr_idx,
 	output logic [`XLEN-1:0] pipeline_commit_wr_data,
 	output logic             pipeline_commit_wr_en,
-	output logic [`XLEN-1:0] pipeline_commit_NPC,
+	output logic [`XLEN-1:0] pipeline_commit_PC,
 
 	// testing hooks (these must be exported so we can test
 	// the synthesized version) data is tested by looking at
@@ -59,6 +59,7 @@ module pipeline (
 	output logic [`XLEN-1:0] ex_cp_NPC,
 	output logic [31:0]      ex_cp_IR,
 	output logic             ex_cp_valid_inst,
+	output logic 			 ex_cp_correct_predict,
 
 	// Outputs from MEM/WB Pipeline Register
 	output logic [`XLEN-1:0] mem_wb_NPC,
@@ -83,6 +84,12 @@ module pipeline (
 	logic [`XLEN-1:0] proc2Icache_addr;
 	IF_ID_PACKET if_packet;
 
+	// Inputs and Outputs from BTB
+	IFID2BTB_PACKET if2btb_packet;
+	IFID2BTB_PACKET id2btb_packet;
+	EX2BTB_PACKET	ex2btb_packet;
+	BTB_PACKET		btb_packet;
+
 	// Outputs from IF/DP Pipeline Register
 	IF_ID_PACKET if_id_packet;
 
@@ -100,6 +107,7 @@ module pipeline (
 	logic ex_valid;
 	logic ex_structural_hazard;
 	logic ex_no_output;
+	logic correct_predict;
 
 	assign ex_structural_hazard = ~ex_valid;
 
@@ -163,8 +171,8 @@ module pipeline (
 
 	 assign pipeline_commit_wr_idx  = rob_retire_packet.dest_reg_idx;
 	 assign pipeline_commit_wr_data = rob_retire_packet.dest_reg_value;
-	 assign pipeline_commit_wr_en   = rob_retire_packet.valid;
-	 assign pipeline_commit_NPC     = rob_retire_packet.NPC;
+	 assign pipeline_commit_wr_en   = rob_retire_packet.wb_en;
+	 assign pipeline_commit_PC      = rob_retire_packet.PC;
 
 //////////////////////////////////////////////////
 //                                              //
@@ -236,10 +244,28 @@ icache icache_0 (
 		.Icache2proc_data(Icache_data_out),
 		.Icache2proc_valid(Icache_valid_out),  // from Icache
 		.proc2Dmem_command(BUS_NONE),		// Prioritize DCache !!!No memory operation for now
+		.btb_packet_in(btb_packet),
 
 		// Outputs
 		.fetch2Icache_addr(proc2Icache_addr), // to icache
-		.if_packet_out(if_packet)
+		.if_packet_out(if_packet),
+		.if2btb_packet_out(if2btb_packet)
+	);
+
+//////////////////////////////////////////////////
+//                                              //
+//                  BTB                         //
+//                                              //
+//////////////////////////////////////////////////
+
+	BTB BTB_0(
+		.clock(clock),
+		.reset(reset),
+		.if_packet_in(if2btb_packet),
+    	.id_packet_in(id2btb_packet),
+    	.ex_packet_in(ex2btb_packet),
+
+    	.btb_packet_out(btb_packet)
 	);
 
 //////////////////////////////////////////////////
@@ -295,7 +321,8 @@ icache icache_0 (
 		.is_packet_out(is_packet),
 		.rob_retire_packet(rob_retire_packet),
 		.next_struc_hazard(next_dp_is_structural_hazard),
-		.squash(squash)
+		.squash(squash),
+		.id2btb_packet_out(id2btb_packet)
 	);
 
 //////////////////////////////////////////////////
@@ -354,7 +381,9 @@ icache icache_0 (
 		// Outputs
 		.ex_packet_out(ex_packet),
 		.valid(ex_valid),         // 0 - has structural hazard in mult, need to stall RS issue only, currently mult_num =4, no need
-		.no_output(ex_no_output)
+		.no_output(ex_no_output),
+		.ex2btb_packet_out(ex2btb_packet),
+		.correct_predict(correct_predict)
 	);
 
 //////////////////////////////////////////////////
@@ -373,6 +402,7 @@ icache icache_0 (
 			ex_cp_IR     <= `SD `NOP;
 			ex_cp_packet <= `SD 0;
 			ex_cp_no_output <= `SD 1;
+			ex_cp_correct_predict <= `SD 1;
 		end else begin
 			if (ex_cp_enable) begin
 				// these are forwarded directly from ID/EX registers, only for debugging purposes
@@ -380,6 +410,7 @@ icache icache_0 (
 				// EX outputs
 				ex_cp_packet <= `SD ex_packet;
 				ex_cp_no_output <= `SD ex_no_output;
+				ex_cp_correct_predict <= `SD correct_predict;
 			end // if
 		end // else: !if(reset)
 	end // always
@@ -394,6 +425,7 @@ icache icache_0 (
 		// Inputs
 		.ex_packet_in(ex_cp_packet),
 		.ex_no_output(ex_cp_no_output),
+		.correct_predict(ex_cp_correct_predict),
 
 		// Outputs
 		.cdb_packet_out(cp_packet)

@@ -22,9 +22,9 @@ module rt_stage (
 	logic [`XLEN-1:0] next_rt_npc;
 	logic mispredict; // 1 - mispredict
 
-	assign mispredict = cdb_packet_in.take_branch;
+	assign mispredict = !cdb_packet_in.correct_predict;
 	
-	assign next_rt_npc = (mispredict) ? cdb_packet_in.NPC : rt_npc_out;
+	assign next_rt_npc = (mispredict) ? cdb_packet_in.correct_PC : rt_npc_out;
 
 	// synopsys sync_set_reset "reset"
 	always_ff @(posedge clock) begin

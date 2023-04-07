@@ -330,6 +330,7 @@ typedef struct packed {
 `define RS_LEN 8
 `define SUPERSCALER_LEN 1
 `define MAP_TABLE_LEN 32
+`define BTB_LEN 32
 
 // flags for cdb write through
 typedef enum logic [1:0] {TAGTAG, TAGCDB, CDBTAG, CDBCDB} FLAG;
@@ -342,6 +343,13 @@ typedef struct packed {
 	logic [$clog2(`ROB_LEN)-1:0] tag;   //ROB entry number
 	logic 						 valid; //valid bit (e.g. tag = 0 && valid = 1 => ROB#0, tag = 0 && valid = 0 => tag is empty)
 } TAG_PACKET;
+
+typedef enum logic[1:0]{
+		NOTTAKE = 0,
+		WEAK_NOTTAKE = 1,
+		WEAK_TAKEN = 2,
+		TAKEN = 3
+} BTB_PREDICT;
 
 //////////////////////////////////////////////
 //
@@ -457,8 +465,10 @@ typedef struct packed {
 typedef struct packed {
 	TAG_PACKET reg_tag;
 	logic [`XLEN-1:0] reg_value;
-	logic [`XLEN-1:0] NPC;         // pc + 4, forwarded
+	logic [`XLEN-1:0] PC;
+	logic [`XLEN-1:0] correct_PC;         
 	logic             take_branch; // is this a taken branch?, forwarded
+	logic 		      correct_predict;
 	logic 			  no_output;
 	logic       	  halt;          // is this a halt?
 	logic       	  illegal;       // is this instruction illegal?
@@ -504,9 +514,10 @@ typedef struct packed {
 	logic [`XLEN-1:0] 	  dest_reg_value;   //data
 	logic [`REG_LEN-1:0]  dest_reg_idx; //address
 	logic                 valid;
+	logic 				  wb_en;
 	logic       	  	  is_halt;          // is this a halt?
 	logic       	  	  is_illegal;       // is this instruction illegal? 
-	logic [`XLEN-1:0]	  NPC;
+	logic [`XLEN-1:0]	  PC;
 	logic			      inst_valid;
 } ROB_entry_PACKET;
 
@@ -519,6 +530,7 @@ typedef struct packed {
 
 typedef struct packed {
 	logic [`XLEN-1:0] alu_result;  // alu_result
+	logic [`XLEN-1:0] PC;         
 	logic [`XLEN-1:0] NPC;         // pc + 4
 	logic             take_branch; // is this a taken branch?
 	logic [$clog2(`ROB_LEN)-1:0] dest_reg_idx;
@@ -545,10 +557,66 @@ typedef struct packed {
 	logic [`XLEN-1:0]    dest_reg_value;
 	logic [`REG_LEN-1:0] dest_reg_idx;
 	logic valid;
+	logic wb_en;
 	logic halt;
 	logic illegal;
-	logic [`XLEN-1:0] NPC;
+	logic [`XLEN-1:0] PC;
 	logic inst_valid;
 } ROB2REG_PACKET;
+
+//////////////////////////////////////////////
+//
+// IF2BTB_PACKET:
+// Data from IF/ID to BTB
+//
+//////////////////////////////////////////////
+
+typedef struct packed {
+	logic [`XLEN-1:0] PC;
+	logic valid;
+} IFID2BTB_PACKET;
+
+
+//////////////////////////////////////////////
+//
+// EX2BTB_PACKET:
+// Data from Brcond FU to BTB
+//
+//////////////////////////////////////////////
+
+typedef struct packed {
+	logic [`XLEN-1:0] PC;
+	logic [`XLEN-1:0] target_pc;
+	logic valid;
+	logic taken;
+} EX2BTB_PACKET;
+
+
+//////////////////////////////////////////////
+//
+// BTB_PACKET:
+// Data from BTB
+//
+//////////////////////////////////////////////
+
+typedef struct packed {
+	logic prediction; // 0 for not taken and 1 for taken
+	logic valid;
+	logic [`XLEN-1:0] target_pc;
+} BTB_PACKET;
+
+//////////////////////////////////////////////
+//
+// BTB_ENTRY:
+// Data from BTB
+//
+//////////////////////////////////////////////
+
+typedef struct packed {
+	BTB_PREDICT state; // T WT WN N
+	logic busy;
+	logic [`XLEN-1:$clog2(`BTB_LEN)] tag;
+	logic [`XLEN-1:0] target_pc;
+} BTB_ENTRY;
 
 `endif // __SYS_DEFS_SVH__
