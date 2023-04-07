@@ -14,7 +14,7 @@ module dcache(
 	input [`XLEN-1:0] proc2Dcache_addr,
     input [63:0]      proc2Dcache_data,
     input [1:0]       proc2Dcache_command, // 0: None, 1: Load, 2: Store
-	input [1:0]		  mem_size, // BYTE = 2'h0, HALF = 2'h1, WORD = 2'h2, DOUBLE = 2'h3
+	input [2:0]		  mem_size, // BYTE = 2'h0, HALF = 2'h1, WORD = 2'h2, DOUBLE = 3'h4
 
 	// to memory
 	output logic [1:0]       proc2Dmem_command,
@@ -96,16 +96,16 @@ module dcache(
 		loaded_data = dcache_data[current_index].data;
 		if (proc2Dcache_command == BUS_STORE && (hit || !dcache_data[current_index].valid || !dcache_data[current_index].dirty)) begin
 			case(mem_size)
-				2'b00: begin
+				3'b000: begin
 					loaded_data_byte[proc2Dcache_addr[2:0]] = proc2Dcache_data[7:0];
 				end
-				2'b01: begin
+				3'b001: begin
 					loaded_data_half[proc2Dcache_addr[2:1]] = proc2Dcache_data[15:0];
 				end
-				2'b10: begin
+				3'b010: begin
 					loaded_data_word[proc2Dcache_addr[2]] = proc2Dcache_data[31:0];
 				end
-				2'b11:
+				3'b100:
 					loaded_data = loaded_data;
 			endcase
 		end
@@ -117,16 +117,16 @@ module dcache(
 		Dcache_data_out = loaded_data;
 
 		case(mem_size)
-			2'b00: begin
+			3'b000: begin
 				Dcache_data_out = {56'b0, loaded_data_byte[proc2Dcache_addr[2:0]]};
 			end
-			2'b01: begin
+			3'b001: begin
 				Dcache_data_out = {48'b0, loaded_data_half[proc2Dcache_addr[2:1]]};
 			end
-			2'b10: begin
+			3'b010: begin
 				Dcache_data_out = {32'b0, loaded_data_word[proc2Dcache_addr[2]]};
 			end
-			2'b11:
+			3'b100:
 				Dcache_data_out = loaded_data;
 		endcase
 	end
@@ -181,13 +181,13 @@ module dcache(
 
 			if (proc2Dcache_command == BUS_STORE && (hit || !dcache_data[current_index].valid || !dcache_data[current_index].dirty)) begin
 				case(mem_size)
-					2'b00:
+					3'b000:
 						dcache_data[current_index].data <= `SD loaded_data_byte;
-					2'b01: 
+					3'b001: 
 						dcache_data[current_index].data <= `SD loaded_data_half;
-					2'b10: 
+					3'b010: 
 						dcache_data[current_index].data <= `SD loaded_data_word;
-					2'b11:
+					3'b100:
 						dcache_data[current_index].data <= `SD proc2Dcache_data;
 				endcase
 				dcache_data[current_index].tags   <= `SD current_tag;
