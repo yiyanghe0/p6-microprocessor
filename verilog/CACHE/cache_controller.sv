@@ -36,8 +36,6 @@ module cache_controller(
 );
 
     logic d_request;
-    logic i_request;
-    assign i_request = (Icache2ctrl_command != BUS_NONE);
     assign d_request = (Dcache2ctrl_command != BUS_NONE);
 
     always_comb begin

@@ -84,20 +84,47 @@ module dcache(
 
 	// case 1
 	// data always comes from dcache
+	logic [7:0][7:0] loaded_data_byte;
+	logic [3:0][15:0] loaded_data_half;
+	logic [1:0][31:0] loaded_data_word;
 	logic [63:0] loaded_data;
-	assign loaded_data = dcache_data[current_index].data; // !!! change according to mem_size
+
+	always_comb begin
+		loaded_data_byte = dcache_data[current_index].data;
+		loaded_data_half = dcache_data[current_index].data;
+		loaded_data_word = dcache_data[current_index].data;
+		loaded_data = dcache_data[current_index].data;
+		if (proc2Dcache_command == BUS_STORE && (hit || !dcache_data[current_index].valid || !dcache_data[current_index].dirty)) begin
+			case(mem_size)
+				2'b00: begin
+					loaded_data_byte[proc2Dcache_addr[2:0]] = proc2Dcache_data[7:0];
+				end
+				2'b01: begin
+					loaded_data_half[proc2Dcache_addr[2:1]] = proc2Dcache_data[15:0];
+				end
+				2'b10: begin
+					loaded_data_word[proc2Dcache_addr[2]] = proc2Dcache_data[31:0];
+				end
+				2'b11:
+					loaded_data = loaded_data;
+			endcase
+		end
+	end
+
+
 	assign Dcache_valid_out = hit && (proc2Dcache_command == BUS_LOAD);
 	always_comb begin
 		Dcache_data_out = loaded_data;
+
 		case(mem_size)
 			2'b00: begin
-				Dcache_data_out = {56'b0, loaded_data[proc2Dcache_addr[2:0]]};
+				Dcache_data_out = {56'b0, loaded_data_byte[proc2Dcache_addr[2:0]]};
 			end
 			2'b01: begin
-				Dcache_data_out = {48'b0, loaded_data[proc2Dcache_addr[2:1]]};
+				Dcache_data_out = {48'b0, loaded_data_half[proc2Dcache_addr[2:1]]};
 			end
 			2'b10: begin
-				Dcache_data_out = {32'b0, loaded_data[proc2Dcache_addr[2]]};
+				Dcache_data_out = {32'b0, loaded_data_word[proc2Dcache_addr[2]]};
 			end
 			2'b11:
 				Dcache_data_out = loaded_data;
@@ -155,11 +182,11 @@ module dcache(
 			if (proc2Dcache_command == BUS_STORE && (hit || !dcache_data[current_index].valid || !dcache_data[current_index].dirty)) begin
 				case(mem_size)
 					2'b00:
-						dcache_data[current_index].data[proc2Dcache_addr[2:0]] <= `SD proc2Dcache_data[7:0];
+						dcache_data[current_index].data <= `SD loaded_data_byte;
 					2'b01: 
-						dcache_data[current_index].data[proc2Dcache_addr[2:1]] <= `SD proc2Dcache_data[15:0];
+						dcache_data[current_index].data <= `SD loaded_data_half;
 					2'b10: 
-						dcache_data[current_index].data[proc2Dcache_addr[2]] <= `SD proc2Dcache_data[31:0];
+						dcache_data[current_index].data <= `SD loaded_data_word;
 					2'b11:
 						dcache_data[current_index].data <= `SD proc2Dcache_data;
 				endcase

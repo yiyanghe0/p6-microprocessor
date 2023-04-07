@@ -232,16 +232,30 @@ initial begin
     NONE();
     @(negedge clock);
 
-    // testcase 3, load without writeback
-    LD(12'h810,3);
+    // testcase 3, store with writeback
+    ST(12'h820,1, 64'habcd_0110_1001_abcd);
     wait_until_finish();
     @(negedge clock);
     NONE();
     @(negedge clock);
 
-    // testcase 4, load with writeback
+    // testcase 4, load without writeback
+    LD(12'h810,2);
+    wait_until_finish();
+    @(negedge clock);
+    NONE();
+    @(negedge clock);
+
+    // testcase 5, load without writeback
     @(negedge clock);
     LD(12'h010,3);
+    wait_until_finish();
+    @(negedge clock);
+    NONE();
+    @(negedge clock);
+
+    // testcase 6, load without writeback
+    LD(12'h810,2);
     wait_until_finish();
     @(negedge clock);
     NONE();

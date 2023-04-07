@@ -238,6 +238,8 @@ EX_simv: FIFO.sv MULTIPLIER.sv Branch.sv ALU.sv
 EX_coverage_simv: FIFO.sv MULTIPLIER.sv Branch.sv ALU.sv
 synth/EX.vg: FIFO.sv MULTIPLIER.sv Branch.sv ALU.sv
 dcache_simv: ../testbench/mem.sv
+dcache_coverage_simv: ../testbench/mem.sv
+synth/dcache.vg: ../testbench/mem.sv
 
 # ROB_simv: ROB.sv
 # MAP_TABLE_simv: MAP_TABLE.sv
