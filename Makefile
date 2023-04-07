@@ -76,7 +76,7 @@
 
 # this is a built-in Make variable that lets Make search folders to find dependencies and targets
 # it can greatly simplify make rules and increase readability
-VPATH = synth:testbench:test_progs:verilog:output:verilog/RS:verilog/ROB:verilog/MAP_TABLE
+VPATH = synth:testbench:test_progs:verilog:output:verilog/RS:verilog/ROB:verilog/MAP_TABLE:verilog/EX:verilog/CACHE
 
 ###############################################
 # ---- Compilation Commands and Variables ----
@@ -222,7 +222,7 @@ all: mult_no_lsq.out
 # delete this comment area when you want to
 # TODO TODO TODO TODO
 
-TESTED_MODULES = RS RS_entry ROB MAP_TABLE
+TESTED_MODULES = RS RS_entry ROB MAP_TABLE FIFO EX icache dcache
 
 # if a module includes other modules, add the dependencies explicitly here
 # this works due to the targets using the $^ automatic variable
@@ -234,6 +234,18 @@ TESTED_MODULES = RS RS_entry ROB MAP_TABLE
 RS_simv: RS_entry.sv
 RS_coverage_simv: RS_entry.sv
 synth/RS.vg: RS_entry.sv 
+EX_simv: FIFO.sv MULTIPLIER.sv Branch.sv ALU.sv
+EX_coverage_simv: FIFO.sv MULTIPLIER.sv Branch.sv ALU.sv
+synth/EX.vg: FIFO.sv MULTIPLIER.sv Branch.sv ALU.sv
+dcache_simv: ../testbench/mem.sv
+
+# ROB_simv: ROB.sv
+# MAP_TABLE_simv: MAP_TABLE.sv
+# ID_simv: id_stage.sv
+# DP_IS_simv: RS_simv ROB_simv MAP_TABLE_simv ID_simv
+# CDB_simv: CDB.sv
+# RT_simv: rt_stage.sv
+# pipeline_simv: EX_simv DP_IS_simv CDB_simv RT_simv
 
 # this make rule will generate <name>_simv targets from the TESTED_MODULES variable e.g. 'make rob_simv'
 # it expects a <name>_tb.sv file in the testbench folder
@@ -361,18 +373,24 @@ testbench_passed:
 # NOTE: we're able to write these filenames without directories due to the VPATH declaration above
 # Make will automatically expand these to their actual paths when used in recipes
 TESTBENCH = testbench.sv \
-				ROB_tb.sv \
             mem.sv
 
 # you could simplify this line with $(wildcard verilog/*.sv) - but the manual way is more explicit
 SIMFILES = pipeline.sv \
            regfile.sv \
-           icache.sv \
-           mult.sv 
-		   
+		   $(wildcard verilog/CDB/*.sv) \
+		   $(wildcard verilog/DP_IS/*.sv) \
+		   $(wildcard verilog/EX/*.sv) \
+		   $(wildcard verilog/ID/*.sv) \
+		   $(wildcard verilog/IF/*.sv) \
+		   $(wildcard verilog/MAP_TABLE/*.sv) \
+		   $(wildcard verilog/ROB/*.sv) \
+		   $(wildcard verilog/RS/*.sv) \
+		   $(wildcard verilog/RT/*.sv) \
+		   $(wildcard verilog/CACHE/*.sv) \
 
-SIMFILES = RS_entry.sv
 
+		
 simv: $(HEADERS) $(TESTBENCH) $(SIMFILES)
 	@$(call PRINT_COLOR, 5, compiling $@)
 	@$(call PRINT_COLOR, 3, NOTE: if this is slow to startup: run '"module load vcs verdi"')

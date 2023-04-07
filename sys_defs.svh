@@ -364,7 +364,7 @@ typedef enum logic[1:0]{
 typedef struct packed {
 	logic [63:0]                  data;
 	// 12:0 (13 bits) since only 16 bits of address exist in mem - and 3 are the block offset
-	logic [12-`CACHE_LINE_BITS:0] tags;
+	logic [12-`DCACHE_LINE_BITS:0] tags;
 	logic                         valid;
     logic                         dirty;
 } DCACHE_PACKET;
