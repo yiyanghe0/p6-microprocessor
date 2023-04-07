@@ -15,6 +15,7 @@ module dcache_testbench;
 	logic [`XLEN-1:0] proc2Dcache_addr,
     logic [63:0]      proc2Dcache_data,
     logic [1:0]       proc2Dcache_command, // 0: None, 1: Load, 2: Store
+    logic [1:0]       proc2Dcache_size,
 
 	// to memory
 	logic [1:0]       proc2Dmem_command,
@@ -39,6 +40,7 @@ module dcache_testbench;
         .proc2Dcache_addr(proc2Dcache_addr),
         .proc2Dcache_data(proc2Dcache_data),
         .proc2Dcache_command(proc2Dcache_command),
+        .proc2Dcache_size(proc2Dcache_size),
         .proc2Dmem_command(proc2Dmem_command),
         .proc2Dmem_addr(proc2Dmem_addr),
         .proc2Dmem_data(proc2Dmem_data),
@@ -142,18 +144,22 @@ end
 
 task ST;
     input [`XLEN-1:0] addr;
+    input [1:0] size;
         begin
             proc2Dcache_command = 2'b10;
             proc2Dcache_addr = addr;
+            proc2Dcache_size = size;
             proc2Dcache_data = $random(64);
         end
 endtask
 
 task LD;
     input [`XLEN-1:0] addr;
+    input [1:0] size;
         begin
             proc2Dcache_command = 2'b01;
             proc2Dcache_addr = addr;
+            proc2Dcache_size = size;
             proc2Dcache_data = $random(64);
         end
 endtask
@@ -173,78 +179,80 @@ initial begin
     reset = 1;
     @(negedge clock);
     reset = 0;
-    LD(1);
+    LD(1,0);
     wait_until_finish();
     @(negedge clock);
-    LD(2);
+    ST(3,2);
     wait_until_finish();
     @(negedge clock);
-    ST(3);
+    ST(4,1);
     wait_until_finish();
     @(negedge clock);
-    ST(4);
-    wait_until_finish();
-    @(negedge clock);
-    ST(1);
+    ST(1,0);
     wait_until_finish();
     @(negedge clock);
     NONE();
     wait_until_finish();
     @(negedge clock);
-    LD(2);
+    LD(1,0);
     wait_until_finish();
     @(negedge clock);
-    ST(1);
+    ST(1,2);
     wait_until_finish();
     @(negedge clock);
-    ST(5);
+    ST(5,3);
     wait_until_finish();
     @(negedge clock);
-    ST(4);
-    wait_until_finish();
-    @(negedge clock);
-    NONE();
-    wait_until_finish();
-    @(negedge clock);
-    LD(1);
-    wait_until_finish();
-    @(negedge clock);
-    LD(4);
-    wait_until_finish();
-    @(negedge clock);
-    LD(4);
-    wait_until_finish();
-    @(negedge clock);
-    ST(3);
-    wait_until_finish();
-    @(negedge clock);
-    ST(4);
-    wait_until_finish();
-    @(negedge clock);
-    ST(1);
+    ST(4,4);
     wait_until_finish();
     @(negedge clock);
     NONE();
     wait_until_finish();
     @(negedge clock);
-    LD(1);
+    LD(1,4);
     wait_until_finish();
     @(negedge clock);
-    LD(2);
+    LD(4,2);
     wait_until_finish();
     @(negedge clock);
-    LD(3);
+    LD(4,3);
+    wait_until_finish();
     @(negedge clock);
-    ST(3);
+    ST(3,2);
+    wait_until_finish();
     @(negedge clock);
-    ST(4);
+    ST(4,3);
+    wait_until_finish();
     @(negedge clock);
-    ST(1);
+    ST(1,2);
+    wait_until_finish();
+    @(negedge clock);
+    NONE();
+    wait_until_finish();
+    @(negedge clock);
+    LD(1,4);
+    wait_until_finish();
+    @(negedge clock);
+    LD(2,4);
+    wait_until_finish();
+    @(negedge clock);
+    LD(3,2);
+    wait_until_finish();
+    @(negedge clock);
+    ST(3,3);
+    @(negedge clock);
+    LD(4,2);
+    wait_until_finish();
+    @(negedge clock);
+    ST(1,3);
     wait_until_finish();
     @(negedge clock);
     NONE();
     @(negedge clock);
-    LD(1);
+    LD(1,2);
+    wait_until_finish();
+    @(negedge clock);
+    LD(3,2);
     wait_until_finish();
     @(negedge clock);
     NONE();
