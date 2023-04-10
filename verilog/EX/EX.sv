@@ -36,9 +36,12 @@ module EX (
 	input [63:0]	Dcache2proc_data,
 	input 			Dcache_finish,
 
+	input           rob_start;
+
 	output EX_PACKET ex_packet_out,
 	output logic 	MUL_valid, // if MUL_valid = 0, mult encountered structural hazard and has to stall
 	output logic 	LOAD_valid, //if LOAD_valid = 0, LOAD encountered structural hazard and has to stall
+	output logic    STORE_valid,
 	output logic 	no_output,  // no_output = 1 -> nothing output; no_output = 0 -> valid output
 	output EX2BTB_PACKET ex2btb_packet_out,
 	output logic correct_predict, // BTB made correct prediction
@@ -83,17 +86,22 @@ module EX (
 	logic [63:0]						LOAD_result;
 	
 	logic								LOAD_busy;
+	logic                               STORE_busy;
 
 	logic [2:0]                         load_mem_size;
+	logic [2:0]                         store_mem_size;
 
 	//mux to determine if mutiplier or ALU or LD or ST
-	assign proc2Dcache_data = 0;
-	assign proc2Dcache_mem_size = load_mem_size;     // !!!temp value
+	assign proc2Dcache_mem_size = (LOAD_busy || LOAD_start) ? load_mem_size : store_mem_size;     
 	assign ALU_start 	= (is_packet_in.channel == ALU) ? 1 : 0;
 	assign BRANCH_start = (is_packet_in.channel == BR)  ? 1 : 0;
 	assign STORE_start  = (is_packet_in.channel == ST)  ? 1 : 0;
 	assign LOAD_start	= (is_packet_in.channel == LD)  ? 1 : 0;
 
+
+	always_comb begin
+
+	end
 
 	always_comb begin
 		MUL_start = 0;
@@ -110,6 +118,9 @@ module EX (
 
 	//Load valid 
 	assign	LOAD_valid = ((LOAD_busy | LOAD_start) & ~LOAD_done) == 1 ? 0 : 1;
+
+	//store valid 
+	assign	STORE_valid = ((STORE_busy | STORE_start) & ~STORE_done) == 1 ? 0 : 1;
 	
 
 	// ALU opA mux
@@ -336,18 +347,26 @@ module EX (
 	assign correct_predict = ((ex_packet_out.take_branch) == (ex_packet_out.NPC == ex_packet_out.alu_result)) || !ex_packet_out.valid;
 
 
-	// instantiate the STORE address generator
-	// STORE STORE_0 (
-	// 	//input
-	// 	.opa(opa_mux_out),
-	// 	.opb(opb_mux_out),
-	// 	.is_packet_in(is_packet_in),
-	// 	.start(STORE_start),
-	// 	//output
-	// 	.addr_result(STORE_addr),
-	// 	.STORE_is_packet(STORE_is_packet),
-	// 	.done(STORE_done)
-	// );
+	//instantiate the STORE address generator
+	STORE STORE_0 (
+		//input
+		.clock(clock),
+		.reset(reset),
+		.opa(opa_mux_out),
+		.opb(opb_mux_out),
+		.is_packet_in(is_packet_in),
+		.start(STORE_start),
+		.finish(Dcache_finish),
+		.rob_start(rob_start),
+		//output
+		.proc2Dcache_command(proc2Dcache_command),
+		.proc2Dcache_addr(proc2Dcache_addr),
+		.proc2Dcache_data(proc2Dcache_data),
+		.store_mem_size(store_mem_size),
+		.is_packet_out(STORE_is_packet),
+		.busy(STORE_busy),
+		.done(STORE_done)
+	);
 	
 
 	// instantiate the LOAD module
