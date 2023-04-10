@@ -538,6 +538,7 @@ typedef struct packed {
 	logic       	  	  is_illegal;       // is this instruction illegal? 
 	logic [`XLEN-1:0]	  PC;
 	logic			      inst_valid;
+	logic				  is_store;
 } ROB_entry_PACKET;
 
 //////////////////////////////////////////////

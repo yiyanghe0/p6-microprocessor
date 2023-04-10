@@ -36,7 +36,7 @@ module EX (
 	input [63:0]	Dcache2proc_data,
 	input 			Dcache_finish,
 
-	input           rob_start;
+	input           rob_start,
 
 	output EX_PACKET ex_packet_out,
 	output logic 	MUL_valid, // if MUL_valid = 0, mult encountered structural hazard and has to stall
@@ -79,11 +79,17 @@ module EX (
 	logic [`XLEN-1:0]					STORE_addr;
 	logic 								STORE_done;
 	IS_PACKET							STORE_is_packet;
+	logic [1:0]							store2Dcache_command;
+	logic [`XLEN-1:0]					store2Dcache_addr;
+
+
 	//Load parameter
 	logic								LOAD_start;
 	logic 								LOAD_done;
 	IS_PACKET							LOAD_is_packet;
 	logic [63:0]						LOAD_result;
+	logic [1:0]							load2Dcache_command;
+	logic [`XLEN-1:0]					load2Dcache_addr;
 	
 	logic								LOAD_busy;
 	logic                               STORE_busy;
@@ -99,9 +105,10 @@ module EX (
 	assign LOAD_start	= (is_packet_in.channel == LD)  ? 1 : 0;
 
 
-	always_comb begin
+	// mux to determine dcache command
+	assign proc2Dcache_command = (LOAD_busy || LOAD_start) ? load2Dcache_command : store2Dcache_command;     
+	assign proc2Dcache_addr = (LOAD_busy || LOAD_start) ? load2Dcache_addr : store2Dcache_addr;     
 
-	end
 
 	always_comb begin
 		MUL_start = 0;
@@ -199,7 +206,7 @@ module EX (
 		.is_packet_out(MUL_is_packet)
 	);
 
-	assign STORE_done = 0;
+	// assign STORE_done = 0;
 	// ex_packet1 - one of alu or branch; ex_packet2 - one of multiplier -one of Load
 	EX_PACKET ex_packet1, ex_packet2, ex_packet3;
 
@@ -359,8 +366,8 @@ module EX (
 		.finish(Dcache_finish),
 		.rob_start(rob_start),
 		//output
-		.proc2Dcache_command(proc2Dcache_command),
-		.proc2Dcache_addr(proc2Dcache_addr),
+		.proc2Dcache_command(store2Dcache_command),
+		.proc2Dcache_addr(store2Dcache_addr),
 		.proc2Dcache_data(proc2Dcache_data),
 		.store_mem_size(store_mem_size),
 		.is_packet_out(STORE_is_packet),
@@ -381,8 +388,8 @@ module EX (
 		.Dcache2proc_data(Dcache2proc_data),
 		.finish(Dcache_finish),
 		//output
-		.proc2Dcache_command(proc2Dcache_command),
-		.proc2Dcache_addr(proc2Dcache_addr),
+		.proc2Dcache_command(load2Dcache_command),
+		.proc2Dcache_addr(load2Dcache_addr),
 		.Dcache_result_out(LOAD_result),
 		.load_mem_size(load_mem_size),
 		.is_packet_out(LOAD_is_packet),

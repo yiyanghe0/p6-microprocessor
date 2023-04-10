@@ -109,19 +109,14 @@ module decoder (
 					opb_select = OPB_IS_I_IMM;
 					rd_mem     = `TRUE;
 					ex_channel = LD;
-					if (inst == `RV32_LB) mem_size = 3'b000;
-					else if (inst == `RV32_LH) mem_size = 3'b001;
-					else if (inst == `RV32_LW) mem_size = 3'b010;
-					else if (inst == `RV32_LBU) mem_size = 3'b100;
-					else mem_size = 3'b101;
+					mem_size   = inst.i.funct3;
 				end
 				`RV32_SB, `RV32_SH, `RV32_SW: begin
 					opb_select = OPB_IS_S_IMM;
 					wr_mem     = `TRUE;
 					ex_channel = ST;
-					if (inst == `RV32_SB) mem_size = 3'b000;
-					else if (inst == `RV32_SH) mem_size = 3'b001;
-					else mem_size = 3'b010;
+					mem_size   = inst.s.funct3;
+				
 				end
 				`RV32_ADDI: begin
 					dest_reg   = DEST_RD;

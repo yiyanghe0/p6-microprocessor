@@ -43,7 +43,7 @@ logic 					next_busy;
 //assign proc2Dcache_command  = (is_packet_out.rd_mem) ? BUS_LOAD : BUS_NONE;
 //sign proc2Dcache_addr     = opa + opb;
 
-assign done = finish;
+assign done = finish && (start || busy);
 
 assign Dcache_result_out = Dcache2proc_data;
 

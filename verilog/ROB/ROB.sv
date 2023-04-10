@@ -18,7 +18,8 @@ module ROB(
 	output ROB_entry_PACKET [`ROB_LEN-1:0]         rob_entry_packet_out,
 	`endif
 
-	output logic          rob_struc_hazard_out, // structural hazard in ROB, output into DP_IS, same as next_hazard
+	output logic          rob2store_start,
+    output logic          rob_struc_hazard_out, // structural hazard in ROB, output into DP_IS, same as next_hazard
     output logic          next_rob_struc_hazard_out,
     output ROB2RS_PACKET  rob2rs_packet_out,    // transfer rs1 & rs2 & Tag 
     output ROB2MT_PACKET  rob2mt_packet_out,    // update tag in MT 
@@ -55,6 +56,8 @@ logic [$clog2(`ROB_LEN)-1:0] index_rs1;
 logic [$clog2(`ROB_LEN)-1:0] index_rs2;
 
 
+// To store unit 
+assign rob2store_start = rob_entry_packet_out[head_idx].is_store;
 
 // ROB structural hazard
 assign next_is_init = squash ? 1 : (is_init < 14) ? is_init + 1 : is_init;
@@ -89,6 +92,7 @@ ROB_entry rob_entry [`ROB_LEN-1:0] (
      .cp_sig(rob_entry_cp_sig),
      .dest_reg_cdb(cdb_packet_in.reg_value),
      .cdb_valid_bit(cdb_packet_in.reg_tag.valid),
+     .wr_mem_in(id_packet_in.wr_mem),
      .dest_reg_idx_in(dest_reg_idx_in),
      .halt_in(id_packet_in.halt),
      .illegal_in(id_packet_in.illegal),
@@ -209,6 +213,7 @@ module ROB_entry(
     input [`XLEN-1:0]            dest_reg_cdb,
     input                        cdb_valid_bit,
     input [`REG_LEN-1:0]         dest_reg_idx_in,  
+    input                        wr_mem_in,
     input                        halt_in,
     input                        illegal_in, 
     input [`XLEN-1:0]            PC_in,
@@ -224,6 +229,7 @@ logic [`REG_LEN-1:0] dest_reg_idx;
 logic [`XLEN-1:0] dest_reg_value;
 logic             is_halt;
 logic             is_illegal;
+logic             is_store;
 logic [`XLEN-1:0] PC_value;
 logic             inst_valid;
 
@@ -234,12 +240,14 @@ logic                next_valid;
 logic                next_wb_en;
 logic                next_is_halt;
 logic                next_is_illegal;
+logic                next_is_store;
 logic [`XLEN-1:0]    next_PC;
 logic                next_inst_valid;
 
 
 // assignment
 assign next_dest_reg_idx   = (wr_en && !stall) ? dest_reg_idx_in : dest_reg_idx;
+assign next_is_store       = (wr_en && !stall) ? wr_mem_in : is_store;
 assign next_dest_reg_value = (wr_en && !stall) ? 0 : (cp_sig && cdb_valid_bit) ? dest_reg_cdb : dest_reg_value;
 assign next_valid          = (retire) ? 0 : cp_sig ? 1'b1 : valid;
 assign next_wb_en          = (retire) ? 0 : cp_sig ? cdb_valid_bit : wb_en;
@@ -257,6 +265,7 @@ assign rob_entry_packet_out.is_halt 	   = is_halt;
 assign rob_entry_packet_out.is_illegal 	   = is_illegal;
 assign rob_entry_packet_out.PC 	           = PC_value;
 assign rob_entry_packet_out.inst_valid 	   = inst_valid;
+assign rob_entry_packet_out.is_store 	   = is_store;
  
 
 //sequential logic
@@ -271,6 +280,7 @@ always_ff @(posedge clock) begin
             is_illegal <= `SD 0;
             PC_value   <= `SD 0;
             inst_valid <= `SD 0;
+            is_store   <= `SD 0;
         end
         else begin
             valid <= `SD next_valid;
@@ -281,6 +291,7 @@ always_ff @(posedge clock) begin
             is_illegal <= `SD next_is_illegal;
             PC_value   <= `SD next_PC;
             inst_valid <= `SD next_inst_valid;
+            is_store   <= `SD next_is_store;
         end
     end
 

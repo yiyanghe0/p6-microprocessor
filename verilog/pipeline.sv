@@ -98,6 +98,7 @@ module pipeline (
 	IS_PACKET is_packet;
 	logic squash;
 	logic next_dp_is_structural_hazard;		// 1 - RS/ROB will have structural hazard next cycle
+	logic rob2store_start;
 
 	// Outputs from DP_IS/EX Pipeline Register
 	IS_PACKET is_ex_packet;
@@ -107,6 +108,7 @@ module pipeline (
 	logic ex_valid;
 	logic MUL_valid;
 	logic LOAD_valid;
+	logic STORE_valid;
 	logic ex_structural_hazard;
 	logic ex_no_output;
 	logic correct_predict;
@@ -325,7 +327,7 @@ cache_controller cache_controller_0 (
 		.rt_npc(rt_npc),
 		.Icache2proc_data(Icache_data_out),
 		.Icache2proc_valid(Icache_valid_out),  // from Icache
-		.proc2Dmem_command(BUS_NONE),		// Prioritize DCache !!!No memory operation for now
+		.proc2Dmem_command(Dcache2ctrl_command),		// Prioritize DCache !!!No memory operation for now
 		.btb_packet_in(btb_packet),
 
 		// Outputs
@@ -390,7 +392,7 @@ cache_controller cache_controller_0 (
 
 	logic is_stall;
 	assign dp_is_stall = !if_id_Icache_valid_out; // Stop assigning RS/ROB when there is icache miss, but can still issue
-	assign is_stall = ((is_packet.channel == MULT) && (MUL_valid == 0)) || ((is_packet.channel == LD) && (LOAD_valid == 0)) ? 1 : 0;
+	assign is_stall = ((is_packet.channel == MULT) && (MUL_valid == 0)) || ((is_packet.channel == LD) && (LOAD_valid == 0)) || ((is_packet.channel == ST) && (STORE_valid == 0)) ? 1 : 0;
 
 	DP_IS DP_IS_0 (
 		.clock (clock),
@@ -400,6 +402,7 @@ cache_controller cache_controller_0 (
 		.if_id_packet_in(if_id_packet),
 		.cdb_packet_in(cp_packet),
 
+		.rob2store_start(rob2store_start),
 		.is_packet_out(is_packet),
 		.rob_retire_packet(rob_retire_packet),
 		.next_struc_hazard(next_dp_is_structural_hazard),
@@ -459,6 +462,7 @@ cache_controller cache_controller_0 (
 		// Inputs
 		.clock(clock),
 		.reset(reset),
+		.rob_start(rob2store_start),
 		.is_packet_in(is_ex_packet),
 		.Dcache2proc_data(Dcache2proc_data),
 		.Dcache_finish(Dcache_finish),
@@ -467,6 +471,7 @@ cache_controller cache_controller_0 (
 		.ex_packet_out(ex_packet),
 		.MUL_valid(MUL_valid),         // 0 - has structural hazard in mult, need to stall RS issue only, currently mult_num =4, no need
 		.LOAD_valid(LOAD_valid),
+		.STORE_valid(STORE_valid),
 		.no_output(ex_no_output),
 		.ex2btb_packet_out(ex2btb_packet),
 		.correct_predict(correct_predict),

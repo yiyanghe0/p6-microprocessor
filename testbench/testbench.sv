@@ -157,7 +157,9 @@ module testbench;
 
 		$fdisplay(pipe_output, "\n ----------------------I cache----------------------");
 		$fdisplay(pipe_output, "Icache => memory  command: %b, addr: %h", core.Icache2ctrl_command, core.Icache2ctrl_addr);
-		$fdisplay(pipe_output, "Memory => Icache  response: %b, data: %h, tag: %b, ", mem2proc_response, mem2proc_data, mem2proc_tag);
+		$fdisplay(pipe_output, "Memory => controller  response: %b, data: %h, tag: %b, ", mem2proc_response, mem2proc_data, mem2proc_tag);
+		$fdisplay(pipe_output, "Memory => icache  response: %b, data: %h, tag: %b, ", core.ctrl2Icache_response, core.ctrl2Icache_data, core.ctrl2Icache_tag);
+
 		$fdisplay(pipe_output, "Icache => core data: %h, valid; %b", core.Icache_data_out, core.Icache_valid_out); 
 		$fdisplay(pipe_output, "core => Icache address; %h", core.proc2Icache_addr); 
 
@@ -178,7 +180,8 @@ module testbench;
 																														core.BTB_0.btb_packet_out.target_pc);  
 
 		$fdisplay(pipe_output, "\n ----------------------ID_PACKET------------------------");	
-		$fdisplay(pipe_output,"id_packet_valid: %b", core.DP_IS_0.id_packet.valid);
+		$fdisplay(pipe_output,"id_packet_valid: %b, id_packet_mem_size: %d, id_packet_inst: %d", core.DP_IS_0.id_packet.valid, core.DP_IS_0.id_packet.mem_size, core.DP_IS_0.id_packet.inst.inst);
+
 
 
 		$fdisplay(pipe_output, "\n ----------------------ROB-----------------------");
@@ -217,6 +220,10 @@ module testbench;
 						 core.DP_IS_0.RS_0.entry_rs2_tags[i].valid);
         end
 
+		$fdisplay(pipe_output, "\n ----------------------ID_PACKET------------------------");	
+		$fdisplay(pipe_output, "decode valid: %b, illegal: %b", core.DP_IS_0.id_stage_0.decoder_0.valid_inst, core.DP_IS_0.id_stage_0.decoder_0.illegal);
+		$fdisplay(pipe_output, "if_id_packet.valid; %b, id_packet_valid: %b", core.if_id_packet.valid, core.DP_IS_0.id_packet.valid);
+
 		$fdisplay(pipe_output, "\n ----------------------IS_PACKET------------------------");	
 		$fdisplay(pipe_output, "| rs1_value  |  rs2_value  |  OPA  |  OPB  | alu_func  |  channel |   valid   |");
 		$fdisplay(pipe_output, " %d  | %d  | %d  |   %d   |   %d  |  %d   |   %b   |",
@@ -228,9 +235,24 @@ module testbench;
 						core.is_packet.channel,
 						core.is_packet.valid);
 
+		$fdisplay(pipe_output, "\n ----------------------STORE UNIT------------------------");
+		$fdisplay(pipe_output, "opa: %h, opb: %h", core.ex_stage_0.opa_mux_out, core.ex_stage_0.opb_mux_out);
+		$fdisplay(pipe_output, "start: %b, busy: %b, done; %b", core.ex_stage_0.STORE_start, core.ex_stage_0.STORE_busy, core.ex_stage_0.STORE_done);
+		$fdisplay(pipe_output, "From Issue Stage: is_STORE: %b", core.is_ex_packet.wr_mem);
+		$fdisplay(pipe_output, "To Dcache command: %b, addr: %h, data: %h, mem_size: %d", core.ex_stage_0.store2Dcache_command, core.ex_stage_0.store2Dcache_addr, core.ex_stage_0.proc2Dcache_data, core.ex_stage_0.store_mem_size);
+		$fdisplay(pipe_output, "From Dcache finish: %b", core.Dcache_finish);
+
+		$fdisplay(pipe_output, "\n ----------------------LOAD UNIT------------------------");
+		$fdisplay(pipe_output, "opa: %h, opb: %h", core.ex_stage_0.opa_mux_out, core.ex_stage_0.opb_mux_out);
+		$fdisplay(pipe_output, "start: %b, busy: %b, done; %b", core.ex_stage_0.LOAD_start, core.ex_stage_0.LOAD_busy, core.ex_stage_0.LOAD_done);
+		$fdisplay(pipe_output, "From Issue Stage: is_load: %b", core.is_ex_packet.rd_mem);
+		$fdisplay(pipe_output, "To Dcache command: %b, addr: %h, mem_size: %d", core.ex_stage_0.load2Dcache_command, core.ex_stage_0.load2Dcache_addr, core.ex_stage_0.load_mem_size);
+		$fdisplay(pipe_output, "From Dcache data: %h, finish: %b", core.Dcache2proc_data, core.Dcache_finish);
+
 
 		$fdisplay(pipe_output, "\n ----------------------EX_PACKET------------------------");	
 		$fdisplay(pipe_output, " issue stall due to ex stage hazard: %b", core.is_stall);
+		$fdisplay(pipe_output, " store_packet: wr_mem: %b, ex_packet3_wr_mem: %b", core.ex_stage_0.STORE_is_packet.wr_mem, core.ex_stage_0.ex_packet3.wr_mem);
 		$fdisplay(pipe_output, " ex stage valid: %b", core.ex_valid); 
 		$fdisplay(pipe_output, " ex stage no output: %b", core.ex_no_output); 
 		$fdisplay(pipe_output, " ex stage mul busy: %b", core.ex_stage_0.MUL_busy);

@@ -41,7 +41,7 @@ logic 					next_busy;
 
 //address
 
-assign done = finish;
+assign done = finish && (start || busy);
 
 //if Dcache hits, pass through the is_packet_in
 always_comb begin

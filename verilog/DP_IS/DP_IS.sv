@@ -14,6 +14,7 @@ module DP_IS (
 
     output ROB2REG_PACKET rob_retire_packet,
 
+    output logic     rob2store_start,
     output IS_PACKET is_packet_out,
     output logic next_struc_hazard,
     output logic squash,
@@ -80,6 +81,7 @@ ROB ROB_0 (
     .cdb_packet_in(cdb_packet_in),
     .id_packet_in(id_packet),
 
+    .rob2store_start(rob2store_start),
     .rob2rs_packet_out(rob2rs_packet),
     .rob2mt_packet_out(rob2mt_packet),
     .rob2reg_packet_out(rob_retire_packet),
