@@ -118,16 +118,20 @@ module dcache(
 
 		case(mem_size)
 			3'b000: begin
-				Dcache_data_out = {56'b0, loaded_data_byte[proc2Dcache_addr[2:0]]};
+				Dcache_data_out = {56{loaded_data_byte[proc2Dcache_addr[2:0]][7]}, loaded_data_byte[proc2Dcache_addr[2:0]]};
 			end
 			3'b001: begin
-				Dcache_data_out = {48'b0, loaded_data_half[proc2Dcache_addr[2:1]]};
+				Dcache_data_out = {48{loaded_data_half[proc2Dcache_addr[2:1]][15]}, loaded_data_half[proc2Dcache_addr[2:1]]};
 			end
 			3'b010: begin
-				Dcache_data_out = {32'b0, loaded_data_word[proc2Dcache_addr[2]]};
+				Dcache_data_out = {32{loaded_data_word[proc2Dcache_addr[2]][31]}, loaded_data_word[proc2Dcache_addr[2]]};
 			end
-			3'b100:
-				Dcache_data_out = loaded_data;
+			3'b100: begin
+				Dcache_data_out = {56'b0, loaded_data_byte[proc2Dcache_addr[2:0]]};
+			end
+			3'b101: begin
+				Dcache_data_out = {48'b0, loaded_data_half[proc2Dcache_addr[2:1]]};
+			end
 		endcase
 	end
 

@@ -23,6 +23,7 @@ module cache_controller(
 	output [3:0]  ctrl2Icache_response,
 	output [63:0] ctrl2Icache_data,
 	output [3:0]  ctrl2Icache_tag,
+    output        d_request,
 
     // from Dcache
     input logic [1:0]       Dcache2ctrl_command,
@@ -35,7 +36,6 @@ module cache_controller(
 	output [3:0]  ctrl2Dcache_tag,
 );
 
-    logic d_request;
     assign d_request = (Dcache2ctrl_command != BUS_NONE);
 
     always_comb begin

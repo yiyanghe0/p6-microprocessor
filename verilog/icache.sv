@@ -48,6 +48,7 @@ module icache (
 	input [3:0]  Imem2proc_response, // this should be zero unless we got a response
 	input [63:0] Imem2proc_data,
 	input [3:0]  Imem2proc_tag,
+	input 		 d_request,
 
 	// from fetch stage
 	input [`XLEN-1:0] proc2Icache_addr,
@@ -90,7 +91,7 @@ module icache (
 	logic unanswered_miss; // if we have a new miss or still waiting for the response tag
 	// we might need to wait for the response tag because dcache has priority over icache
 	assign unanswered_miss = changed_addr ? !Icache_valid_out
-	                                      : miss_outstanding && (Imem2proc_response == 0);
+	                                      : (miss_outstanding && (Imem2proc_response == 0)) || !d_request;
 
 	// keep sending memory requests until we receive a response tag or change addresses
 	assign proc2Imem_command = (miss_outstanding && !changed_addr) ? BUS_LOAD : BUS_NONE;
