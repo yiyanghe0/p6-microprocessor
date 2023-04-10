@@ -36,7 +36,6 @@ logic [`XLEN-1:0]    	next_addr;
 
 logic 					next_busy;
 
-assign load_mem_size = is_packet_in.mem_size;
 
 //assign proc2Dcache_command 	= command;
 //assign proc2Dcache_addr  	= addr;
@@ -55,11 +54,13 @@ always_comb begin
 		is_packet_out 		= is_packet_in;
 		proc2Dcache_command = (is_packet_in.rd_mem) ? BUS_LOAD : BUS_NONE;
 		proc2Dcache_addr	= opa + opb;
+		load_mem_size       = is_packet_in.mem_size;
 	end
 	else begin
 		is_packet_out 		= is_packet;
 		proc2Dcache_command = command;
 		proc2Dcache_addr	= addr;
+		load_mem_size       = is_packet.mem_size;
 	end
 end
 
