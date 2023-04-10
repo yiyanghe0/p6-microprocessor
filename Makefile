@@ -76,7 +76,7 @@
 
 # this is a built-in Make variable that lets Make search folders to find dependencies and targets
 # it can greatly simplify make rules and increase readability
-VPATH = synth:testbench:test_progs:verilog:output:verilog/RS:verilog/ROB:verilog/MAP_TABLE:verilog/EX
+VPATH = synth:testbench:test_progs:verilog:output:verilog/RS:verilog/ROB:verilog/MAP_TABLE:verilog/EX:verilog/cache
 
 ###############################################
 # ---- Compilation Commands and Variables ----
@@ -222,7 +222,7 @@ all: mult_no_lsq.out
 # delete this comment area when you want to
 # TODO TODO TODO TODO
 
-TESTED_MODULES = RS RS_entry ROB MAP_TABLE FIFO EX icache
+TESTED_MODULES = RS RS_entry ROB MAP_TABLE FIFO EX icache dcache
 
 # if a module includes other modules, add the dependencies explicitly here
 # this works due to the targets using the $^ automatic variable
@@ -237,6 +237,10 @@ synth/RS.vg: RS_entry.sv
 EX_simv: FIFO.sv MULTIPLIER.sv Branch.sv ALU.sv
 EX_coverage_simv: FIFO.sv MULTIPLIER.sv Branch.sv ALU.sv
 synth/EX.vg: FIFO.sv MULTIPLIER.sv Branch.sv ALU.sv
+
+dcache_simv: ../testbench/mem.sv
+dcache_coverage_simv: ../testbench/mem.sv
+synth/dcache.vg: ../testbench/mem.sv
 
 # ROB_simv: ROB.sv
 # MAP_TABLE_simv: MAP_TABLE.sv
@@ -379,6 +383,7 @@ SIMFILES = pipeline.sv \
            regfile.sv \
 		   $(wildcard verilog/CDB/*.sv) \
 		   $(wildcard verilog/BTB/*.sv) \
+		   $(wildcard verilog/cache/*.sv) \
 		   $(wildcard verilog/DP_IS/*.sv) \
 		   $(wildcard verilog/EX/*.sv) \
 		   $(wildcard verilog/ID/*.sv) \

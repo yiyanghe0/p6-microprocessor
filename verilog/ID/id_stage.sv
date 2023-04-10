@@ -38,7 +38,8 @@ module decoder (
 	                        // keeping track of when to allow the next
 	                        // instruction out of fetch
 	                        // 0 for HALT and illegal instructions (die on halt)
-	output CHANNEL ex_channel
+	output CHANNEL ex_channel,
+	output logic [2:0] mem_size
 );
 
 	INST inst;
@@ -67,6 +68,7 @@ module decoder (
 		halt          = `FALSE;
 		illegal       = `FALSE;
 		ex_channel    = ALU;
+		mem_size      = 3'b111; //nothing
 
 		if(valid_inst_in) begin
 			casez (inst)
@@ -107,11 +109,19 @@ module decoder (
 					opb_select = OPB_IS_I_IMM;
 					rd_mem     = `TRUE;
 					ex_channel = LD;
+					if (inst == `RV32_LB) mem_size = 3'b000;
+					else if (inst == `RV32_LH) mem_size = 3'b001;
+					else if (inst == `RV32_LW) mem_size = 3'b010;
+					else if (inst == `RV32_LBU) mem_size = 3'b100;
+					else mem_size = 3'b101;
 				end
 				`RV32_SB, `RV32_SH, `RV32_SW: begin
 					opb_select = OPB_IS_S_IMM;
 					wr_mem     = `TRUE;
 					ex_channel = ST;
+					if (inst == `RV32_SB) mem_size = 3'b000;
+					else if (inst == `RV32_SH) mem_size = 3'b001;
+					else mem_size = 3'b010;
 				end
 				`RV32_ADDI: begin
 					dest_reg   = DEST_RD;
@@ -282,7 +292,8 @@ module id_stage (
 		.halt(id_packet_out.halt),
 		.illegal(id_packet_out.illegal),
 		.valid_inst(id_packet_out.valid),
-		.ex_channel(id_packet_out.channel)
+		.ex_channel(id_packet_out.channel),
+		.mem_size(id_packet_out.mem_size)
 	);
 
 	assign id2btb_packet_out.PC = id_packet_out.PC;

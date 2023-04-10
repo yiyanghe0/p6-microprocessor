@@ -30,17 +30,25 @@
 //
 
 module EX (
-	input clock, // system clock
-	input reset, // system reset
+	input 			clock, // system clock
+	input 			reset, // system reset
 	input IS_PACKET is_packet_in,
+	input [63:0]	Dcache2proc_data,
+	input 			Dcache_finish,
 
 	output EX_PACKET ex_packet_out,
-	output logic valid, // if valid = 0, mult encountered structural hazard and has to stall
-	output logic no_output,  // no_output = 1 -> nothing output; no_output = 0 -> valid output
+	output logic 	MUL_valid, // if MUL_valid = 0, mult encountered structural hazard and has to stall
+	output logic 	LOAD_valid, //if LOAD_valid = 0, LOAD encountered structural hazard and has to stall
+	output logic 	no_output,  // no_output = 1 -> nothing output; no_output = 0 -> valid output
 	output EX2BTB_PACKET ex2btb_packet_out,
-	output logic correct_predict // BTB made correct prediction
+	output logic correct_predict, // BTB made correct prediction
+	//LOAD output
+	output logic [1:0]          proc2Dcache_command,
+	output logic [`XLEN-1:0]    proc2Dcache_addr,
+	output logic [63:0]			proc2Dcache_data,
+	output logic [2:0]          proc2Dcache_mem_size
 );
-
+	
 	logic [`XLEN-1:0] 					opa_mux_out, opb_mux_out;
 
 	//ALU parameter
@@ -63,22 +71,46 @@ module EX (
 	logic [`MUL_NUM-1:0]				MUL_busy;
 	IS_PACKET [`MUL_NUM-1:0]			MUL_is_packet;
 
-	//mux to determine if mutiplier or ALU
-	assign ALU_start = (is_packet_in.channel == ALU) ? 1 : 0;
-	assign BRANCH_start = (is_packet_in.channel == BR) ? 1 : 0;
+	//Store parameter
+	logic								STORE_start;
+	logic [`XLEN-1:0]					STORE_addr;
+	logic 								STORE_done;
+	IS_PACKET							STORE_is_packet;
+	//Load parameter
+	logic								LOAD_start;
+	logic 								LOAD_done;
+	IS_PACKET							LOAD_is_packet;
+	logic [63:0]						LOAD_result;
+	
+	logic								LOAD_busy;
+
+	logic [2:0]                         load_mem_size;
+
+	//mux to determine if mutiplier or ALU or LD or ST
+	assign proc2Dcache_data = 0;
+	assign proc2Dcache_mem_size = load_mem_size;     // !!!temp value
+	assign ALU_start 	= (is_packet_in.channel == ALU) ? 1 : 0;
+	assign BRANCH_start = (is_packet_in.channel == BR)  ? 1 : 0;
+	assign STORE_start  = (is_packet_in.channel == ST)  ? 1 : 0;
+	assign LOAD_start	= (is_packet_in.channel == LD)  ? 1 : 0;
+
 
 	always_comb begin
 		MUL_start = 0;
-		valid = 0;
+		MUL_valid = 0;
 
 		for (int i = 0; i < `MUL_NUM; i++) begin
 			if ((MUL_busy[i] == 0)) begin
 				MUL_start[i] = (is_packet_in.channel == MULT);
-				valid = (((MUL_busy | MUL_start) & ~MUL_done) == {`MUL_NUM{1'b1}}) ? 0 : 1;
+				MUL_valid = (((MUL_busy | MUL_start) & ~MUL_done) == {`MUL_NUM{1'b1}}) ? 0 : 1;
 				break;
 			end
 		end
 	end
+
+	//Load valid 
+	assign	LOAD_valid = ((LOAD_busy | LOAD_start) & ~LOAD_done) == 1 ? 0 : 1;
+	
 
 	// ALU opA mux
 	always_comb begin
@@ -156,38 +188,53 @@ module EX (
 		.is_packet_out(MUL_is_packet)
 	);
 
-	// ex_packet1 - one of alu or branch; ex_packet2 - one of multiplier
-	EX_PACKET ex_packet1, ex_packet2;
+	assign STORE_done = 0;
+	// ex_packet1 - one of alu or branch; ex_packet2 - one of multiplier -one of Load
+	EX_PACKET ex_packet1, ex_packet2, ex_packet3;
 
 	// Pass-throughs
 	assign ex_packet1.NPC          = (ALU_done) ? ALU_is_packet.NPC :
 												  (BRANCH_done) ? BRANCH_is_packet.NPC : 0;
-	assign ex_packet1.PC           = (ALU_done) ? ALU_is_packet.PC :
+
+	assign ex_packet1.PC		   = (ALU_done) ? ALU_is_packet.PC :
 												  (BRANCH_done) ? BRANCH_is_packet.PC : 0;
+
 	assign ex_packet1.rs2_value    = (ALU_done) ? ALU_is_packet.rs2_value :
 												  (BRANCH_done) ? BRANCH_is_packet.rs2_value : 0;
+									
 	assign ex_packet1.rd_mem       = (ALU_done) ? ALU_is_packet.rd_mem :
 												  (BRANCH_done) ? BRANCH_is_packet.rd_mem : 0;
+
 	assign ex_packet1.wr_mem       = (ALU_done) ? ALU_is_packet.wr_mem :
 												  (BRANCH_done) ? BRANCH_is_packet.wr_mem : 0;
+
 	assign ex_packet1.dest_reg_idx = (ALU_done) ? ALU_is_packet.dest_reg_idx :
 												  (BRANCH_done) ? BRANCH_is_packet.dest_reg_idx : 0;
+
 	assign ex_packet1.halt         = (ALU_done) ? ALU_is_packet.halt :
 												  (BRANCH_done) ? BRANCH_is_packet.halt : 0;
+
 	assign ex_packet1.illegal      = (ALU_done) ? ALU_is_packet.illegal :
 												  (BRANCH_done) ? BRANCH_is_packet.illegal : 0;
+												  
 	assign ex_packet1.csr_op       = (ALU_done) ? ALU_is_packet.csr_op :
 												  (BRANCH_done) ? BRANCH_is_packet.csr_op : 0;
+
 	assign ex_packet1.valid        = (ALU_done) ? ALU_is_packet.valid :
 												  (BRANCH_done) ? BRANCH_is_packet.valid : 0;
+
 	assign ex_packet1.mem_size     = (ALU_done) ? ALU_is_packet.inst.r.funct3 :
 												  (BRANCH_done) ? BRANCH_is_packet.inst.r.funct3 : 0;
+
 	assign ex_packet1.take_branch  = (ALU_done) ? 0 :
-												  (BRANCH_done) ? (is_packet_in.uncond_branch | (is_packet_in.cond_branch & brcond_result)) : 0;
+												  (BRANCH_done) ? (is_packet_in.uncond_branch | (is_packet_in.cond_branch & brcond_result)) : 0;   // !!! Do we really need that?
+
 	assign ex_packet1.alu_result   = (ALU_done) ? ALU_result :
 												  (BRANCH_done) ? BRANCH_addr : 0;
+
 	assign ex_packet1.is_ZEROREG   = (ALU_done) ? ALU_is_packet.is_ZEROREG :
 												  (BRANCH_done) ? BRANCH_is_packet.is_ZEROREG : 1;
+
 
 	always_comb begin
 		ex_packet2.NPC          = 0;
@@ -227,12 +274,55 @@ module EX (
 		end
 	end
 
+	//packet3 assignment
+	assign ex_packet3.NPC          = (LOAD_done) ? LOAD_is_packet.NPC :
+												   (STORE_done) ? STORE_is_packet.NPC : 0;
+
+	assign ex_packet3.PC		   = (LOAD_done) ? LOAD_is_packet.PC :
+												   (STORE_done) ? STORE_is_packet.PC : 0;
+
+	assign ex_packet3.rs2_value    = (LOAD_done) ? LOAD_is_packet.rs2_value :
+												   (STORE_done) ? STORE_is_packet.rs2_value : 0;
+
+	assign ex_packet3.rd_mem       = (LOAD_done) ? LOAD_is_packet.rd_mem :
+												   (STORE_done) ? STORE_is_packet.rd_mem : 0;
+
+	assign ex_packet3.wr_mem       = (LOAD_done) ? LOAD_is_packet.wr_mem :
+												   (STORE_done) ? STORE_is_packet.wr_mem : 0;
+
+	assign ex_packet3.dest_reg_idx = (LOAD_done) ? LOAD_is_packet.dest_reg_idx :
+												   (STORE_done) ? STORE_is_packet.dest_reg_idx : 0;
+
+	assign ex_packet3.halt         = (LOAD_done) ? LOAD_is_packet.halt :
+												   (STORE_done) ? STORE_is_packet.halt : 0;
+
+	assign ex_packet3.illegal      = (LOAD_done) ? LOAD_is_packet.illegal :
+												   (STORE_done) ? STORE_is_packet.illegal : 0;
+												  
+	assign ex_packet3.csr_op       = (LOAD_done) ? LOAD_is_packet.csr_op :
+												   (STORE_done) ? STORE_is_packet.csr_op : 0;
+
+	assign ex_packet3.valid        = (LOAD_done) ? LOAD_is_packet.valid :
+												   (STORE_done) ? STORE_is_packet.valid : 0;
+
+	assign ex_packet3.mem_size     = (LOAD_done) ? LOAD_is_packet.inst.i.funct3 :
+												   (STORE_done) ? STORE_is_packet.inst.s.funct3 : 0;
+
+	assign ex_packet3.take_branch  = 0;
+
+	assign ex_packet3.alu_result   = (LOAD_done) ? LOAD_result : 0;
+												  
+	assign ex_packet3.is_ZEROREG   = (LOAD_done) ? LOAD_is_packet.is_ZEROREG :
+												   (STORE_done) ? STORE_is_packet.is_ZEROREG : 1;
+
+
 
 	FIFO f0(
 		.clock(clock),
 		.reset(reset),
 		.ex_packet1(ex_packet1),
 		.ex_packet2(ex_packet2),
+		.ex_packet3(ex_packet3),
 
 		.ex_packet_out(ex_packet_out),
 		.no_output(no_output)
@@ -244,6 +334,43 @@ module EX (
 	assign ex2btb_packet_out.taken = ex_packet_out.take_branch;
 
 	assign correct_predict = ((ex_packet_out.take_branch) == (ex_packet_out.NPC == ex_packet_out.alu_result)) || !ex_packet_out.valid;
+
+
+	// instantiate the STORE address generator
+	// STORE STORE_0 (
+	// 	//input
+	// 	.opa(opa_mux_out),
+	// 	.opb(opb_mux_out),
+	// 	.is_packet_in(is_packet_in),
+	// 	.start(STORE_start),
+	// 	//output
+	// 	.addr_result(STORE_addr),
+	// 	.STORE_is_packet(STORE_is_packet),
+	// 	.done(STORE_done)
+	// );
+	
+
+	// instantiate the LOAD module
+	LOAD LOAD_0 (
+		//input
+		.clock(clock),
+		.reset(reset),
+		.opa(opa_mux_out),
+		.opb(opb_mux_out),
+		.is_packet_in(is_packet_in),
+		.start(LOAD_start),
+		.Dcache2proc_data(Dcache2proc_data),
+		.finish(Dcache_finish),
+		//output
+		.proc2Dcache_command(proc2Dcache_command),
+		.proc2Dcache_addr(proc2Dcache_addr),
+		.Dcache_result_out(LOAD_result),
+		.load_mem_size(load_mem_size),
+		.is_packet_out(LOAD_is_packet),
+		.busy(LOAD_busy),
+		.done(LOAD_done)
+	);
+
 
 endmodule // module ex_stage
 `endif // __EX_STAGE_SV__

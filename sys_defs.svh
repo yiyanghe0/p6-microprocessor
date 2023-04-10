@@ -55,14 +55,14 @@ typedef union packed {
     logic [1:0][31:0] word_level;
 } EXAMPLE_CACHE_BLOCK;
 
-`ifndef CACHE_MODE
-typedef enum logic [1:0] {
-	BYTE = 2'h0,
-	HALF = 2'h1,
-	WORD = 2'h2,
-	DOUBLE = 2'h3
-} MEM_SIZE;
-`endif
+// `ifndef CACHE_MODE
+// typedef enum logic [1:0] {
+// 	BYTE = 2'h0,
+// 	HALF = 2'h1,
+// 	WORD = 2'h2,
+// 	DOUBLE = 2'h3
+// } MEM_SIZE;
+// `endif
 
 
 //////////////////////////////////////////////
@@ -167,7 +167,7 @@ typedef enum logic [1:0] {
 } BUS_COMMAND;
 
 `ifndef CACHE_MODE
-typedef enum logic [1:0] {
+typedef enum logic [2:0] {
 	BYTE = 2'h0,
 	HALF = 2'h1,
 	WORD = 2'h2,
@@ -353,6 +353,22 @@ typedef enum logic[1:0]{
 
 //////////////////////////////////////////////
 //
+// DCACHE_packet
+//
+//////////////////////////////////////////////
+`define DCACHE_LINES 32
+`define DCACHE_LINE_BITS $clog2(`DCACHE_LINES)
+
+typedef struct packed {
+	logic [63:0]                  data;
+	// 12:0 (13 bits) since only 16 bits of address exist in mem - and 3 are the block offset
+	logic [12-`DCACHE_LINE_BITS:0] tags;
+	logic                         valid;
+    logic                         dirty;
+} DCACHE_PACKET;
+
+//////////////////////////////////////////////
+//
 // ID_packet:
 // Data from decoder to RS in dispatch stage
 //
@@ -380,6 +396,8 @@ typedef struct packed {
 	logic       csr_op;        // is this a CSR operation? (we only used this as a cheap way to get return code)
 	logic       valid;         // is inst a valid instruction to be counted for CPI calculations?
 	CHANNEL     channel;
+
+	logic[2:0]  mem_size;
 } ID_PACKET;
 
 //////////////////////////////////////////////
@@ -412,6 +430,7 @@ typedef struct packed {
 	logic       valid;         // is inst a valid instruction to be counted for CPI calculations?
 	logic		is_ZEROREG;	   // is the dest_reg ZERO_REG, in other words, do we need to CDB broadcast in complete stage?
 	CHANNEL		channel;
+	logic [2:0] mem_size;
 } IS_PACKET;
 
 //////////////////////////////////////////////

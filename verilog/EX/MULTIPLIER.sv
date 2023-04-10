@@ -142,7 +142,8 @@ module MULTIPLIER(
 				1'b0, // csr_op
 				1'b0, // valid
 				1'b1,
-				ALU
+				ALU,
+				3'b111
 			}; // or a nop instruction
 		
 		if (start)
@@ -226,7 +227,8 @@ module MULTIPLIER(
 				1'b0, // csr_op
 				1'b0, // valid
 				1'b1,
-				ALU
+				ALU,
+				3'b111
 			}; // or a nop instruction
 		end
 		else begin

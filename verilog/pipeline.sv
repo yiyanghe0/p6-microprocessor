@@ -74,8 +74,8 @@ module pipeline (
 	logic if_stall, dp_is_stall;
 
 	//output from icache
-	logic [1:0]       Icache2Imem_command;
-	logic [`XLEN-1:0] Icache2Imem_addr;
+	logic [1:0]       Icache2ctrl_command;
+	logic [`XLEN-1:0] Icache2ctrl_addr;
 
 	logic [63:0] Icache_data_out;
 	logic		 Icache_valid_out;
@@ -105,6 +105,8 @@ module pipeline (
 	// Outputs from EX-Stage
 	EX_PACKET ex_packet;
 	logic ex_valid;
+	logic MUL_valid;
+	logic LOAD_valid;
 	logic ex_structural_hazard;
 	logic ex_no_output;
 	logic correct_predict;
@@ -121,14 +123,36 @@ module pipeline (
 	// Outputs from RT-Stage
 	logic [`XLEN-1:0] rt_npc;
 
-	// Outputs to interact with mem.sv
-	logic [`XLEN-1:0] mem_result_out;
-	logic [`XLEN-1:0] proc2Dmem_addr;
-	logic [`XLEN-1:0] proc2Dmem_data;
-	logic [1:0]       proc2Dmem_command;
-`ifndef CACHE_MODE
-	MEM_SIZE          proc2Dmem_size;
-`endif
+// 	// Outputs to interact with mem.sv
+// 	logic [`XLEN-1:0] mem_result_out;
+// 	logic [`XLEN-1:0] proc2Dmem_addr;
+// 	logic [`XLEN-1:0] proc2Dmem_data;
+// 	logic [1:0]       proc2Dmem_command;
+// `ifndef CACHE_MODE
+// 	MEM_SIZE          proc2Dmem_size;
+// `endif
+
+	//Output from EX to Dcache
+	logic [`XLEN-1:0] proc2Dcache_addr;
+	logic [1:0]		  proc2Dcache_command;
+	logic [63:0]	  proc2Dcache_data;
+	logic [2:0]       proc2Dcache_mem_size;
+
+	//Output from Dcache
+	logic [63:0]	  Dcache2proc_data;
+	logic			  Dcache_finish;
+	logic [1:0]       Dcache2ctrl_command;
+	logic [`XLEN-1:0] Dcache2ctrl_addr;
+    logic [63:0]      Dcache2ctrl_data;
+
+	// Output from Cache controller
+	logic [3:0]       ctrl2Icache_response;
+	logic [63:0]      ctrl2Icache_data;
+	logic [3:0]       ctrl2Icache_tag;      // to Icache
+	logic [3:0]  	  ctrl2Dcache_response;
+	logic [63:0] 	  ctrl2Dcache_data;
+	logic [3:0]  	  ctrl2Dcache_tag;
+
 
 	// Determine the command that must be sent to mem
 	assign proc2Dmem_command = BUS_NONE;
@@ -180,22 +204,22 @@ module pipeline (
 //                                              //
 //////////////////////////////////////////////////
 
-	always_comb begin
-		if (proc2Dmem_command == BUS_NONE) begin // load an instruction from memory
-			proc2mem_command = Icache2Imem_command;
-			proc2mem_addr    = Icache2Imem_addr;
-`ifndef CACHE_MODE
-			proc2mem_size    = DOUBLE; // if it's an instruction, then load a double word (64 bits)
-`endif
-		end else begin // do a data operation with memory
-			proc2mem_command = proc2Dmem_command;
-			proc2mem_addr    = proc2Dmem_addr;
-`ifndef CACHE_MODE
-			proc2mem_size    = proc2Dmem_size;
-`endif
-		end
-		proc2mem_data = {32'b0, proc2Dmem_data};
-	end
+// 	always_comb begin
+// 		if (proc2Dmem_command == BUS_NONE) begin // load an instruction from memory
+// 			proc2mem_command = Icache2Imem_command;
+// 			proc2mem_addr    = Icache2Imem_addr;
+// `ifndef CACHE_MODE
+// 			proc2mem_size    = DOUBLE; // if it's an instruction, then load a double word (64 bits)
+// `endif
+// 		end else begin // do a data operation with memory
+// 			proc2mem_command = proc2Dmem_command;
+// 			proc2mem_addr    = proc2Dmem_addr;
+// `ifndef CACHE_MODE
+// 			proc2mem_size    = proc2Dmem_size;
+// `endif
+// 		end
+// 		proc2mem_data = {32'b0, proc2Dmem_data};
+// 	end
 
 
 //////////////////////////////////////////////////
@@ -206,17 +230,75 @@ module pipeline (
 icache icache_0 (
 	.clock (clock),
 	.reset (reset),
-	.Imem2proc_response(mem2proc_response),
-	.Imem2proc_data(mem2proc_data),
-	.Imem2proc_tag(mem2proc_tag),     			// from memory
+	.Imem2proc_response(ctrl2Icache_response),
+	.Imem2proc_data(ctrl2Icache_data),
+	.Imem2proc_tag(ctrl2Icache_tag),     		// from controller
 	.proc2Icache_addr(proc2Icache_addr),        // from processor
 
-	.proc2Imem_command(Icache2Imem_command),
-	.proc2Imem_addr(Icache2Imem_addr),          // to memory
+	.proc2Imem_command(Icache2ctrl_command),
+	.proc2Imem_addr(Icache2ctrl_addr),          // to controller
 	.Icache_data_out(Icache_data_out),
 	.Icache_valid_out(Icache_valid_out)         // to processor
 );
 
+//////////////////////////////////////////////////
+//                                              //
+//                  dcache                      //
+//                                              //
+//////////////////////////////////////////////////
+dcache dcache_0 (
+	.clock (clock),
+	.reset (reset),	
+	.Dmem2proc_response(ctrl2Dcache_response),
+	.Dmem2proc_data(ctrl2Dcache_data),
+	.Dmem2proc_tag(ctrl2Dcache_tag),
+
+	.proc2Dcache_addr(proc2Dcache_addr),
+
+    .proc2Dcache_data(proc2Dcache_data), //!!! Store not finished !!!//------------------------------------------------
+
+    .proc2Dcache_command(proc2Dcache_command), // 0: None, 1: Load, 2: Store
+	.mem_size(proc2Dcache_mem_size), // BYTE = 2'h0, HALF = 2'h1, WORD = 2'h2, DOUBLE = 3'h4
+
+	.proc2Dmem_command(Dcache2ctrl_command),
+	.proc2Dmem_addr(Dcache2ctrl_addr),
+    .proc2Dmem_data(Dcache2ctrl_data),      // to controller
+
+	.Dcache_data_out(Dcache2proc_data), // value is memory[proc2Dcache_addr]
+	//.Dcache_valid_out(), // when this is high !!! not sure if we need it
+	.finished(Dcache_finish)		// finished current instruction
+);
+
+//////////////////////////////////////////////////
+//                                              //
+//           cache controller                   //
+//                                              //
+//////////////////////////////////////////////////
+
+cache_controller cache_controller_0 (
+    .mem2proc_response(mem2proc_response), // this should be zero unless we got a response
+	.mem2proc_data(mem2proc_data),
+	.mem2proc_tag(mem2proc_tag),
+
+    .proc2mem_command(proc2mem_command),
+	.proc2mem_addr(proc2mem_addr),
+    .proc2Dmem_data(proc2mem_data),
+
+    .Icache2ctrl_command(Icache2ctrl_command),
+	.Icache2ctrl_addr(Icache2ctrl_addr),
+
+    .ctrl2Icache_response(ctrl2Icache_response),
+    .ctrl2Icache_data(ctrl2Icache_data),
+	.ctrl2Icache_tag(ctrl2Icache_tag),
+
+    .Dcache2ctrl_command(Dcache2ctrl_command),
+	.Dcache2ctrl_addr(Dcache2ctrl_addr),
+    .Dcache2ctrl_data(Dcache2ctrl_data),
+
+    .ctrl2Dcache_response(ctrl2Dcache_response),
+	.ctrl2Dcache_data(ctrl2Dcache_data),
+	.ctrl2Dcache_tag(ctrl2Dcache_tag)
+);
 
 //////////////////////////////////////////////////
 //                                              //
@@ -308,7 +390,7 @@ icache icache_0 (
 
 	logic is_stall;
 	assign dp_is_stall = !if_id_Icache_valid_out; // Stop assigning RS/ROB when there is icache miss, but can still issue
-	assign is_stall = ((is_packet.channel == MULT) && (ex_valid == 0)) ? 1 : 0;
+	assign is_stall = ((is_packet.channel == MULT) && (MUL_valid == 0)) || ((is_packet.channel == LD) && (LOAD_valid == 0)) ? 1 : 0;
 
 	DP_IS DP_IS_0 (
 		.clock (clock),
@@ -357,7 +439,8 @@ icache icache_0 (
 				1'b0, // csr_op
 				1'b0, // valid
                 1'b1, // is_ZEROREG
-                ALU   // channel
+                ALU,   // channel
+				3'b111  // mem_size
 			};
 		end else begin // if (reset)
 			if (is_ex_enable && !is_stall) begin
@@ -377,13 +460,20 @@ icache icache_0 (
 		.clock(clock),
 		.reset(reset),
 		.is_packet_in(is_ex_packet),
+		.Dcache2proc_data(Dcache2proc_data),
+		.Dcache_finish(Dcache_finish),
 
 		// Outputs
 		.ex_packet_out(ex_packet),
-		.valid(ex_valid),         // 0 - has structural hazard in mult, need to stall RS issue only, currently mult_num =4, no need
+		.MUL_valid(MUL_valid),         // 0 - has structural hazard in mult, need to stall RS issue only, currently mult_num =4, no need
+		.LOAD_valid(LOAD_valid),
 		.no_output(ex_no_output),
 		.ex2btb_packet_out(ex2btb_packet),
-		.correct_predict(correct_predict)
+		.correct_predict(correct_predict),
+		.proc2Dcache_command(proc2Dcache_command),
+		.proc2Dcache_addr(proc2Dcache_addr),
+		.proc2Dcache_data(proc2Dcache_data),
+		.proc2Dcache_mem_size(proc2Dcache_mem_size)
 	);
 
 //////////////////////////////////////////////////
@@ -487,7 +577,7 @@ icache icache_0 (
 			mem_wb_valid_inst   <= `SD 0;
 			mem_wb_dest_reg_idx <= `SD `ZERO_REG;
 			mem_wb_take_branch  <= `SD 0;
-			mem_wb_result       <= `SD 0;
+			// mem_wb_result       <= `SD 0;
 		end else begin
 			if (mem_wb_enable) begin
 				// these are should come from retire stage!!!
@@ -499,7 +589,7 @@ icache icache_0 (
 				mem_wb_dest_reg_idx <= `SD ex_cp_packet.dest_reg_idx;
 				mem_wb_take_branch  <= `SD ex_cp_packet.take_branch;
 				// these are results of MEM stage
-				mem_wb_result       <= `SD mem_result_out;
+				// mem_wb_result       <= `SD mem_result_out;
 			end // if
 		end // else: !if(reset)
 	end // always

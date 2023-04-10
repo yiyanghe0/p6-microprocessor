@@ -156,7 +156,7 @@ module testbench;
 		$fdisplay(pipe_output, "mem2proc => response: %d, tag: %d, data: %h", mem2proc_response, mem2proc_tag, mem2proc_data);
 
 		$fdisplay(pipe_output, "\n ----------------------I cache----------------------");
-		$fdisplay(pipe_output, "Icache => memory  command: %b, addr: %h", core.Icache2Imem_command, core.Icache2Imem_addr);
+		$fdisplay(pipe_output, "Icache => memory  command: %b, addr: %h", core.Icache2ctrl_command, core.Icache2ctrl_addr);
 		$fdisplay(pipe_output, "Memory => Icache  response: %b, data: %h, tag: %b, ", mem2proc_response, mem2proc_data, mem2proc_tag);
 		$fdisplay(pipe_output, "Icache => core data: %h, valid; %b", core.Icache_data_out, core.Icache_valid_out); 
 		$fdisplay(pipe_output, "core => Icache address; %h", core.proc2Icache_addr); 

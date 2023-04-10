@@ -1,7 +1,7 @@
 `ifndef __RS_ENTRY_SV__
 `define __RS_ENTRY_SV__
 
-`define DEBUG
+//`define DEBUG
 
 `include "sys_defs.svh"
 
@@ -87,6 +87,7 @@ Note: packets to ROB, Map Table and selection of RS_entry, issued s_x_packet sho
     assign next_entry_packet.dest_reg_idx     = wr_en ? rob2rs_packet_in.rob_entry  : entry_packet.dest_reg_idx; // changed
     assign next_entry_packet.channel          = wr_en ? id_packet_in.channel        : entry_packet.channel;
     assign next_entry_packet.is_ZEROREG       = wr_en ? ((id_packet_in.dest_reg_idx == `ZERO_REG) ? 1 : 0) : entry_packet.is_ZEROREG;
+    assign next_entry_packet.mem_size         = wr_en ? id_packet_in.mem_size       : entry_packet.mem_size;
 
     // register values for next rs1 and rs2 tags
     // assign next_entry_rs1_tag = wr_en ? (mt2rs_packet_in.rs1_ready ? 0 :
@@ -258,7 +259,8 @@ Note: packets to ROB, Map Table and selection of RS_entry, issued s_x_packet sho
 				1'b0, // csr_op
 				1'b0, // valid
                 1'b1, // is_ZEROREG
-                ALU   // channel
+                ALU,   // channel
+                3'b111 //mem_size
 			};
             entry_rs1_tag <= `SD 0;
             entry_rs2_tag <= `SD 0;
