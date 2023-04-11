@@ -48,7 +48,7 @@ module cache_controller(
             ctrl2Dcache_data = mem2proc_data;
             ctrl2Dcache_tag = mem2proc_tag;
 
-            ctrl2Icache_response = mem2proc_response;
+            ctrl2Icache_response = 0;
             ctrl2Icache_data = mem2proc_data;
             ctrl2Icache_tag = mem2proc_tag;
         end
@@ -57,7 +57,7 @@ module cache_controller(
             proc2mem_addr = Icache2ctrl_addr;
             proc2Dmem_data = 0;
 
-            ctrl2Dcache_response = mem2proc_response;
+            ctrl2Dcache_response = 0;
             ctrl2Dcache_data = mem2proc_data;
             ctrl2Dcache_tag = mem2proc_tag;
 

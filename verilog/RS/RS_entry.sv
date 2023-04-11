@@ -139,6 +139,10 @@ Note: packets to ROB, Map Table and selection of RS_entry, issued s_x_packet sho
                 next_entry_rs2_tag.tag = 0;
                 next_entry_rs2_tag.valid = 0;
             end
+            else if (id_packet_in.wr_mem)begin
+                next_entry_rs2_tag.tag = 0;
+                next_entry_rs2_tag.valid = 0;
+            end
             else begin
                 next_entry_rs2_tag.tag = mt2rs_packet_in.rs2_tag.tag;
                 next_entry_rs2_tag.valid = mt2rs_packet_in.rs2_tag.valid;

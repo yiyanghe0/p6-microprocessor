@@ -15,17 +15,15 @@ module DP_IS (
     output ROB2REG_PACKET rob_retire_packet,
 
     output logic     rob2store_start,
+    output ID_PACKET id_packet,
     output IS_PACKET is_packet_out,
     output logic next_struc_hazard,
+    output logic struc_hazard,
     output logic squash,
     output IFID2BTB_PACKET id2btb_packet_out
 );
 
 logic struc_hazard;
-
-// instantiate ID_STAGE
-ID_PACKET id_packet;
-// ROB2REG_PACKET rob_retire_packet;
 
 //instantiate RS
 RS2ROB_PACKET rs2rob_packet;
@@ -37,7 +35,7 @@ ROB2MT_PACKET rob2mt_packet;
 ROB2RS_PACKET rob2rs_packet;
 logic rob_struc_hazard; // 0 - no structural hazard; 1 - structural hazard
 logic next_rob_struc_hazard; // 0 - no structural hazard; 1 - structural hazard in nxt cycle
-
+logic dispatch_stall;
 
 // instantiate MT
 MT2RS_PACKET mt2rs_packet;
@@ -59,7 +57,7 @@ RS RS_0 (
     .reset(reset),
     .squash(rob2rs_packet.squash),
     // .stall(stall),
-    .stall(stall || rob_struc_hazard),
+    .stall(dispatch_stall),
     .is_stall(is_stall),
     .id_packet_in(id_packet),
     .rob2rs_packet_in(rob2rs_packet),
@@ -105,6 +103,7 @@ MAP_TABLE MT_0 (
 // structural hazard signal to IF/ID pipeline register
 assign struc_hazard = rob_struc_hazard | (~RS_struc_hazard_inv); 
 assign next_struc_hazard = next_rob_struc_hazard | (~RS_struc_hazard_inv); 
+assign dispatch_stall = stall || rob_struc_hazard;
 
 
 endmodule
