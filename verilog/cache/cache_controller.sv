@@ -5,7 +5,7 @@
 
 
 module cache_controller(
-    input clock, reset
+    input clock, reset,
     // from memory
 	input [3:0]  mem2proc_response, // this should be zero unless we got a response
 	input [63:0] mem2proc_data,

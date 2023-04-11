@@ -276,6 +276,8 @@ dcache dcache_0 (
 //////////////////////////////////////////////////
 
 cache_controller cache_controller_0 (
+	.clock(clock),
+	.reset(reset),
     .mem2proc_response(mem2proc_response), // this should be zero unless we got a response
 	.mem2proc_data(mem2proc_data),
 	.mem2proc_tag(mem2proc_tag),           		// from mem
