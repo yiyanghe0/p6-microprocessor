@@ -13,7 +13,7 @@ module CDB(
     assign cdb_packet_out.reg_tag.tag 	  = ex_packet_in.dest_reg_idx;
     assign cdb_packet_out.reg_tag.valid   = (ex_packet_in.is_ZEROREG || ex_no_output) ? 0 : 1;    // 1 - have write back value, not tag valid bit
     assign cdb_packet_out.no_output       = ex_no_output; 
-    assign cdb_packet_out.reg_value       = ex_packet_in.alu_result;
+    assign cdb_packet_out.reg_value       = ex_packet_in.uncond_branch ? ex_packet_in.NPC : ex_packet_in.alu_result;
     assign cdb_packet_out.correct_PC      = (ex_packet_in.take_branch) ? ex_packet_in.alu_result : ex_packet_in.PC + 4;
     assign cdb_packet_out.PC              = ex_packet_in.PC;
     assign cdb_packet_out.correct_predict = correct_predict;

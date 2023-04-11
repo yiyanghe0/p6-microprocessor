@@ -36,7 +36,6 @@ module cache_controller(
 );
 
     logic d_request;
-    logic d_grant;   // miss logic
     assign d_request = (Dcache2ctrl_command != BUS_NONE);
 
     always_comb begin
@@ -49,18 +48,18 @@ module cache_controller(
             ctrl2Dcache_data = mem2proc_data;
             ctrl2Dcache_tag = mem2proc_tag;
 
-            ctrl2Icache_response = 0;
-            ctrl2Icache_data = 0;
-            ctrl2Icache_tag = 0;
+            ctrl2Icache_response = mem2proc_response;
+            ctrl2Icache_data = mem2proc_data;
+            ctrl2Icache_tag = mem2proc_tag;
         end
         else begin
             proc2mem_command = Icache2ctrl_command;
             proc2mem_addr = Icache2ctrl_addr;
             proc2Dmem_data = 0;
 
-            ctrl2Dcache_response = 0;
-            ctrl2Dcache_data = 0;
-            ctrl2Dcache_tag = 0;
+            ctrl2Dcache_response = mem2proc_response;
+            ctrl2Dcache_data = mem2proc_data;
+            ctrl2Dcache_tag = mem2proc_tag;
 
             ctrl2Icache_response = mem2proc_response;
             ctrl2Icache_data = mem2proc_data;

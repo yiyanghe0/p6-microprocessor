@@ -250,25 +250,34 @@ module EX (
 	assign ex_packet1.alu_result   = (ALU_done) ? ALU_result :
 												  (BRANCH_done) ? BRANCH_addr : 0;
 
+	//For JAL/JALR
+	assign ex_packet1.uncond_branch = (ALU_done) ? ALU_is_packet.uncond_branch :
+												  (BRANCH_done) ? BRANCH_is_packet.uncond_branch : 0;
+
 	assign ex_packet1.is_ZEROREG   = (ALU_done) ? ALU_is_packet.is_ZEROREG :
 												  (BRANCH_done) ? BRANCH_is_packet.is_ZEROREG : 1;
 
+    
+
 
 	always_comb begin
-		ex_packet2.NPC          = 0;
-		ex_packet2.PC           = 0;
-		ex_packet2.rs2_value    = 0;
-		ex_packet2.rd_mem       = 0;
-		ex_packet2.wr_mem       = 0;
-		ex_packet2.dest_reg_idx = 0;
-		ex_packet2.halt         = 0;
-		ex_packet2.illegal      = 0;
-		ex_packet2.csr_op       = 0;
-		ex_packet2.valid        = 0;
-		ex_packet2.mem_size     = 0;
-		ex_packet2.take_branch  = 0;
-		ex_packet2.alu_result   = 0;
-		ex_packet2.is_ZEROREG	= 1;
+		ex_packet2.NPC           = 0;
+		ex_packet2.PC            = 0;
+		ex_packet2.rs2_value     = 0;
+		ex_packet2.rd_mem        = 0;
+		ex_packet2.wr_mem        = 0;
+		ex_packet2.dest_reg_idx  = 0;
+		ex_packet2.halt          = 0;
+		ex_packet2.illegal       = 0;
+		ex_packet2.csr_op        = 0;
+		ex_packet2.valid         = 0;
+		ex_packet2.mem_size      = 0;
+		ex_packet2.take_branch   = 0;
+		ex_packet2.alu_result    = 0;
+		//For JALR/JAL
+		ex_packet2.uncond_branch = 0;
+		ex_packet2.is_ZEROREG	 = 1;
+		
 
 		for (int i = 0; i < `MUL_NUM; i++) begin
 			if (MUL_done[i]) begin
@@ -285,6 +294,8 @@ module EX (
 				ex_packet2.mem_size     = MUL_is_packet[i].inst.r.funct3;
 				ex_packet2.take_branch  = 0;
 				ex_packet2.alu_result   = MUL_product[i];
+				//For JALR/JAL
+				ex_packet2.uncond_branch = 0;
 				ex_packet2.is_ZEROREG	= MUL_is_packet[i].is_ZEROREG;
 
 				break;
@@ -325,6 +336,10 @@ module EX (
 
 	assign ex_packet3.mem_size     = (LOAD_done) ? LOAD_is_packet.inst.i.funct3 :
 												   (STORE_done) ? STORE_is_packet.inst.s.funct3 : 0;
+
+	//For JALR/JAL
+	assign ex_packet3.uncond_branch = (LOAD_done) ? LOAD_is_packet.uncond_branch :
+												   (STORE_done) ? STORE_is_packet.uncond_branch : 0;
 
 	assign ex_packet3.take_branch  = 0;
 

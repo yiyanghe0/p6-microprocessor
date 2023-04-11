@@ -564,6 +564,7 @@ typedef struct packed {
 	logic       	  valid;         // is inst a valid instruction to be counted for CPI calculations?
 	logic [2:0]       mem_size;
 	logic			  is_ZEROREG;	   // is the dest_reg ZERO_REG, in other words, do we need to CDB broadcast in complete stage?
+	logic       	  uncond_branch;
 } EX_PACKET;
 
 

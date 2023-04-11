@@ -256,9 +256,7 @@ dcache dcache_0 (
 	.Dmem2proc_tag(ctrl2Dcache_tag),
 
 	.proc2Dcache_addr(proc2Dcache_addr),
-
     .proc2Dcache_data(proc2Dcache_data), //!!! Store not finished !!!//------------------------------------------------
-
     .proc2Dcache_command(proc2Dcache_command), // 0: None, 1: Load, 2: Store
 	.mem_size(proc2Dcache_mem_size), // BYTE = 2'h0, HALF = 2'h1, WORD = 2'h2, DOUBLE = 3'h4
 
@@ -280,26 +278,26 @@ dcache dcache_0 (
 cache_controller cache_controller_0 (
     .mem2proc_response(mem2proc_response), // this should be zero unless we got a response
 	.mem2proc_data(mem2proc_data),
-	.mem2proc_tag(mem2proc_tag),
+	.mem2proc_tag(mem2proc_tag),           		// from mem
 
     .proc2mem_command(proc2mem_command),
 	.proc2mem_addr(proc2mem_addr),
-    .proc2Dmem_data(proc2mem_data),
+    .proc2Dmem_data(proc2mem_data),        		// to mem 
 
     .Icache2ctrl_command(Icache2ctrl_command),
-	.Icache2ctrl_addr(Icache2ctrl_addr),
+	.Icache2ctrl_addr(Icache2ctrl_addr),    	// from icache  
 
     .ctrl2Icache_response(ctrl2Icache_response),
     .ctrl2Icache_data(ctrl2Icache_data),
-	.ctrl2Icache_tag(ctrl2Icache_tag),
+	.ctrl2Icache_tag(ctrl2Icache_tag),			// to icache
 
     .Dcache2ctrl_command(Dcache2ctrl_command),
 	.Dcache2ctrl_addr(Dcache2ctrl_addr),
-    .Dcache2ctrl_data(Dcache2ctrl_data),
+    .Dcache2ctrl_data(Dcache2ctrl_data),		// from dcache
 
     .ctrl2Dcache_response(ctrl2Dcache_response),
 	.ctrl2Dcache_data(ctrl2Dcache_data),
-	.ctrl2Dcache_tag(ctrl2Dcache_tag)
+	.ctrl2Dcache_tag(ctrl2Dcache_tag)			// to dcache
 );
 
 //////////////////////////////////////////////////
@@ -392,7 +390,7 @@ cache_controller cache_controller_0 (
 
 	logic is_stall;
 	assign dp_is_stall = !if_id_Icache_valid_out; // Stop assigning RS/ROB when there is icache miss, but can still issue
-	assign is_stall = ((is_packet.channel == MULT) && (MUL_valid == 0)) || ((is_packet.channel == LD) && (LOAD_valid == 0)) || ((is_packet.channel == ST) && (STORE_valid == 0)) ? 1 : 0;
+	assign is_stall = ((is_packet.channel == MULT) && (MUL_valid == 0)) || (((is_packet.channel == LD) || (is_packet.channel == ST)) && ((LOAD_valid == 0) || (STORE_valid == 0))) ? 1 : 0;
 
 	DP_IS DP_IS_0 (
 		.clock (clock),

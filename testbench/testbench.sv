@@ -150,18 +150,27 @@ module testbench;
 		$fdisplay(pipe_output, "IF_PC: %h, DP_PC: %h, IS_PC: %h, EX_PC: %h, CP_PC: %h, RT_PC: %h",
 				  core.if_packet.PC, core.DP_IS_0.id_packet.PC, core.is_packet.PC, core.ex_packet.PC, core.cp_packet.PC , pipeline_commit_PC);
 
+		$fdisplay(pipe_output, "\n ----------------------I cache----------------------");
+		$fdisplay(pipe_output, "icache unanswer miss: %b, missed outstanding: %b, current tag: %b, last tag: %b, current index: %b, last index: %b, drequest: %b, changed addr: %b", core.icache_0.unanswered_miss, core.icache_0.miss_outstanding, core.icache_0.current_tag, core.icache_0.last_tag, core.icache_0.current_index, core.icache_0.last_index, core.cache_controller_0.d_request, core.icache_0.changed_addr);
+		$fdisplay(pipe_output, "update mem tag: %b, current mem tag: %b, got mem data: %b", core.icache_0.update_mem_tag, core.icache_0.current_mem_tag, core.icache_0.got_mem_data);
+		$fdisplay(pipe_output, "core => Icache address; %h", core.proc2Icache_addr); 
+		$fdisplay(pipe_output, "Icache => core data: %h, valid; %b", core.Icache_data_out, core.Icache_valid_out); 
+		$fdisplay(pipe_output, "Icache => controller  command: %b, addr: %h", core.Icache2ctrl_command, core.Icache2ctrl_addr);
+		$fdisplay(pipe_output, "controller => icache  response: %b, data: %h, tag: %b, ", core.ctrl2Icache_response, core.ctrl2Icache_data, core.ctrl2Icache_tag);
+
 
 		$fdisplay(pipe_output, "\n ----------------------Memory----------------------");
-		$fdisplay(pipe_output, "proc2mem => command: %b, addr: %5d, data: %h", proc2mem_command, proc2mem_addr, proc2mem_data);
-		$fdisplay(pipe_output, "mem2proc => response: %d, tag: %d, data: %h", mem2proc_response, mem2proc_tag, mem2proc_data);
-
-		$fdisplay(pipe_output, "\n ----------------------I cache----------------------");
-		$fdisplay(pipe_output, "Icache => memory  command: %b, addr: %h", core.Icache2ctrl_command, core.Icache2ctrl_addr);
 		$fdisplay(pipe_output, "Memory => controller  response: %b, data: %h, tag: %b, ", mem2proc_response, mem2proc_data, mem2proc_tag);
-		$fdisplay(pipe_output, "Memory => icache  response: %b, data: %h, tag: %b, ", core.ctrl2Icache_response, core.ctrl2Icache_data, core.ctrl2Icache_tag);
+		$fdisplay(pipe_output, "controller => Memory  command: %b, data: %h, addr: %h, ", proc2mem_command, proc2mem_data, proc2mem_addr);
 
-		$fdisplay(pipe_output, "Icache => core data: %h, valid; %b", core.Icache_data_out, core.Icache_valid_out); 
-		$fdisplay(pipe_output, "core => Icache address; %h", core.proc2Icache_addr); 
+
+		$fdisplay(pipe_output, "\n ----------------------D cache----------------------");
+		$fdisplay(pipe_output, "update mem tag: %b, current mem tag: %b, got mem data: %b", core.dcache_0.update_mem_tag, core.dcache_0.current_mem_tag, core.dcache_0.got_mem_data);
+		$fdisplay(pipe_output, "core => Dcache address: %h, data: %h, command: %b, mem_size: %b", core.proc2Dcache_addr, core.proc2Dcache_data, core.proc2Dcache_command, core.proc2Dcache_mem_size); 
+		$fdisplay(pipe_output, "Dcache => core data: %h, finish: %b", core.Icache_data_out, core.Dcache_finish); 
+		$fdisplay(pipe_output, "Dcache => controller  command: %b, addr: %h, data: %h", core.Dcache2ctrl_command, core.Dcache2ctrl_addr, core.Dcache2ctrl_data);
+		$fdisplay(pipe_output, "controller => Dcache  response: %b, data: %h, tag: %b, ", core.ctrl2Dcache_response, core.ctrl2Dcache_data, core.ctrl2Dcache_tag);
+
 
 		$fdisplay(pipe_output, "\n ----------------------IF_PACKET------------------------");
 		$fdisplay(pipe_output, "|   inst    |    PC    |    NPC    |   valid   |");
@@ -220,9 +229,9 @@ module testbench;
 						 core.DP_IS_0.RS_0.entry_rs2_tags[i].valid);
         end
 
-		$fdisplay(pipe_output, "\n ----------------------ID_PACKET------------------------");	
-		$fdisplay(pipe_output, "decode valid: %b, illegal: %b", core.DP_IS_0.id_stage_0.decoder_0.valid_inst, core.DP_IS_0.id_stage_0.decoder_0.illegal);
-		$fdisplay(pipe_output, "if_id_packet.valid; %b, id_packet_valid: %b", core.if_id_packet.valid, core.DP_IS_0.id_packet.valid);
+		// $fdisplay(pipe_output, "\n ----------------------ID_PACKET------------------------");	
+		// $fdisplay(pipe_output, "decode valid: %b, illegal: %b", core.DP_IS_0.id_stage_0.decoder_0.valid_inst, core.DP_IS_0.id_stage_0.decoder_0.illegal);
+		// $fdisplay(pipe_output, "if_id_packet.valid; %b, id_packet_valid: %b", core.if_id_packet.valid, core.DP_IS_0.id_packet.valid);
 
 		$fdisplay(pipe_output, "\n ----------------------IS_PACKET------------------------");	
 		$fdisplay(pipe_output, "| rs1_value  |  rs2_value  |  OPA  |  OPB  | alu_func  |  channel |   valid   |");
@@ -236,6 +245,7 @@ module testbench;
 						core.is_packet.valid);
 
 		$fdisplay(pipe_output, "\n ----------------------STORE UNIT------------------------");
+		$fdisplay(pipe_output, "STORE valid: %b", core.STORE_valid);
 		$fdisplay(pipe_output, "opa: %h, opb: %h", core.ex_stage_0.opa_mux_out, core.ex_stage_0.opb_mux_out);
 		$fdisplay(pipe_output, "start: %b, busy: %b, done; %b", core.ex_stage_0.STORE_start, core.ex_stage_0.STORE_busy, core.ex_stage_0.STORE_done);
 		$fdisplay(pipe_output, "From Issue Stage: is_STORE: %b", core.is_ex_packet.wr_mem);
@@ -243,6 +253,7 @@ module testbench;
 		$fdisplay(pipe_output, "From Dcache finish: %b", core.Dcache_finish);
 
 		$fdisplay(pipe_output, "\n ----------------------LOAD UNIT------------------------");
+		$fdisplay(pipe_output, "LOAD valid: %b", core.LOAD_valid);
 		$fdisplay(pipe_output, "opa: %h, opb: %h", core.ex_stage_0.opa_mux_out, core.ex_stage_0.opb_mux_out);
 		$fdisplay(pipe_output, "start: %b, busy: %b, done; %b", core.ex_stage_0.LOAD_start, core.ex_stage_0.LOAD_busy, core.ex_stage_0.LOAD_done);
 		$fdisplay(pipe_output, "From Issue Stage: is_load: %b", core.is_ex_packet.rd_mem);
@@ -264,6 +275,17 @@ module testbench;
 						core.ex_packet.dest_reg_idx,
 						core.ex_packet.rd_mem,
 						core.ex_packet.wr_mem);
+
+		$fdisplay(pipe_output, "\n ----------------------EX_PACKET 3------------------------");	
+		$fdisplay(pipe_output, "| alu_result  |  rs2_value   |  take_branch  | ROB Index  |  rd_mem  | wr_mem  |");
+		$fdisplay(pipe_output, " %d   |    %d     |    %b    |    %d    |    %b    |    %b   |",
+						core.ex_stage_0.ex_packet3.alu_result,
+						core.ex_stage_0.ex_packet3.rs2_value,
+						core.ex_stage_0.ex_packet3.take_branch,
+						core.ex_stage_0.ex_packet3.dest_reg_idx,
+						core.ex_stage_0.ex_packet3.rd_mem,
+						core.ex_stage_0.ex_packet3.wr_mem);
+
 
 		$fdisplay(pipe_output, "\n ----------------------CDB------------------------");	
 		$fdisplay(pipe_output, "| ROB Index  |  Value  |  Valid  | take_branch  |  halt  | illegal  |");
@@ -445,7 +467,7 @@ module testbench;
 			end
 
 			// deal with any halting conditions
-			if(pipeline_error_status != NO_ERROR || debug_counter > 50000) begin
+			if(pipeline_error_status != NO_ERROR || debug_counter > 5000) begin
 				$display("@@@ Unified Memory contents hex on left, decimal on right: ");
 				show_mem_with_decimal(0,`MEM_64BIT_LINES - 1);
 				// 8Bytes per line, 16kB total
