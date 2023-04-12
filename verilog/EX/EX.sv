@@ -45,11 +45,13 @@ module EX (
 	output logic 	no_output,  // no_output = 1 -> nothing output; no_output = 0 -> valid output
 	output EX2BTB_PACKET ex2btb_packet_out,
 	output logic correct_predict, // BTB made correct prediction
+	output logic STORE_done,
 	//LOAD output
 	output logic [1:0]          proc2Dcache_command,
 	output logic [`XLEN-1:0]    proc2Dcache_addr,
 	output logic [63:0]			proc2Dcache_data,
-	output logic [2:0]          proc2Dcache_mem_size
+	output logic [2:0]          proc2Dcache_mem_size,
+	output logic LOAD_done
 );
 	
 	logic [`XLEN-1:0] 					opa_mux_out, opb_mux_out;
@@ -77,7 +79,6 @@ module EX (
 	//Store parameter
 	logic								STORE_start;
 	logic [`XLEN-1:0]					STORE_addr;
-	logic 								STORE_done;
 	IS_PACKET							STORE_is_packet;
 	logic [1:0]							store2Dcache_command;
 	logic [`XLEN-1:0]					store2Dcache_addr;
@@ -85,7 +86,6 @@ module EX (
 
 	//Load parameter
 	logic								LOAD_start;
-	logic 								LOAD_done;
 	IS_PACKET							LOAD_is_packet;
 	logic [63:0]						LOAD_result;
 	logic [1:0]							load2Dcache_command;

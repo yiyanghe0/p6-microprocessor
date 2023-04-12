@@ -99,6 +99,7 @@ module pipeline (
 	IS_PACKET is_packet;
 	logic squash;
 	logic dp_is_structural_hazard;
+	logic mem_flag;
 	logic next_dp_is_structural_hazard;		// 1 - RS/ROB will have structural hazard next cycle
 	logic rob2store_start;
 
@@ -111,6 +112,8 @@ module pipeline (
 	logic MUL_valid;
 	logic LOAD_valid;
 	logic STORE_valid;
+	logic LOAD_done;
+	logic STORE_done;
 	logic ex_structural_hazard;
 	logic ex_no_output;
 	logic correct_predict;
@@ -317,7 +320,7 @@ cache_controller cache_controller_0 (
 	assign if_valid_inst_out = if_packet.valid;
 
 	// assign if_stall = 0; // Temp value
-	assign if_stall = dp_is_structural_hazard || (((id_packet.rd_mem) || (id_packet.wr_mem)) && ((LOAD_valid == 0) || (STORE_valid == 0))); // Temp value
+	assign if_stall = dp_is_structural_hazard || mem_flag; // Temp value
 
 
 	if_stage if_stage_0 (
@@ -366,7 +369,7 @@ cache_controller cache_controller_0 (
 	assign if_id_IR         = if_id_packet.inst;
 	assign if_id_valid_inst = if_id_packet.valid;
 
-	assign if_id_enable = !dp_is_structural_hazard && !(((id_packet.rd_mem) || (id_packet.wr_mem)) && ((LOAD_valid == 0) || (STORE_valid == 0))); // always enabled
+	assign if_id_enable = !mem_flag; // always enabled
 	// assign if_id_enable = !next_dp_is_structural_hazard;
 	// synopsys sync_set_reset "reset"
 	always_ff @(posedge clock) begin
@@ -376,11 +379,22 @@ cache_controller cache_controller_0 (
 			if_id_packet.NPC   <= `SD 0;
 			if_id_packet.PC    <= `SD 0;
 			if_id_Icache_valid_out <= `SD 0;
-		end 
-		else if (if_id_enable) begin
+		end
+		else if (dp_is_structural_hazard) begin
+			if_id_packet <= `SD if_id_packet;
+			if_id_Icache_valid_out <= `SD if_id_Icache_valid_out;
+		end
+		else if (mem_flag) begin
+			if_id_packet.inst  <= `SD `NOP;
+			if_id_packet.valid <= `SD `FALSE;
+			if_id_packet.NPC   <= `SD 0;
+			if_id_packet.PC    <= `SD 0;
+			if_id_Icache_valid_out <= `SD 0;
+		end
+		else begin
 			if_id_packet <= `SD if_packet;
 			if_id_Icache_valid_out <= `SD Icache_valid_out;
-		end 
+		end
 	end // always
 
 //////////////////////////////////////////////////
@@ -391,12 +405,14 @@ cache_controller cache_controller_0 (
 
 	logic is_stall;
 	// assign dp_is_stall = !if_id_Icache_valid_out; // Stop assigning RS/ROB when there is icache miss, but can still issue
-	assign dp_is_stall = !if_id_Icache_valid_out || (((id_packet.rd_mem) || (id_packet.wr_mem)) && ((LOAD_valid == 0) || (STORE_valid == 0))); // Stop assigning RS/ROB when there is icache miss, but can still issue
-	assign is_stall = ((is_packet.channel == MULT) && (MUL_valid == 0)) || (((is_packet.channel == LD) || (is_packet.channel == ST)) && ((LOAD_valid == 0) || (STORE_valid == 0))) ? 1 : 0;
+	assign dp_is_stall = !if_id_Icache_valid_out; // Stop assigning RS/ROB when there is icache miss, but can still issue
+	assign is_stall = ((is_packet.channel == MULT) && (MUL_valid == 0)) ? 1 : 0;
 
 	DP_IS DP_IS_0 (
 		.clock (clock),
 		.reset (reset),
+		.LOAD_done(LOAD_done),
+		.STORE_done(STORE_done),
 		.stall (dp_is_stall),
 		.is_stall(is_stall),
 		.if_id_packet_in(if_id_packet),
@@ -409,6 +425,7 @@ cache_controller cache_controller_0 (
 		.struc_hazard(dp_is_structural_hazard),
 		.next_struc_hazard(next_dp_is_structural_hazard),
 		.squash(squash),
+		.mem_flag(mem_flag),
 		.id2btb_packet_out(id2btb_packet)
 	);
 
@@ -474,6 +491,8 @@ cache_controller cache_controller_0 (
 		.MUL_valid(MUL_valid),         // 0 - has structural hazard in mult, need to stall RS issue only, currently mult_num =4, no need
 		.LOAD_valid(LOAD_valid),
 		.STORE_valid(STORE_valid),
+		.LOAD_done(LOAD_done),
+		.STORE_done(STORE_done),
 		.no_output(ex_no_output),
 		.ex2btb_packet_out(ex2btb_packet),
 		.correct_predict(correct_predict),

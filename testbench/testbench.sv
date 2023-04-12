@@ -10,6 +10,7 @@
 `include "sys_defs.svh"
 
 
+
 /* PIPEPRINT_UNUSED: no pipe_print for project 4, although feel free to write your own
 // these link to the pipe_print.c file in this directory, and are used below to print
 // detailed output to the pipeline_output_file, initialized by open_pipeline_output_file()
@@ -165,6 +166,8 @@ module testbench;
 
 
 		$fdisplay(pipe_output, "\n ----------------------D cache----------------------");
+		$fdisplay(pipe_output, "Dcache miss outstanding: %b, unswered miss: %b, changed addr: %b", core.dcache_0.miss_outstanding, core.dcache_0.unanswered_miss, core.dcache_0.changed_addr); 
+		$fdisplay(pipe_output, "Dcache writeback: %b, finish write back: %b", core.dcache_0.writeback, core.dcache_0.writeback_finished_reg);
 		$fdisplay(pipe_output, "update mem tag: %b, current mem tag: %b, got mem data: %b", core.dcache_0.update_mem_tag, core.dcache_0.current_mem_tag, core.dcache_0.got_mem_data);
 		$fdisplay(pipe_output, "core => Dcache address: %h, data: %h, command: %b, mem_size: %b", core.proc2Dcache_addr, core.proc2Dcache_data, core.proc2Dcache_command, core.proc2Dcache_mem_size); 
 		$fdisplay(pipe_output, "Dcache => core data: %h, finish: %b", core.Icache_data_out, core.Dcache_finish); 
@@ -208,7 +211,8 @@ module testbench;
 
 		$fdisplay(pipe_output, "if_stall: %b, if_id_enable: %b", core.if_stall, core.if_id_enable);
 		$fdisplay(pipe_output, "\n DP_IS_Stall: %b", core.dp_is_stall);
-		$fdisplay(pipe_output, "DP_IS_Structural_Hazard: %b", core.next_dp_is_structural_hazard);
+		$fdisplay(pipe_output, "DP_IS_Structural_Hazard: %b", core.dp_is_structural_hazard);
+		$fdisplay(pipe_output, "mem_flag: %b", core.mem_flag);
 
 		$fdisplay(pipe_output, "\n ----------------------ROB-----------------------");
 		$fdisplay(pipe_output, "ROB_head: %d, ROB_tail: %d ROB Structural Hazard: %b, next ROB Structural Hazard: %b", core.DP_IS_0.ROB_0.head_idx, core.DP_IS_0.ROB_0.tail_idx, core.DP_IS_0.rob_struc_hazard, core.DP_IS_0.next_rob_struc_hazard);  

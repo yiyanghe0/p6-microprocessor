@@ -7,6 +7,8 @@
 module DP_IS (
 	input                clock,              // system clock
 	input                reset,              // system reset
+    input                LOAD_done,
+    input                STORE_done,
     input                stall,              // 1 - stall DP_IS stage;
     input                is_stall,
     input IF_ID_PACKET   if_id_packet_in,
@@ -14,6 +16,7 @@ module DP_IS (
 
     output ROB2REG_PACKET rob_retire_packet,
 
+    output logic     mem_flag,
     output logic     rob2store_start,
     output ID_PACKET id_packet,
     output IS_PACKET is_packet_out,
@@ -23,7 +26,10 @@ module DP_IS (
     output IFID2BTB_PACKET id2btb_packet_out
 );
 
-logic struc_hazard;
+// logic struc_hazard;
+logic internal_mem_flag;
+logic next_internal_mem_flag;
+
 
 //instantiate RS
 RS2ROB_PACKET rs2rob_packet;
@@ -52,12 +58,49 @@ id_stage id_stage_0 (
     .id2btb_packet_out(id2btb_packet_out)
 );
 
+// stall logic
+always_comb begin
+    if (struc_hazard && (id_packet.rd_mem || id_packet.wr_mem)) begin
+        mem_flag = 1'b0;
+    end
+    else if (id_packet.rd_mem || id_packet.wr_mem) begin
+        mem_flag = 1'b1;
+    end
+    else begin
+        mem_flag = internal_mem_flag;
+    end
+end
+
+always_comb begin
+    if (struc_hazard && (id_packet.rd_mem || id_packet.wr_mem)) begin
+        next_internal_mem_flag = 1'b0;
+    end
+    else if (id_packet.rd_mem || id_packet.wr_mem) begin
+        next_internal_mem_flag = 1'b1;
+    end
+    else begin
+        next_internal_mem_flag = (LOAD_done || STORE_done) ? 0 : internal_mem_flag;
+    end
+end
+
+
+// synopsys sync_set_reset "reset"
+always_ff @(posedge clock) begin
+    if (reset) begin
+        internal_mem_flag <= `SD 0;
+    end 
+    else begin
+        internal_mem_flag <= `SD next_internal_mem_flag;
+    end
+end
+
+
 RS RS_0 (
     .clock(clock),
     .reset(reset),
     .squash(rob2rs_packet.squash),
     // .stall(stall),
-    .stall(dispatch_stall),
+    .stall(dispatch_stall || internal_mem_flag),
     .is_stall(is_stall),
     .id_packet_in(id_packet),
     .rob2rs_packet_in(rob2rs_packet),
@@ -74,7 +117,7 @@ ROB ROB_0 (
     .clock(clock),
     .reset(reset),
     // .stall(stall),
-    .stall(stall ||(~RS_struc_hazard_inv)),
+    .stall(stall ||(~RS_struc_hazard_inv) || internal_mem_flag),
     .rs2rob_packet_in(rs2rob_packet),
     .cdb_packet_in(cdb_packet_in),
     .id_packet_in(id_packet),
@@ -92,7 +135,7 @@ MAP_TABLE MT_0 (
     .clock(clock),
     .reset(reset),
     // .stall(stall),
-    .stall(stall || struc_hazard),
+    .stall(stall || struc_hazard || internal_mem_flag),
     .rs2mt_packet_in(rs2mt_packet),
     .cdb_packet_in(cdb_packet_in),
     .rob2mt_packet_in(rob2mt_packet),
@@ -102,7 +145,7 @@ MAP_TABLE MT_0 (
 
 // structural hazard signal to IF/ID pipeline register
 assign struc_hazard = rob_struc_hazard | (~RS_struc_hazard_inv); 
-assign next_struc_hazard = next_rob_struc_hazard | (~RS_struc_hazard_inv); 
+// assign next_struc_hazard = next_rob_struc_hazard | (~RS_struc_hazard_inv); 
 assign dispatch_stall = stall || rob_struc_hazard;
 
 

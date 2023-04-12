@@ -68,8 +68,8 @@ module cache_controller(
     end
 
     always_ff @(posedge clock) begin
-        if (reset) last_d_request = 0;
-        else last_d_request = d_request;
+        if (reset) last_d_request <= `SD 0;
+        else last_d_request <= `SD d_request;
     end
 
 

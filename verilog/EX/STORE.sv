@@ -49,14 +49,14 @@ always_comb begin
 	if (start) begin
 		is_packet_out 		= is_packet_in;
 		proc2Dcache_command = (is_packet_in.wr_mem && rob_start) ? BUS_STORE : BUS_NONE;
-		proc2Dcache_addr	= opa + opb;
+		proc2Dcache_addr	= rob_start ? opa + opb : 0;
         proc2Dcache_data    = is_packet_in.rs2_value;
         store_mem_size      = is_packet_in.mem_size;
 	end
 	else begin
 		is_packet_out 		= is_packet;
 		proc2Dcache_command = rob_start ? command : BUS_NONE;
-		proc2Dcache_addr	= addr;
+		proc2Dcache_addr	= rob_start ? addr : 0;
         proc2Dcache_data    = is_packet.rs2_value;
         store_mem_size      = is_packet.mem_size;
 	end
