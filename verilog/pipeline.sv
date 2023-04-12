@@ -95,8 +95,10 @@ module pipeline (
 
 	// Outputs from DP_IS stage
 	ROB2REG_PACKET rob_retire_packet;
+	ID_PACKET id_packet;
 	IS_PACKET is_packet;
 	logic squash;
+	logic dp_is_structural_hazard;
 	logic next_dp_is_structural_hazard;		// 1 - RS/ROB will have structural hazard next cycle
 	logic rob2store_start;
 
@@ -315,7 +317,7 @@ cache_controller cache_controller_0 (
 	assign if_valid_inst_out = if_packet.valid;
 
 	// assign if_stall = 0; // Temp value
-	assign if_stall = next_dp_is_structural_hazard; // Temp value
+	assign if_stall = dp_is_structural_hazard || (((id_packet.rd_mem) || (id_packet.wr_mem)) && ((LOAD_valid == 0) || (STORE_valid == 0))); // Temp value
 
 
 	if_stage if_stage_0 (
@@ -364,11 +366,11 @@ cache_controller cache_controller_0 (
 	assign if_id_IR         = if_id_packet.inst;
 	assign if_id_valid_inst = if_id_packet.valid;
 
-	assign if_id_enable = !next_dp_is_structural_hazard; // always enabled
-
+	assign if_id_enable = !dp_is_structural_hazard && !(((id_packet.rd_mem) || (id_packet.wr_mem)) && ((LOAD_valid == 0) || (STORE_valid == 0))); // always enabled
+	// assign if_id_enable = !next_dp_is_structural_hazard;
 	// synopsys sync_set_reset "reset"
 	always_ff @(posedge clock) begin
-		if (reset || squash || !Icache_valid_out) begin
+		if (reset || squash) begin
 			if_id_packet.inst  <= `SD `NOP;
 			if_id_packet.valid <= `SD `FALSE;
 			if_id_packet.NPC   <= `SD 0;
@@ -376,12 +378,9 @@ cache_controller cache_controller_0 (
 			if_id_Icache_valid_out <= `SD 0;
 		end 
 		else if (if_id_enable) begin
-				if_id_packet <= `SD if_packet;
-				if_id_Icache_valid_out <= `SD Icache_valid_out;
+			if_id_packet <= `SD if_packet;
+			if_id_Icache_valid_out <= `SD Icache_valid_out;
 		end 
-		// else begin
-		// 		if_id_packet <= `SD if_id_packet;
-		// 	end
 	end // always
 
 //////////////////////////////////////////////////
@@ -391,7 +390,8 @@ cache_controller cache_controller_0 (
 //////////////////////////////////////////////////
 
 	logic is_stall;
-	assign dp_is_stall = !if_id_Icache_valid_out; // Stop assigning RS/ROB when there is icache miss, but can still issue
+	// assign dp_is_stall = !if_id_Icache_valid_out; // Stop assigning RS/ROB when there is icache miss, but can still issue
+	assign dp_is_stall = !if_id_Icache_valid_out || (((id_packet.rd_mem) || (id_packet.wr_mem)) && ((LOAD_valid == 0) || (STORE_valid == 0))); // Stop assigning RS/ROB when there is icache miss, but can still issue
 	assign is_stall = ((is_packet.channel == MULT) && (MUL_valid == 0)) || (((is_packet.channel == LD) || (is_packet.channel == ST)) && ((LOAD_valid == 0) || (STORE_valid == 0))) ? 1 : 0;
 
 	DP_IS DP_IS_0 (
@@ -403,8 +403,10 @@ cache_controller cache_controller_0 (
 		.cdb_packet_in(cp_packet),
 
 		.rob2store_start(rob2store_start),
+		.id_packet(id_packet),
 		.is_packet_out(is_packet),
 		.rob_retire_packet(rob_retire_packet),
+		.struc_hazard(dp_is_structural_hazard),
 		.next_struc_hazard(next_dp_is_structural_hazard),
 		.squash(squash),
 		.id2btb_packet_out(id2btb_packet)
