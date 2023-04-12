@@ -12,16 +12,7 @@
 
 `include "sys_defs.svh"
 
-// internal macros, no other file should need these
-`define CACHE_LINES 32
-`define CACHE_LINE_BITS $clog2(`CACHE_LINES)
 
-typedef struct packed {
-	logic [63:0]                  data;
-	// 12:0 (13 bits) since only 16 bits of address exist in mem - and 3 are the block offset
-	logic [12-`CACHE_LINE_BITS:0] tags;
-	logic                         valid;
-} ICACHE_PACKET;
 
 // a quick README copied from mem.sv:
 // We've increased the memory latency from 1 cycle to 100ns. which will be multiple cycles for any
@@ -56,12 +47,20 @@ module icache (
 	output logic [1:0]       proc2Imem_command,
 	output logic [`XLEN-1:0] proc2Imem_addr,
 
+	`ifdef TEST_MODE
+		output ICACHE_PACKET [`CACHE_LINES-1:0] show_icache_data,
+	`endif	
+
 	// to fetch stage
 	output logic [63:0] Icache_data_out, // value is memory[proc2Icache_addr]
 	output logic        Icache_valid_out // when this is high
 );
 
 	ICACHE_PACKET [`CACHE_LINES-1:0] icache_data;
+
+	`ifdef TEST_MODE
+		assign show_icache_data = icache_data;
+	`endif	
 
 	// note: cache tags, not memory tags
 	logic [`CACHE_LINE_BITS - 1:0] current_index, last_index;

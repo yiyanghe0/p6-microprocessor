@@ -351,6 +351,22 @@ typedef enum logic[1:0]{
 		TAKEN = 3
 } BTB_PREDICT;
 
+
+//////////////////////////////////////////////
+//
+// ICACHE_packet
+//
+//////////////////////////////////////////////
+`define CACHE_LINES 32
+`define CACHE_LINE_BITS $clog2(`CACHE_LINES)
+
+typedef struct packed {
+	logic [63:0]                  data;
+	// 12:0 (13 bits) since only 16 bits of address exist in mem - and 3 are the block offset
+	logic [12-`CACHE_LINE_BITS:0] tags;
+	logic                         valid;
+} ICACHE_PACKET;
+
 //////////////////////////////////////////////
 //
 // DCACHE_packet
