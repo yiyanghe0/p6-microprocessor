@@ -56,6 +56,7 @@ module dcache(
 	logic hit; // found memory address in dcache
 	logic writeback; // need to writeback
 	logic writeback_finished; // high when writeback is finished
+	logic writeback_finished_reg;
 
 	// control signals
 	assign hit 					= dcache_data[current_index].valid && (dcache_data[current_index].tags == current_tag); // valid && tag match
@@ -77,7 +78,7 @@ module dcache(
 
 	logic unanswered_miss; // if we have a new miss or still waiting for the response tag
 	assign unanswered_miss = (proc2Dcache_command == BUS_NONE) ? 0 : (changed_addr ? (!(hit || (proc2Dcache_command == BUS_STORE && !dcache_data[current_index].dirty)))
-	                            													: miss_outstanding && (Dmem2proc_response == 0));
+	                            													: miss_outstanding && (Dmem2proc_response == 0) || writeback_finished_reg);
 
 	assign finished = hit;
 
@@ -118,17 +119,20 @@ module dcache(
 
 		case(mem_size)
 			3'b000: begin
-				Dcache_data_out = {56'b0, loaded_data_byte[proc2Dcache_addr[2:0]]};
+				Dcache_data_out = {{56{loaded_data_byte[proc2Dcache_addr[2:0]][7]}}, loaded_data_byte[proc2Dcache_addr[2:0]]};
 			end
 			3'b001: begin
-				Dcache_data_out = {48'b0, loaded_data_half[proc2Dcache_addr[2:1]]};
+				Dcache_data_out = {{48{loaded_data_half[proc2Dcache_addr[2:1]][15]}}, loaded_data_half[proc2Dcache_addr[2:1]]};
 			end
 			3'b010: begin
-				Dcache_data_out = {32'b0, loaded_data_word[proc2Dcache_addr[2]]};
+				Dcache_data_out = {{32{loaded_data_word[proc2Dcache_addr[2]][31]}}, loaded_data_word[proc2Dcache_addr[2]]};
 			end
-
-			3'b100:
-				Dcache_data_out = loaded_data;
+			3'b100: begin
+				Dcache_data_out = {56'b0, loaded_data_byte[proc2Dcache_addr[2:0]]};
+			end
+			3'b101: begin
+				Dcache_data_out = {48'b0, loaded_data_half[proc2Dcache_addr[2:1]]};
+			end
 		endcase
 	end
 
@@ -199,6 +203,10 @@ module dcache(
 			
 			if (writeback_finished) begin
 				dcache_data[current_index].dirty  <= `SD 0;
+				writeback_finished_reg <= `SD 1;
+			end
+			else begin
+				writeback_finished_reg <= `SD 0;
 			end
 		end
 	end

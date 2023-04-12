@@ -219,21 +219,21 @@ initial begin
     reset = 0;
 
     // testcase 1, store without writeback
-    ST(16'h0010,4, 64'hFFFF_1234_4321_FFFF);
+    ST(16'h0010,3'b100, 64'hFFFF_1234_4321_FFFF);
     wait_until_finish();
     @(negedge clock);
     NONE();
     @(negedge clock);
 
     // testcase 2, store with writeback
-    ST(16'h0810,4, 64'habcd_0110_1001_abcd);
+    ST(16'h0810,3'b100, 64'habcd_0110_1001_abcd);
     wait_until_finish();
     @(negedge clock);
     NONE();
     @(negedge clock);
 
     // testcase 3, store with writeback
-    ST(16'h820,1, 64'habcd_0110_1001_abcd);
+    ST(16'h820,3'b010, 64'habcd_0110_1001_abcd);
     wait_until_finish();
     @(negedge clock);
     NONE();
@@ -248,7 +248,7 @@ initial begin
 
     // testcase 5, load without writeback
     @(negedge clock);
-    LD(12'h010,4);
+    LD(12'h010,0);
     wait_until_finish();
     @(negedge clock);
     NONE();
