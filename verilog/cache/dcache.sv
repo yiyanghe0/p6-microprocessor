@@ -147,12 +147,12 @@ module dcache(
 			proc2Dmem_data = 0;
 		end
 		// not hit
-		else if (!writeback && (proc2Dcache_command == BUS_LOAD)) begin // case 3
+		else if (!writeback && (proc2Dcache_command == BUS_LOAD) && miss_outstanding) begin // case 3
 			proc2Dmem_command = BUS_LOAD;
 			proc2Dmem_addr = {proc2Dcache_addr[31:3],3'b0};
 			proc2Dmem_data = 0;
 		end
-		else if (writeback) begin // case 5, 6
+		else if (writeback  && miss_outstanding) begin // case 5, 6
 			proc2Dmem_command = BUS_STORE;
 			proc2Dmem_addr = {dcache_data[current_index].tags,current_index,3'b0};
 			proc2Dmem_data = dcache_data[current_index].data;

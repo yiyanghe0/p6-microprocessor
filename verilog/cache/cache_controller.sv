@@ -5,6 +5,7 @@
 
 
 module cache_controller(
+    input clock, reset,
     // from memory
 	input [3:0]  mem2proc_response, // this should be zero unless we got a response
 	input [63:0] mem2proc_data,
@@ -36,35 +37,39 @@ module cache_controller(
 );
 
     logic d_request;
+    logic last_d_request;
     assign d_request = (Dcache2ctrl_command != BUS_NONE);
 
     always_comb begin
+        ctrl2Dcache_data = mem2proc_data;
+        ctrl2Dcache_tag = mem2proc_tag;
+        
+        ctrl2Icache_data = mem2proc_data;
+        ctrl2Icache_tag = mem2proc_tag;
+
         if (d_request) begin // assign memory output to Dcache, and clear Icache output
             proc2mem_command = Dcache2ctrl_command;
             proc2mem_addr = Dcache2ctrl_addr;
             proc2Dmem_data = Dcache2ctrl_data;
-
-            ctrl2Dcache_response = mem2proc_response;
-            ctrl2Dcache_data = mem2proc_data;
-            ctrl2Dcache_tag = mem2proc_tag;
-
-            ctrl2Icache_response = 0;
-            ctrl2Icache_data = mem2proc_data;
-            ctrl2Icache_tag = mem2proc_tag;
         end
         else begin
             proc2mem_command = Icache2ctrl_command;
             proc2mem_addr = Icache2ctrl_addr;
             proc2Dmem_data = 0;
-
-            ctrl2Dcache_response = 0;
-            ctrl2Dcache_data = mem2proc_data;
-            ctrl2Dcache_tag = mem2proc_tag;
-
-            ctrl2Icache_response = mem2proc_response;
-            ctrl2Icache_data = mem2proc_data;
-            ctrl2Icache_tag = mem2proc_tag;
         end
+
+        if (last_d_request) begin
+            ctrl2Icache_response = 0;
+            ctrl2Dcache_response = mem2proc_response;
+        end else begin
+            ctrl2Icache_response = mem2proc_response;
+            ctrl2Dcache_response = 0;
+        end
+    end
+
+    always_ff @(posedge clock) begin
+        if (reset) last_d_request = 0;
+        else last_d_request = d_request;
     end
 
 
