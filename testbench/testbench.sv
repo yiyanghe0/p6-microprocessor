@@ -143,194 +143,201 @@ module testbench;
 
 	function pipeline_output;
 
-		$fdisplay(pipe_output, "\n ---------------------------Cycle %d---------------------------", clock_count);
-		$fdisplay(pipe_output, "\n System Halt is: %b", core.rob_retire_packet.halt);
-		$fdisplay(pipe_output, "\n squash is: %b", core.squash);
+		// $fdisplay(pipe_output, "\n ---------------------------Cycle %d---------------------------", clock_count);
+		// $fdisplay(pipe_output, "\n System Halt is: %b", core.rob_retire_packet.halt);
+		// $fdisplay(pipe_output, "\n squash is: %b", core.squash);
 
-		$fdisplay(pipe_output, "\n ----------------------PC----------------------");
-		$fdisplay(pipe_output, "IF_PC: %h, DP_PC: %h, IS_PC: %h, EX_PC: %h, CP_PC: %h, RT_PC: %h",
-				  core.if_packet.PC, core.DP_IS_0.id_packet.PC, core.is_packet.PC, core.ex_packet.PC, core.cp_packet.PC , pipeline_commit_PC);
+		// $fdisplay(pipe_output, "\n ----------------------PC----------------------");
+		// $fdisplay(pipe_output, "IF_PC: %h, DP_PC: %h, IS_PC: %h, EX_PC: %h, CP_PC: %h, RT_PC: %h",
+		// 		  core.if_packet.PC, core.DP_IS_0.id_packet.PC, core.is_packet.PC, core.ex_packet.PC, core.cp_packet.PC , pipeline_commit_PC);
 
-		$fdisplay(pipe_output, "\n ----------------------I cache----------------------");
-		$fdisplay(pipe_output, "icache unanswer miss: %b, missed outstanding: %b, current tag: %b, last tag: %b, current index: %b, last index: %b, drequest: %b, changed addr: %b", core.icache_0.unanswered_miss, core.icache_0.miss_outstanding, core.icache_0.current_tag, core.icache_0.last_tag, core.icache_0.current_index, core.icache_0.last_index, core.cache_controller_0.d_request, core.icache_0.changed_addr);
-		$fdisplay(pipe_output, "update mem tag: %b, current mem tag: %b, got mem data: %b", core.icache_0.update_mem_tag, core.icache_0.current_mem_tag, core.icache_0.got_mem_data);
-		$fdisplay(pipe_output, "core => Icache address; %h", core.proc2Icache_addr); 
-		$fdisplay(pipe_output, "Icache => core data: %h, valid; %b", core.Icache_data_out, core.Icache_valid_out); 
-		$fdisplay(pipe_output, "Icache => controller  command: %b, addr: %h", core.Icache2ctrl_command, core.Icache2ctrl_addr);
-		$fdisplay(pipe_output, "controller => icache  response: %b, data: %h, tag: %b, ", core.ctrl2Icache_response, core.ctrl2Icache_data, core.ctrl2Icache_tag);
-
-
-		$fdisplay(pipe_output, "\n ----------------------Memory----------------------");
-		$fdisplay(pipe_output, "Memory => controller  response: %b, data: %h, tag: %b, ", mem2proc_response, mem2proc_data, mem2proc_tag);
-		$fdisplay(pipe_output, "controller => Memory  command: %b, data: %h, addr: %h, ", proc2mem_command, proc2mem_data, proc2mem_addr);
+		// $fdisplay(pipe_output, "\n ----------------------I cache----------------------");
+		// $fdisplay(pipe_output, "icache unanswer miss: %b, missed outstanding: %b, current tag: %b, last tag: %b, current index: %b, last index: %b, drequest: %b, changed addr: %b", core.icache_0.unanswered_miss, core.icache_0.miss_outstanding, core.icache_0.current_tag, core.icache_0.last_tag, core.icache_0.current_index, core.icache_0.last_index, core.cache_controller_0.d_request, core.icache_0.changed_addr);
+		// $fdisplay(pipe_output, "update mem tag: %b, current mem tag: %b, got mem data: %b", core.icache_0.update_mem_tag, core.icache_0.current_mem_tag, core.icache_0.got_mem_data);
+		// $fdisplay(pipe_output, "core => Icache address; %h", core.proc2Icache_addr); 
+		// $fdisplay(pipe_output, "Icache => core data: %h, valid; %b", core.Icache_data_out, core.Icache_valid_out); 
+		// $fdisplay(pipe_output, "Icache => controller  command: %b, addr: %h", core.Icache2ctrl_command, core.Icache2ctrl_addr);
+		// $fdisplay(pipe_output, "controller => icache  response: %b, data: %h, tag: %b, ", core.ctrl2Icache_response, core.ctrl2Icache_data, core.ctrl2Icache_tag);
 
 
-		$fdisplay(pipe_output, "\n ----------------------D cache----------------------");
-		$fdisplay(pipe_output, "Dcache miss outstanding: %b, unswered miss: %b, changed addr: %b", core.dcache_0.miss_outstanding, core.dcache_0.unanswered_miss, core.dcache_0.changed_addr); 
-		$fdisplay(pipe_output, "Dcache writeback: %b, finish write back: %b", core.dcache_0.writeback, core.dcache_0.writeback_finished_reg);
-		$fdisplay(pipe_output, "update mem tag: %b, current mem tag: %b, got mem data: %b", core.dcache_0.update_mem_tag, core.dcache_0.current_mem_tag, core.dcache_0.got_mem_data);
-		$fdisplay(pipe_output, "core => Dcache address: %h, data: %h, command: %b, mem_size: %b", core.proc2Dcache_addr, core.proc2Dcache_data, core.proc2Dcache_command, core.proc2Dcache_mem_size); 
-		$fdisplay(pipe_output, "Dcache => core data: %h, finish: %b", core.Icache_data_out, core.Dcache_finish); 
-		$fdisplay(pipe_output, "Dcache => controller  command: %b, addr: %h, data: %h", core.Dcache2ctrl_command, core.Dcache2ctrl_addr, core.Dcache2ctrl_data);
-		$fdisplay(pipe_output, "controller => Dcache  response: %b, data: %h, tag: %b, ", core.ctrl2Dcache_response, core.ctrl2Dcache_data, core.ctrl2Dcache_tag);
-
-		$fdisplay(pipe_output, "\n ----------------------IF_PACKET------------------------");
-		$fdisplay(pipe_output, "|   inst    |    PC    |    NPC    |   valid   |");
-		$fdisplay(pipe_output, "| %h  | %h  | %h  |   %b   |",
-						core.if_packet.inst.inst,
-						core.if_packet.PC,
-						core.if_packet.NPC,
-						core.if_packet.valid);	
-
-		$fdisplay(pipe_output, "\n ----------------------IF_ID_PACKET------------------------");
-		$fdisplay(pipe_output, "|   inst    |    PC    |    NPC    |   valid   | icache valid |");
-		$fdisplay(pipe_output, "| %h  | %h  | %h  |   %b   |",
-						core.if_id_packet.inst.inst,
-						core.if_id_packet.PC,
-						core.if_id_packet.NPC,
-						core.if_id_packet.valid,
-						core.if_id_Icache_valid_out);
-
-		// $fdisplay(pipe_output, "\n ----------------------BTB-----------------------");
-		// $fdisplay(pipe_output, "if_packet_in.PC: %h, if_packet_in.valid: %d", core.BTB_0.if_packet_in.PC, core.BTB_0.if_packet_in.valid);  
-		// $fdisplay(pipe_output, "id_packet_in.PC: %h, id_packet_in.valid: %d", core.BTB_0.id_packet_in.PC, core.BTB_0.id_packet_in.valid);  
-		// $fdisplay(pipe_output, "ex_packet_in.PC: %h ex_packet_in.valid: %d ex_packet_in.taken: %b ex_packet_in.target_pc: %h", core.BTB_0.ex_packet_in.PC, core.BTB_0.ex_packet_in.valid, 
-		// 																												core.BTB_0.ex_packet_in.taken, core.BTB_0.ex_packet_in.target_pc);  
-		// $fdisplay(pipe_output, "btb_packet_out.prediction: %b btb_packet_out.valid: %b btb_packet_out.target_pc: %h", core.BTB_0.btb_packet_out.prediction, core.BTB_0.btb_packet_out.valid, 
-		// 																												core.BTB_0.btb_packet_out.target_pc);  
-
-		$fdisplay(pipe_output, "\n ----------------------ID_PACKET------------------------");	
-		$fdisplay(pipe_output, "|   Inst    |    PC    |    NPC     |  valid   |   mem size   |");
-		$fdisplay(pipe_output, "|  %h  |  %h  |   %h  |   %b  |   %d   |",
-								core.DP_IS_0.id_packet.inst.inst, 
-								core.DP_IS_0.id_packet.PC, 
-								core.DP_IS_0.id_packet.NPC, 
-								core.DP_IS_0.id_packet.valid, 
-								core.DP_IS_0.id_packet.mem_size);
+		// $fdisplay(pipe_output, "\n ----------------------Memory----------------------");
+		// $fdisplay(pipe_output, "Memory => controller  response: %b, data: %h, tag: %b, ", mem2proc_response, mem2proc_data, mem2proc_tag);
+		// $fdisplay(pipe_output, "controller => Memory  command: %b, data: %h, addr: %h, ", proc2mem_command, proc2mem_data, proc2mem_addr);
 
 
-		$fdisplay(pipe_output, "if_stall: %b, if_id_enable: %b", core.if_stall, core.if_id_enable);
-		$fdisplay(pipe_output, "\n DP_IS_Stall: %b", core.dp_is_stall);
-		$fdisplay(pipe_output, "DP_IS_Structural_Hazard: %b", core.dp_is_structural_hazard);
-		$fdisplay(pipe_output, "mem_flag: %b", core.mem_flag);
+		// $fdisplay(pipe_output, "\n ----------------------D cache----------------------");
+		// $fdisplay(pipe_output, "Dcache miss outstanding: %b, unswered miss: %b, changed addr: %b", core.dcache_0.miss_outstanding, core.dcache_0.unanswered_miss, core.dcache_0.changed_addr); 
+		// $fdisplay(pipe_output, "Dcache writeback: %b, finish write back: %b", core.dcache_0.writeback, core.dcache_0.writeback_finished_reg);
+		// $fdisplay(pipe_output, "update mem tag: %b, current mem tag: %b, got mem data: %b", core.dcache_0.update_mem_tag, core.dcache_0.current_mem_tag, core.dcache_0.got_mem_data);
+		// $fdisplay(pipe_output, "core => Dcache address: %h, data: %h, command: %b, mem_size: %b", core.proc2Dcache_addr, core.proc2Dcache_data, core.proc2Dcache_command, core.proc2Dcache_mem_size); 
+		// $fdisplay(pipe_output, "Dcache => core data: %h, finish: %b", core.Icache_data_out, core.Dcache_finish); 
+		// $fdisplay(pipe_output, "Dcache => controller  command: %b, addr: %h, data: %h", core.Dcache2ctrl_command, core.Dcache2ctrl_addr, core.Dcache2ctrl_data);
+		// $fdisplay(pipe_output, "controller => Dcache  response: %b, data: %h, tag: %b, ", core.ctrl2Dcache_response, core.ctrl2Dcache_data, core.ctrl2Dcache_tag);
 
-		$fdisplay(pipe_output, "\n ----------------------ROB-----------------------");
-		$fdisplay(pipe_output, "ROB_head: %d, ROB_tail: %d ROB Structural Hazard: %b, next ROB Structural Hazard: %b", core.DP_IS_0.ROB_0.head_idx, core.DP_IS_0.ROB_0.tail_idx, core.DP_IS_0.rob_struc_hazard, core.DP_IS_0.next_rob_struc_hazard);  
-		// $fdisplay(pipe_output, "is_init: %d", core.DP_IS_0.ROB_0.is_init);
-		$fdisplay(pipe_output, "ROB Index | REG ID | Value |  PC   |  Complete | Halt | Illegal");
-		for(int i=0; i<`ROB_LEN; i=i+1) begin
-			$fdisplay(pipe_output, "%d | %d | %h |   %h   |  %b   |   %b   |   %b | ",
-				i,
-				core.DP_IS_0.ROB_0.rob_entry_packet_out[i].dest_reg_idx,
-				core.DP_IS_0.ROB_0.rob_entry_packet_out[i].dest_reg_value,
-				core.DP_IS_0.ROB_0.rob_entry_packet_out[i].PC,
-				core.DP_IS_0.ROB_0.rob_entry_packet_out[i].valid,
-				core.DP_IS_0.ROB_0.rob_entry_packet_out[i].is_halt,
-				core.DP_IS_0.ROB_0.rob_entry_packet_out[i].is_illegal);
-		end
+		// $fdisplay(pipe_output, "\n ----------------------IF_PACKET------------------------");
+		// $fdisplay(pipe_output, "|   inst    |    PC    |    NPC    |   valid   |");
+		// $fdisplay(pipe_output, "| %h  | %h  | %h  |   %b   |",
+		// 				core.if_packet.inst.inst,
+		// 				core.if_packet.PC,
+		// 				core.if_packet.NPC,
+		// 				core.if_packet.valid);	
 
-		$fdisplay(pipe_output, "\n ----------------------RS------------------------");	
-		$fdisplay(pipe_output, "RS dispatch stall: %b, RS issue stall: %b", core.DP_IS_0.dispatch_stall, core.DP_IS_0.is_stall);
-		$fdisplay(pipe_output, "RS Structural Hazard: %b", ~core.DP_IS_0.RS_struc_hazard_inv);
-		$fdisplay(pipe_output, "RS Index | ROB Index | Wr_en | Busy |    Inst    |    PC     | Ready   |   Clear   |   Tag1   |   T1_v    |   Tag2   |   T2_v   |");
+		// $fdisplay(pipe_output, "\n ----------------------IF_ID_PACKET------------------------");
+		// $fdisplay(pipe_output, "|   inst    |    PC    |    NPC    |   valid   | icache valid |");
+		// $fdisplay(pipe_output, "| %h  | %h  | %h  |   %b   |",
+		// 				core.if_id_packet.inst.inst,
+		// 				core.if_id_packet.PC,
+		// 				core.if_id_packet.NPC,
+		// 				core.if_id_packet.valid,
+		// 				core.if_id_Icache_valid_out);
 
-		for (int i = 0; i < `RS_LEN; i++) begin
-                $fdisplay(pipe_output, "|   [%1d]     |   %d   |   %d   |  %d   |   %h    |   %h    |   %d   |   %d   |    %d    |    %d    |     %d     |     %d     |",
-                         i, 
-						 core.DP_IS_0.RS_0.rs_entry_packet_out[i].dest_reg_idx,
-						 core.DP_IS_0.RS_0.rs_entry_enable[i], 
-						 core.DP_IS_0.RS_0.rs_entry_busy[i], 
-						 core.DP_IS_0.RS_0.rs_entry_packet_out[i].inst.inst, 
-						 core.DP_IS_0.RS_0.rs_entry_packet_out[i].NPC-4,
-						 core.DP_IS_0.RS_0.rs_entry_ready[i], 
-						 core.DP_IS_0.RS_0.rs_entry_clear[i], 
-						 core.DP_IS_0.RS_0.entry_rs1_tags[i].tag, 
-						 core.DP_IS_0.RS_0.entry_rs1_tags[i].valid, 
-						 core.DP_IS_0.RS_0.entry_rs2_tags[i].tag,
-						 core.DP_IS_0.RS_0.entry_rs2_tags[i].valid);
-        end
+		// // $fdisplay(pipe_output, "\n ----------------------BTB-----------------------");
+		// // $fdisplay(pipe_output, "if_packet_in.PC: %h, if_packet_in.valid: %d", core.BTB_0.if_packet_in.PC, core.BTB_0.if_packet_in.valid);  
+		// // $fdisplay(pipe_output, "id_packet_in.PC: %h, id_packet_in.valid: %d", core.BTB_0.id_packet_in.PC, core.BTB_0.id_packet_in.valid);  
+		// // $fdisplay(pipe_output, "ex_packet_in.PC: %h ex_packet_in.valid: %d ex_packet_in.taken: %b ex_packet_in.target_pc: %h", core.BTB_0.ex_packet_in.PC, core.BTB_0.ex_packet_in.valid, 
+		// // 																												core.BTB_0.ex_packet_in.taken, core.BTB_0.ex_packet_in.target_pc);  
+		// // $fdisplay(pipe_output, "btb_packet_out.prediction: %b btb_packet_out.valid: %b btb_packet_out.target_pc: %h", core.BTB_0.btb_packet_out.prediction, core.BTB_0.btb_packet_out.valid, 
+		// // 																												core.BTB_0.btb_packet_out.target_pc);  
 
 		// $fdisplay(pipe_output, "\n ----------------------ID_PACKET------------------------");	
-		// $fdisplay(pipe_output, "decode valid: %b, illegal: %b", core.DP_IS_0.id_stage_0.decoder_0.valid_inst, core.DP_IS_0.id_stage_0.decoder_0.illegal);
-		// $fdisplay(pipe_output, "if_id_packet.valid; %b, id_packet_valid: %b", core.if_id_packet.valid, core.DP_IS_0.id_packet.valid);
-
-		$fdisplay(pipe_output, "\n ----------------------IS_PACKET------------------------");	
-		$fdisplay(pipe_output, "| rs1_value  |  rs2_value  |  OPA  |  OPB  | alu_func  |  channel |   valid   |");
-		$fdisplay(pipe_output, " %d  | %d  | %d  |   %d   |   %d  |  %d   |   %b   |",
-						core.is_packet.rs1_value,
-						core.is_packet.rs2_value,
-						core.is_packet.opa_select,
-						core.is_packet.opb_select,
-						core.is_packet.alu_func,
-						core.is_packet.channel,
-						core.is_packet.valid);
-
-		$fdisplay(pipe_output, "\n ----------------------STORE UNIT------------------------");
-		$fdisplay(pipe_output, "STORE valid: %b", core.STORE_valid);
-		$fdisplay(pipe_output, "opa: %h, opb: %h", core.ex_stage_0.opa_mux_out, core.ex_stage_0.opb_mux_out);
-		$fdisplay(pipe_output, "start: %b, busy: %b, done; %b", core.ex_stage_0.STORE_start, core.ex_stage_0.STORE_busy, core.ex_stage_0.STORE_done);
-		$fdisplay(pipe_output, "From Issue Stage: is_STORE: %b", core.is_ex_packet.wr_mem);
-		$fdisplay(pipe_output, "To Dcache command: %b, addr: %h, data: %h, mem_size: %d", core.ex_stage_0.store2Dcache_command, core.ex_stage_0.store2Dcache_addr, core.ex_stage_0.proc2Dcache_data, core.ex_stage_0.store_mem_size);
-		$fdisplay(pipe_output, "From Dcache finish: %b", core.Dcache_finish);
-
-		$fdisplay(pipe_output, "\n ----------------------LOAD UNIT------------------------");
-		$fdisplay(pipe_output, "LOAD valid: %b", core.LOAD_valid);
-		$fdisplay(pipe_output, "opa: %h, opb: %h", core.ex_stage_0.opa_mux_out, core.ex_stage_0.opb_mux_out);
-		$fdisplay(pipe_output, "start: %b, busy: %b, done; %b", core.ex_stage_0.LOAD_start, core.ex_stage_0.LOAD_busy, core.ex_stage_0.LOAD_done);
-		$fdisplay(pipe_output, "From Issue Stage: is_load: %b", core.is_ex_packet.rd_mem);
-		$fdisplay(pipe_output, "To Dcache command: %b, addr: %h, mem_size: %d", core.ex_stage_0.load2Dcache_command, core.ex_stage_0.load2Dcache_addr, core.ex_stage_0.load_mem_size);
-		$fdisplay(pipe_output, "From Dcache data: %h, finish: %b", core.Dcache2proc_data, core.Dcache_finish);
+		// $fdisplay(pipe_output, "|   Inst    |    PC    |    NPC     |  valid   |   mem size   |");
+		// $fdisplay(pipe_output, "|  %h  |  %h  |   %h  |   %b  |   %d   |",
+		// 						core.DP_IS_0.id_packet.inst.inst, 
+		// 						core.DP_IS_0.id_packet.PC, 
+		// 						core.DP_IS_0.id_packet.NPC, 
+		// 						core.DP_IS_0.id_packet.valid, 
+		// 						core.DP_IS_0.id_packet.mem_size);
 
 
+		// $fdisplay(pipe_output, "if_stall: %b, if_id_enable: %b", core.if_stall, core.if_id_enable);
+		// $fdisplay(pipe_output, "\n DP_IS_Stall: %b", core.dp_is_stall);
+		// $fdisplay(pipe_output, "DP_IS_Structural_Hazard: %b", core.dp_is_structural_hazard);
+		// $fdisplay(pipe_output, "mem_flag: %b", core.mem_flag);
 
-		$fdisplay(pipe_output, "\n ----------------------EX_PACKET------------------------");	
-		$fdisplay(pipe_output, " issue stall due to ex stage hazard: %b", core.is_stall);
-		$fdisplay(pipe_output, " store_packet: wr_mem: %b, ex_packet3_wr_mem: %b", core.ex_stage_0.STORE_is_packet.wr_mem, core.ex_stage_0.ex_packet3.wr_mem);
-		$fdisplay(pipe_output, " ex stage valid: %b", core.ex_valid); 
-		$fdisplay(pipe_output, " ex stage no output: %b", core.ex_no_output); 
-		$fdisplay(pipe_output, " ex stage mul busy: %b", core.ex_stage_0.MUL_busy);
-		$fdisplay(pipe_output, " ex stage mul start: %b", core.ex_stage_0.MUL_start);
-		$fdisplay(pipe_output, "| alu_result  |  take_branch  | ROB Index  |  rd_mem  | wr_mem  |");
-		$fdisplay(pipe_output, " %d  |    %d    |    %d    |    %d    |    %d   |",
-						core.ex_packet.alu_result,
-						core.ex_packet.take_branch,
-						core.ex_packet.dest_reg_idx,
-						core.ex_packet.rd_mem,
-						core.ex_packet.wr_mem);
+		// $fdisplay(pipe_output, "\n ----------------------ROB-----------------------");
+		// $fdisplay(pipe_output, "ROB_head: %d, ROB_tail: %d ROB Structural Hazard: %b, next ROB Structural Hazard: %b", core.DP_IS_0.ROB_0.head_idx, core.DP_IS_0.ROB_0.tail_idx, core.DP_IS_0.rob_struc_hazard, core.DP_IS_0.next_rob_struc_hazard);  
+		// // $fdisplay(pipe_output, "is_init: %d", core.DP_IS_0.ROB_0.is_init);
+		// $fdisplay(pipe_output, "ROB Index | REG ID | Value |  PC   |  Complete | Halt | Illegal");
+		// for(int i=0; i<`ROB_LEN; i=i+1) begin
+		// 	$fdisplay(pipe_output, "%d | %d | %h |   %h   |  %b   |   %b   |   %b | ",
+		// 		i,
+		// 		core.DP_IS_0.ROB_0.rob_entry_packet_out[i].dest_reg_idx,
+		// 		core.DP_IS_0.ROB_0.rob_entry_packet_out[i].dest_reg_value,
+		// 		core.DP_IS_0.ROB_0.rob_entry_packet_out[i].PC,
+		// 		core.DP_IS_0.ROB_0.rob_entry_packet_out[i].valid,
+		// 		core.DP_IS_0.ROB_0.rob_entry_packet_out[i].is_halt,
+		// 		core.DP_IS_0.ROB_0.rob_entry_packet_out[i].is_illegal);
+		// end
 
-		$fdisplay(pipe_output, "\n ----------------------EX_PACKET 3------------------------");	
-		$fdisplay(pipe_output, "| alu_result  |  rs2_value   |  take_branch  | ROB Index  |  rd_mem  | wr_mem  |");
-		$fdisplay(pipe_output, " %d   |    %d     |    %b    |    %d    |    %b    |    %b   |",
-						core.ex_stage_0.ex_packet3.alu_result,
-						core.ex_stage_0.ex_packet3.rs2_value,
-						core.ex_stage_0.ex_packet3.take_branch,
-						core.ex_stage_0.ex_packet3.dest_reg_idx,
-						core.ex_stage_0.ex_packet3.rd_mem,
-						core.ex_stage_0.ex_packet3.wr_mem);
+		// $fdisplay(pipe_output, "\n ----------------------RS------------------------");	
+		// $fdisplay(pipe_output, "RS dispatch stall: %b, RS issue stall: %b", core.DP_IS_0.dispatch_stall, core.DP_IS_0.is_stall);
+		// $fdisplay(pipe_output, "RS Structural Hazard: %b", ~core.DP_IS_0.RS_struc_hazard_inv);
+		// $fdisplay(pipe_output, "RS Index | ROB Index | Wr_en | Busy |    Inst    |    PC     | Ready   |   Clear   |   Tag1   |   T1_v    |   Tag2   |   T2_v   |");
+
+		// for (int i = 0; i < `RS_LEN; i++) begin
+        //         $fdisplay(pipe_output, "|   [%1d]     |   %d   |   %d   |  %d   |   %h    |   %h    |   %d   |   %d   |    %d    |    %d    |     %d     |     %d     |",
+        //                  i, 
+		// 				 core.DP_IS_0.RS_0.rs_entry_packet_out[i].dest_reg_idx,
+		// 				 core.DP_IS_0.RS_0.rs_entry_enable[i], 
+		// 				 core.DP_IS_0.RS_0.rs_entry_busy[i], 
+		// 				 core.DP_IS_0.RS_0.rs_entry_packet_out[i].inst.inst, 
+		// 				 core.DP_IS_0.RS_0.rs_entry_packet_out[i].NPC-4,
+		// 				 core.DP_IS_0.RS_0.rs_entry_ready[i], 
+		// 				 core.DP_IS_0.RS_0.rs_entry_clear[i], 
+		// 				 core.DP_IS_0.RS_0.entry_rs1_tags[i].tag, 
+		// 				 core.DP_IS_0.RS_0.entry_rs1_tags[i].valid, 
+		// 				 core.DP_IS_0.RS_0.entry_rs2_tags[i].tag,
+		// 				 core.DP_IS_0.RS_0.entry_rs2_tags[i].valid);
+        // end
+
+		// // $fdisplay(pipe_output, "\n ----------------------ID_PACKET------------------------");	
+		// // $fdisplay(pipe_output, "decode valid: %b, illegal: %b", core.DP_IS_0.id_stage_0.decoder_0.valid_inst, core.DP_IS_0.id_stage_0.decoder_0.illegal);
+		// // $fdisplay(pipe_output, "if_id_packet.valid; %b, id_packet_valid: %b", core.if_id_packet.valid, core.DP_IS_0.id_packet.valid);
+
+		// $fdisplay(pipe_output, "\n ----------------------IS_PACKET------------------------");	
+		// $fdisplay(pipe_output, "| rs1_value  |  rs2_value  |  OPA  |  OPB  | alu_func  |  channel |   valid   |");
+		// $fdisplay(pipe_output, " %h  | %h  | %d  |   %d   |   %d  |  %d   |   %b   |",
+		// 				core.is_packet.rs1_value,
+		// 				core.is_packet.rs2_value,
+		// 				core.is_packet.opa_select,
+		// 				core.is_packet.opb_select,
+		// 				core.is_packet.alu_func,
+		// 				core.is_packet.channel,
+		// 				core.is_packet.valid);
+
+		// $fdisplay(pipe_output, "\n ----------------------STORE UNIT------------------------");
+		// $fdisplay(pipe_output, "STORE valid: %b", core.STORE_valid);
+		// $fdisplay(pipe_output, "opa: %h, opb: %h", core.ex_stage_0.opa_mux_out, core.ex_stage_0.opb_mux_out);
+		// $fdisplay(pipe_output, "start: %b, busy: %b, done; %b", core.ex_stage_0.STORE_start, core.ex_stage_0.STORE_busy, core.ex_stage_0.STORE_done);
+		// $fdisplay(pipe_output, "From Issue Stage: is_STORE: %b", core.is_ex_packet.wr_mem);
+		// $fdisplay(pipe_output, "To Dcache command: %b, addr: %h, data: %h, mem_size: %d", core.ex_stage_0.store2Dcache_command, core.ex_stage_0.store2Dcache_addr, core.ex_stage_0.proc2Dcache_data, core.ex_stage_0.store_mem_size);
+		// $fdisplay(pipe_output, "From Dcache finish: %b", core.Dcache_finish);
+
+		// $fdisplay(pipe_output, "\n ----------------------LOAD UNIT------------------------");
+		// $fdisplay(pipe_output, "LOAD valid: %b", core.LOAD_valid);
+		// $fdisplay(pipe_output, "opa: %h, opb: %h", core.ex_stage_0.opa_mux_out, core.ex_stage_0.opb_mux_out);
+		// $fdisplay(pipe_output, "start: %b, busy: %b, done; %b", core.ex_stage_0.LOAD_start, core.ex_stage_0.LOAD_busy, core.ex_stage_0.LOAD_done);
+		// $fdisplay(pipe_output, "From Issue Stage: is_load: %b", core.is_ex_packet.rd_mem);
+		// $fdisplay(pipe_output, "To Dcache command: %b, addr: %h, mem_size: %d", core.ex_stage_0.load2Dcache_command, core.ex_stage_0.load2Dcache_addr, core.ex_stage_0.load_mem_size);
+		// $fdisplay(pipe_output, "From Dcache data: %h, finish: %b", core.Dcache2proc_data, core.Dcache_finish);
 
 
-		$fdisplay(pipe_output, "\n ----------------------CDB------------------------");	
-		$fdisplay(pipe_output, "| ROB Index  |  Value  |  Valid  | take_branch  |  halt  | illegal  |");
-		$fdisplay(pipe_output, " %d   |   %h   |   %b   |   %d   |    %d   |   %d  |",
-						core.cp_packet.reg_tag.tag,
-						core.cp_packet.reg_value,
-						core.cp_packet.reg_tag.valid,
-						core.cp_packet.take_branch,
-						core.cp_packet.halt,
-						core.cp_packet.illegal);
 
-		$fdisplay(pipe_output, "\n ----------------------RETIRE------------------------");	
-		$fdisplay(pipe_output, "ROB retire packet PC: %h, halt: %b, illegal: %b", core.rob_retire_packet.PC, core.rob_retire_packet.halt, core.rob_retire_packet.illegal);
-		$fdisplay(pipe_output, "ROB2REG packet    addr: %h, value: %b, valid: %b", core.rob_retire_packet.dest_reg_idx, core.rob_retire_packet.dest_reg_value, core.rob_retire_packet.valid);
-		$fdisplay(pipe_output, "pipeline completed insts: %h", pipeline_completed_insts);
+		// $fdisplay(pipe_output, "\n ----------------------EX_PACKET------------------------");	
+		// $fdisplay(pipe_output, " mproduct: %h", core.ex_stage_0.MULTIPLIER_0[0].mproduct);
+		// $fdisplay(pipe_output, " issue stall due to ex stage hazard: %b", core.is_stall);
+		// $fdisplay(pipe_output, " store_packet: wr_mem: %b, ex_packet3_wr_mem: %b", core.ex_stage_0.STORE_is_packet.wr_mem, core.ex_stage_0.ex_packet3.wr_mem);
+		// $fdisplay(pipe_output, " ex stage valid: %b", core.ex_valid); 
+		// $fdisplay(pipe_output, " ex stage no output: %b", core.ex_no_output); 
+		// $fdisplay(pipe_output, " ex stage mul busy: %b", core.ex_stage_0.MUL_busy);
+		// $fdisplay(pipe_output, " ex stage mul start: %b", core.ex_stage_0.MUL_start);
+		// $fdisplay(pipe_output, "| alu_result  |  take_branch  | ROB Index  |  rd_mem  | wr_mem  |");
+		// $fdisplay(pipe_output, " %h  |    %d    |    %d    |    %d    |    %d   |",
+		// 				core.ex_packet.alu_result,
+		// 				core.ex_packet.take_branch,
+		// 				core.ex_packet.dest_reg_idx,
+		// 				core.ex_packet.rd_mem,
+		// 				core.ex_packet.wr_mem);
+
+		// $fdisplay(pipe_output, "\n ----------------------EX_PACKET 3------------------------");	
+		// $fdisplay(pipe_output, "| alu_result  |  rs2_value   |  take_branch  | ROB Index  |  rd_mem  | wr_mem  |");
+		// $fdisplay(pipe_output, " %d   |    %d     |    %b    |    %d    |    %b    |    %b   |",
+		// 				core.ex_stage_0.ex_packet3.alu_result,
+		// 				core.ex_stage_0.ex_packet3.rs2_value,
+		// 				core.ex_stage_0.ex_packet3.take_branch,
+		// 				core.ex_stage_0.ex_packet3.dest_reg_idx,
+		// 				core.ex_stage_0.ex_packet3.rd_mem,
+		// 				core.ex_stage_0.ex_packet3.wr_mem);
+
+		// $fdisplay(pipe_output, "\n ----------------------MAP TABLE------------------------");	
+		// $fdisplay(pipe_output, " |  REG Index |  ROB Tag  |  valid  |");
+		// for(int i=0; i<32; i=i+1) begin
+		// 	$fdisplay(pipe_output, " %d |  %d  |  %b  |", i, core.DP_IS_0.MT_0.map_table_entry_tag[i].tag, core.DP_IS_0.MT_0.map_table_entry_tag[i].valid);
+		// end
+
+
+		// $fdisplay(pipe_output, "\n ----------------------CDB------------------------");	
+		// $fdisplay(pipe_output, "| ROB Index  |  Value  |  Valid  | take_branch  |  halt  | illegal  |");
+		// $fdisplay(pipe_output, " %d   |   %h   |   %b   |   %d   |    %d   |   %d  |",
+		// 				core.cp_packet.reg_tag.tag,
+		// 				core.cp_packet.reg_value,
+		// 				core.cp_packet.reg_tag.valid,
+		// 				core.cp_packet.take_branch,
+		// 				core.cp_packet.halt,
+		// 				core.cp_packet.illegal);
+
+		// $fdisplay(pipe_output, "\n ----------------------RETIRE------------------------");	
+		// $fdisplay(pipe_output, "ROB retire packet PC: %h, halt: %b, illegal: %b", core.rob_retire_packet.PC, core.rob_retire_packet.halt, core.rob_retire_packet.illegal);
+		// $fdisplay(pipe_output, "ROB2REG packet    addr: %h, value: %b, valid: %b", core.rob_retire_packet.dest_reg_idx, core.rob_retire_packet.dest_reg_value, core.rob_retire_packet.valid);
+		// $fdisplay(pipe_output, "pipeline completed insts: %h", pipeline_completed_insts);
 
 
 
-		$fdisplay(pipe_output, "\n -------------------REG------------------------");	
-		$fdisplay(pipe_output, "        Index | Data |");
-		for(int i=0; i<32; i=i+1) begin
-			$fdisplay(pipe_output, " %d |  %h |", i,  core.DP_IS_0.id_stage_0.regf_0.registers[i]);
-		end
+		// $fdisplay(pipe_output, "\n -------------------REG------------------------");	
+		// $fdisplay(pipe_output, "        Index | Data |");
+		// for(int i=0; i<32; i=i+1) begin
+		// 	$fdisplay(pipe_output, " %d |  %h |", i,  core.DP_IS_0.id_stage_0.regf_0.registers[i]);
+		// end
 	endfunction
 
 
@@ -490,7 +497,7 @@ module testbench;
 			end
 
 			// deal with any halting conditions
-			if(pipeline_error_status != NO_ERROR || debug_counter > 5000) begin
+			if(pipeline_error_status != NO_ERROR || debug_counter > 150000) begin
 				$display("@@@ Unified Memory contents hex on left, decimal on right: ");
 				show_mem_with_decimal(0,`MEM_64BIT_LINES - 1);
 				// 8Bytes per line, 16kB total

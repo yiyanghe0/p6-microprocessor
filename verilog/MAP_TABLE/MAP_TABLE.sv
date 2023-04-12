@@ -83,7 +83,7 @@ module MAP_TABLE(
 
     // synopsys sync_set_reset "reset"
     always_ff @(posedge clock) begin
-        if (reset) begin
+        if (reset || rob2mt_packet_in.squash) begin
             for (int i = 0; i < `MAP_TABLE_LEN; i++) begin
                 map_table_entry_tag[i].tag <= `SD 0;
                 map_table_entry_tag[i].valid <= `SD 0;

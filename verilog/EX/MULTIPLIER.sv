@@ -101,7 +101,7 @@ endmodule // module mult_stage
 module MULTIPLIER(
 	input [`XLEN-1:0] opa,
 	input [`XLEN-1:0] opb,
-	ALU_FUNC          func,
+	input ALU_FUNC    func,
 
 	input IS_PACKET is_packet_in,
 
@@ -120,6 +120,11 @@ module MULTIPLIER(
 	logic next_busy;
 	IS_PACKET is_packet;
 	IS_PACKET next_is_packet;
+
+	ALU_FUNC myfunc;
+	ALU_FUNC next_myfunc;
+
+	assign next_myfunc = (start) ? func : myfunc;
 
 	assign is_packet_out = is_packet;
 
@@ -197,10 +202,9 @@ module MULTIPLIER(
 	);
 
 	always_comb begin
-		case (func)
+		case (myfunc)
 			ALU_MUL:                             product = mproduct[`XLEN-1:0];
-			ALU_MULH, ALU_MULHSU, ALU_MULHU:     product = mproduct[2*`XLEN-1:`XLEN];
-
+			ALU_MULH, ALU_MULHU, ALU_MULHSU: 	 product = mproduct[(2*`XLEN)-1:`XLEN];
 			default:                             product = mproduct[`XLEN-1:0];
 		endcase
 	end
@@ -230,10 +234,12 @@ module MULTIPLIER(
 				ALU,
 				3'b111
 			}; // or a nop instruction
+			myfunc <= `SD ALU_MUL;
 		end
 		else begin
 			busy <= `SD next_busy;
 			is_packet <= `SD next_is_packet;
+			myfunc <= `SD next_myfunc;
 		end
 	end
 endmodule

@@ -86,7 +86,7 @@ end
 
 // synopsys sync_set_reset "reset"
 always_ff @(posedge clock) begin
-    if (reset) begin
+    if (reset || squash) begin
         internal_mem_flag <= `SD 0;
     end 
     else begin

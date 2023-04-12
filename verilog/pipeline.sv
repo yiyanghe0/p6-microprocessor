@@ -480,7 +480,7 @@ cache_controller cache_controller_0 (
 	EX ex_stage_0 (
 		// Inputs
 		.clock(clock),
-		.reset(reset),
+		.reset(reset || squash),
 		.rob_start(rob2store_start),
 		.is_packet_in(is_ex_packet),
 		.Dcache2proc_data(Dcache2proc_data),
