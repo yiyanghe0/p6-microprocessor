@@ -239,6 +239,13 @@ initial begin
     NONE();
     @(negedge clock);
 
+    // testcase 3, store with writeback
+    ST(16'h010,3'b000, 64'habcd_0110_1001_abcd);
+    wait_until_finish();
+    @(negedge clock);
+    NONE();
+    @(negedge clock);
+
     // testcase 4, load without writeback
     LD(14'h810,2);
     wait_until_finish();
