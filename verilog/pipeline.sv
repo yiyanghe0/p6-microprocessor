@@ -442,7 +442,7 @@ cache_controller cache_controller_0 (
 	assign is_ex_enable = 1'b1; // always enabled
 	// synopsys sync_set_reset "reset"
 	always_ff @(posedge clock) begin
-		if (reset || squash) begin
+		if (reset || squash || is_stall) begin
 			is_ex_packet <= `SD '{{`XLEN{1'b0}},
 				{`XLEN{1'b0}},
 				{`XLEN{1'b0}},
@@ -465,7 +465,7 @@ cache_controller cache_controller_0 (
 				3'b111  // mem_size
 			};
 		end else begin // if (reset)
-			if (is_ex_enable && !is_stall) begin
+			if (is_ex_enable) begin
 				is_ex_packet <= `SD is_packet;
 			end // if
 		end // else: !if(reset)

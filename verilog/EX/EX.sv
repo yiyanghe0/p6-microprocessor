@@ -13,7 +13,7 @@
 
 `ifndef __EX_STAGE_SV__
 `define __EX_STAGE_SV__
-`define MUL_NUM 2
+`define MUL_NUM 4
 
 `include "sys_defs.svh"
 `include "ISA.svh"
