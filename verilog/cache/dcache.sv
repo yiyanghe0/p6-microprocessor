@@ -49,7 +49,7 @@ module dcache(
 	 * 1: hit load (hit && command == LOAD): directly return data
 	 * 2: hit store (hit && command == STORE): change dirty to 1, write data in cache
 	 * 3: miss load not dirty (!hit && command == LOAD && !cache.dirty): assign command = load, addr = addr_in
-	 * 4: miss store not dirty (!hit && command == STORE && !cache.dirty): change dirty to 1, write data in cache
+	 * 4: miss store not dirty (!hit && command == STORE && !cache.dirty): load correspone data, change dirty to 1, write data in cache
 	 * 5: miss load dirty: writeback = 1, command = store, addr = cache_addr, then change dirty to 0 and execute 3
 	 * 6: miss store dirty: writeback = 1, command = store, addr = cache_addr, then change dirty to 0 and execute 4
 	 */
@@ -57,11 +57,13 @@ module dcache(
 	logic writeback; // need to writeback
 	logic writeback_finished; // high when writeback is finished
 	logic writeback_finished_reg;
+	logic st_miss_load;
 
 	// control signals
-	assign hit 					= dcache_data[current_index].valid && (dcache_data[current_index].tags == current_tag); // valid && tag match
-	assign writeback 			= dcache_data[current_index].valid && (dcache_data[current_index].tags != current_tag) && dcache_data[current_index].dirty; // dirty && valid && not hit
-	assign writeback_finished 	= writeback && (Dmem2proc_response != 0); //current in writeback, and received memory response
+	assign hit 					 = dcache_data[current_index].valid && (dcache_data[current_index].tags == current_tag); // valid && tag match
+	assign writeback 			 = dcache_data[current_index].valid && (dcache_data[current_index].tags != current_tag) && dcache_data[current_index].dirty; // dirty && valid && not hit
+	assign writeback_finished 	 = writeback && (Dmem2proc_response != 0); //current in writeback, and received memory response
+	assign st_miss_load			 = (!hit && proc2Dcache_command == BUS_STORE);
 
 
 	logic [3:0] current_mem_tag;
@@ -77,8 +79,7 @@ module dcache(
 	assign update_mem_tag = changed_addr || miss_outstanding || got_mem_data;
 
 	logic unanswered_miss; // if we have a new miss or still waiting for the response tag
-	assign unanswered_miss = (proc2Dcache_command == BUS_NONE) ? 0 : (changed_addr ? (!(hit || (proc2Dcache_command == BUS_STORE && !dcache_data[current_index].dirty)))
-	                            													: miss_outstanding && (Dmem2proc_response == 0) || writeback_finished_reg);
+	assign unanswered_miss = (proc2Dcache_command == BUS_NONE) ? 0 : (changed_addr ? !hit : (miss_outstanding && (Dmem2proc_response == 0) || writeback_finished_reg));
 
 	assign finished = hit;
 
@@ -142,13 +143,13 @@ module dcache(
 		proc2Dmem_addr = 0;
 		proc2Dmem_data = 0;
 		
-		if (changed_addr || proc2Dcache_command == BUS_NONE || hit || (proc2Dcache_command == BUS_STORE && !dcache_data[current_index].dirty)) begin // case 0, 1, 2, 4, changed addr
+		if (changed_addr || proc2Dcache_command == BUS_NONE || hit) begin // case 0, 1, 2, changed addr
 			proc2Dmem_command = BUS_NONE;
 			proc2Dmem_addr = 0;
 			proc2Dmem_data = 0;
 		end
 		// not hit
-		else if (!writeback && (proc2Dcache_command == BUS_LOAD) && miss_outstanding) begin // case 3
+		else if (((!writeback && (proc2Dcache_command == BUS_LOAD)) || st_miss_load) && miss_outstanding) begin // case 3, 4
 			proc2Dmem_command = BUS_LOAD;
 			proc2Dmem_addr = {proc2Dcache_addr[31:3],3'b0};
 			proc2Dmem_data = 0;
@@ -184,7 +185,7 @@ module dcache(
 				dcache_data[current_index].dirty  <= `SD 0;
 			end
 
-			if (proc2Dcache_command == BUS_STORE && (hit || !dcache_data[current_index].valid || !dcache_data[current_index].dirty)) begin
+			if (proc2Dcache_command == BUS_STORE && hit) begin
 				case(mem_size)
 					3'b000:
 						dcache_data[current_index].data <= `SD loaded_data_byte;
@@ -195,9 +196,9 @@ module dcache(
 					3'b100:
 						dcache_data[current_index].data <= `SD proc2Dcache_data;
 				endcase
-				dcache_data[current_index].tags   <= `SD current_tag;
+				// dcache_data[current_index].tags   <= `SD current_tag;
 				dcache_data[current_index].dirty  <= `SD 1;
-				dcache_data[current_index].valid  <= `SD 1;
+				// dcache_data[current_index].valid  <= `SD 1;
 				// finished <= `SD 1;
 			end
 			
