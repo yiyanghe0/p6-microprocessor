@@ -15,6 +15,7 @@ module dcache(
     input [63:0]      proc2Dcache_data,
     input [1:0]       proc2Dcache_command, // 0: None, 1: Load, 2: Store
 	input [2:0]		  mem_size, // BYTE = 2'h0, HALF = 2'h1, WORD = 2'h2, DOUBLE = 3'h4
+	input 			  clear;  // clear dcache when program is ending
 
 	// to memory
 	output logic [1:0]       proc2Dmem_command,
@@ -59,11 +60,17 @@ module dcache(
 	logic writeback_finished_reg;
 	logic st_miss_load;
 
+	logic clear_finished;
+	logic clear_all_finished;
+	logic clear_index;
+
 	// control signals
 	assign hit 					 = dcache_data[current_index].valid && (dcache_data[current_index].tags == current_tag); // valid && tag match
 	assign writeback 			 = dcache_data[current_index].valid && (dcache_data[current_index].tags != current_tag) && dcache_data[current_index].dirty; // dirty && valid && not hit
 	assign writeback_finished 	 = writeback && (Dmem2proc_response != 0); //current in writeback, and received memory response
 	assign st_miss_load			 = (!hit && proc2Dcache_command == BUS_STORE && !writeback);
+
+	assign clear_finished 		 = clear && (Dmem2proc_response != 0);
 
 
 	logic [3:0] current_mem_tag;
@@ -81,7 +88,7 @@ module dcache(
 	logic unanswered_miss; // if we have a new miss or still waiting for the response tag
 	assign unanswered_miss = (proc2Dcache_command == BUS_NONE) ? 0 : (changed_addr ? !hit : (miss_outstanding && (Dmem2proc_response == 0) || writeback_finished_reg));
 
-	assign finished = hit;
+	assign finished = hit || clear_all_finished;
 
 
 	// case 1
@@ -142,8 +149,23 @@ module dcache(
 		proc2Dmem_command = BUS_NONE;
 		proc2Dmem_addr = 0;
 		proc2Dmem_data = 0;
+
+		clear_all_finished = 0;
+		clear_index = 0;
+		if (clear) begin
+			for (int i = 0; i < `DCACHE_LINES; i++) begin
+				if (dcache_data[i].dirty) begin
+					proc2Dmem_command = BUS_STORE;
+					proc2Dmem_addr = {dcache_data[i].tags,i,3'b0};;
+					proc2Dmem_data = dcache_data[i].data;
+					clear_index = i;
+					break;
+				end
+				clear_all_finished = 1;
+			end
+		end
 		
-		if (changed_addr || proc2Dcache_command == BUS_NONE || hit) begin // case 0, 1, 2, changed addr
+		else if (changed_addr || proc2Dcache_command == BUS_NONE || hit) begin // case 0, 1, 2, changed addr
 			proc2Dmem_command = BUS_NONE;
 			proc2Dmem_addr = 0;
 			proc2Dmem_data = 0;
@@ -208,6 +230,10 @@ module dcache(
 			end
 			else begin
 				writeback_finished_reg <= `SD 0;
+			end
+
+			if (clear_finished) begin
+				dcache_data[clear_index].dirty  <= `SD 0;
 			end
 		end
 	end
