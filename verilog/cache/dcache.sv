@@ -63,7 +63,7 @@ module dcache(
 	assign hit 					 = dcache_data[current_index].valid && (dcache_data[current_index].tags == current_tag); // valid && tag match
 	assign writeback 			 = dcache_data[current_index].valid && (dcache_data[current_index].tags != current_tag) && dcache_data[current_index].dirty; // dirty && valid && not hit
 	assign writeback_finished 	 = writeback && (Dmem2proc_response != 0); //current in writeback, and received memory response
-	assign st_miss_load			 = (!hit && proc2Dcache_command == BUS_STORE);
+	assign st_miss_load			 = (!hit && proc2Dcache_command == BUS_STORE && !writeback);
 
 
 	logic [3:0] current_mem_tag;

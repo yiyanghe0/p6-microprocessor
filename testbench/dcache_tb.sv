@@ -109,7 +109,7 @@ task show_cache;
         $fdisplay(pipe_output,"=====   Cache ram   =====");
         $fdisplay(pipe_output,"|Entry(idx)|valid|dirty|      Tag |             data |");
         for (int i=0; i<32; ++i) begin
-            $fdisplay(pipe_output,"| %d | %b | %b | %d | %h |", i, show_dcache_data[i].valid, show_dcache_data[i].dirty, show_dcache_data[i].tags, show_dcache_data[i].data);
+            $fdisplay(pipe_output,"| %h | %b | %b | %h | %h |", i, show_dcache_data[i].valid, show_dcache_data[i].dirty, show_dcache_data[i].tags, show_dcache_data[i].data);
         end
         $fdisplay(pipe_output,"-------------------------------------------------");
     end
@@ -118,10 +118,10 @@ endtask
 task show_input;
     begin
         $fdisplay(pipe_output,"=====   Mem2proc Input   =====");
-        $fdisplay(pipe_output,"response: %d,  tag: %d,  data: %h", Dmem2proc_response, Dmem2proc_tag, Dmem2proc_data);
+        $fdisplay(pipe_output,"response: %h,  tag: %h,  data: %h", Dmem2proc_response, Dmem2proc_tag, Dmem2proc_data);
         $fdisplay(pipe_output,"----------------------------------------------------------------- ");
         $fdisplay(pipe_output,"=====   EX Input   =====");
-        $fdisplay(pipe_output,"command: %d,  addr: %d,  data: %h", proc2Dcache_command, proc2Dcache_addr, proc2Dcache_data);
+        $fdisplay(pipe_output,"command: %h,  addr: %h,  data: %h", proc2Dcache_command, proc2Dcache_addr, proc2Dcache_data);
         $fdisplay(pipe_output,"----------------------------------------------------------------- ");
     end
 endtask
@@ -129,7 +129,7 @@ endtask
 task show_output;
     begin
         $fdisplay(pipe_output,"=====  Cache2Memory Output   =====");
-        $fdisplay(pipe_output,"command: %d,  addr: %d,  data: %h", proc2Dmem_command, proc2Dmem_addr, proc2Dmem_data);
+        $fdisplay(pipe_output,"command: %h,  addr: %h,  data: %h", proc2Dmem_command, proc2Dmem_addr, proc2Dmem_data);
         $fdisplay(pipe_output,"---------------------");
         $fdisplay(pipe_output,"=====  Cache2EX Output   =====");
         $fdisplay(pipe_output,"valid: %b , data: %h, finished: %b", Dcache_valid_out, Dcache_data_out, finished);
@@ -140,12 +140,12 @@ endtask
 task show_cache_controls;
     begin
         $fdisplay(pipe_output,"=====  Cache Controls   =====");
-        $fdisplay(pipe_output,"clock: %d,  reset: %d", cache.clock, cache.reset);
-        $fdisplay(pipe_output,"hit: %d,  writeback: %d,  writeback_finished: %d", cache.hit, cache.writeback, cache.writeback_finished);
-        $fdisplay(pipe_output,"current_index: %d,  current_tag: %d,  last_index: %d, last_tag: %d", cache.current_index, cache.current_tag, cache.last_index, cache.last_tag);
-        $fdisplay(pipe_output,"changed_addr: %d,  current_mem_tag: %d,  update_mem_tag: %d", cache.changed_addr, cache.current_mem_tag, cache.update_mem_tag);
-        $fdisplay(pipe_output,"got_mem_data: %d,  unanswered_miss: %d,  miss_outstanding: %d", cache.got_mem_data, cache.unanswered_miss, cache.miss_outstanding);
-        $fdisplay(pipe_output,"command: %d,  addr: %d,  data: %h, mem_size: %d", cache.proc2Dcache_command, cache.proc2Dcache_addr, cache.proc2Dcache_data, cache.mem_size);
+        $fdisplay(pipe_output,"clock: %h,  reset: %h", cache.clock, cache.reset);
+        $fdisplay(pipe_output,"hit: %h,  writeback: %h,  writeback_finished: %h", cache.hit, cache.writeback, cache.writeback_finished);
+        $fdisplay(pipe_output,"current_index: %h,  current_tag: %h,  last_index: %h, last_tag: %h", cache.current_index, cache.current_tag, cache.last_index, cache.last_tag);
+        $fdisplay(pipe_output,"changed_addr: %h,  current_mem_tag: %h,  update_mem_tag: %h", cache.changed_addr, cache.current_mem_tag, cache.update_mem_tag);
+        $fdisplay(pipe_output,"got_mem_data: %h,  unanswered_miss: %h,  miss_outstanding: %h", cache.got_mem_data, cache.unanswered_miss, cache.miss_outstanding);
+        $fdisplay(pipe_output,"command: %h,  addr: %h,  data: %h, mem_size: %h", cache.proc2Dcache_command, cache.proc2Dcache_addr, cache.proc2Dcache_data, cache.mem_size);
         $fdisplay(pipe_output,"---------------------");
     end
 endtask
