@@ -64,7 +64,9 @@ module pipeline (
 	// Outputs from MEM/WB Pipeline Register
 	output logic [`XLEN-1:0] mem_wb_NPC,
 	output logic [31:0]      mem_wb_IR,
-	output logic             mem_wb_valid_inst
+	output logic             mem_wb_valid_inst,
+
+	output logic 			 ishalt
 );
 
 	// Pipeline register enables
@@ -119,6 +121,7 @@ module pipeline (
 	logic correct_predict;
 
 	assign ex_structural_hazard = ~ex_valid;
+	assign ishalt = rob_retire_packet.halt;
 
 	// Outputs from EX/CP Pipeline Register
 	EX_PACKET ex_cp_packet;

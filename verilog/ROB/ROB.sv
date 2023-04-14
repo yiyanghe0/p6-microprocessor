@@ -71,7 +71,7 @@ assign next_rob_struc_hazard_out = next_rob_struc_hazard;
 // assign rob_struc_hazard = 1'b0;
 
 assign next_tail = squash ? head_idx : ((id_packet_in.valid && (!rob_struc_hazard) && (!stall)) ? tail_idx + 1'b1 : tail_idx);
-assign next_head = (retire && (!squash)) ? head_idx +1'b1 : head_idx;
+assign next_head = (retire && (!squash) && (rob_entry_packet_out[head_idx].is_halt == 0)) ? head_idx +1'b1 : head_idx;
 
 assign dest_reg_idx_in = id_packet_in.dest_reg_idx;
 assign rob2reg_packet_out.valid = (retire && (rob_entry_packet_out[head_idx].dest_reg_idx != `ZERO_REG)) ? 1 : 0;
