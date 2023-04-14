@@ -162,21 +162,24 @@ Output the index of the RS_entry that issued instruction
     //     .gnt(issue_inst_rob_entry),
     //     .req_up(reserved_wire) // some wire that has no use
     // );
-    integer available_assignment = `SUPERSCALER_LEN;
+    // integer available_assignment = `SUPERSCALER_LEN;
+    logic [$clog2(`ROB_LEN)-1:0] curr_rob_entry;
     always_comb begin
-        integer i;
-        available_assignment = `SUPERSCALER_LEN; //2
+        // integer i;
+        // available_assignment = `SUPERSCALER_LEN; //2
         issue_inst_rob_entry = 0;
-        for (i = 0; i < `ROB_LEN; i++) begin
-            integer curr_rob_entry = i;
-            for (int j = 0; j < `ROB_LEN; j++) begin
-                if (j == rob2rs_packet_in.rob_head_idx) curr_rob_entry = i + j;
-            end
-            if (curr_rob_entry >= `ROB_LEN) curr_rob_entry = curr_rob_entry - `ROB_LEN;
+        for (int i = 0; i < `ROB_LEN; i++) begin
+            // integer curr_rob_entry = i;
+            // for (int j = 0; j < `ROB_LEN; j++) begin
+            //     if (j == rob2rs_packet_in.rob_head_idx) curr_rob_entry = i + j;
+            // end
+            curr_rob_entry = i + rob2rs_packet_in.rob_head_idx;
+            // if (curr_rob_entry >= `ROB_LEN) curr_rob_entry = curr_rob_entry - `ROB_LEN;
             if (issue_candidate_rob_entry[curr_rob_entry] == 1) begin
                 issue_inst_rob_entry[curr_rob_entry] = 1;
-                available_assignment = available_assignment - 1;
-                if (available_assignment == 0) break;
+                // available_assignment = available_assignment - 1;
+                // if (available_assignment == 0) break;
+                break;
             end
         end
     end
