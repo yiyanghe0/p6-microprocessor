@@ -53,7 +53,8 @@ module FIFO(
                         (ex_packet1.mem_size     == 0) &&
                         (ex_packet1.take_branch  == 0) &&
                         (ex_packet1.alu_result   == 0) &&
-                        (ex_packet1.is_ZEROREG   == 1)) ? 1 : 0;
+                        (ex_packet1.is_ZEROREG   == 1) &&
+                        (ex_packet1.uncond_branch == 0)) ? 1: 0;
 
     assign is_empty2 = ((ex_packet2.NPC          == 0) &&
                         (ex_packet2.PC           == 0) &&
@@ -68,7 +69,8 @@ module FIFO(
                         (ex_packet2.mem_size     == 0) &&
                         (ex_packet2.take_branch  == 0) &&
                         (ex_packet2.alu_result   == 0) &&
-                        (ex_packet2.is_ZEROREG   == 1)) ? 1 : 0;
+                        (ex_packet2.is_ZEROREG   == 1) &&
+                        (ex_packet2.uncond_branch == 0)) ? 1: 0;
 
     assign is_empty3 = ((ex_packet3.NPC          == 0) &&
                         (ex_packet3.PC           == 0) &&
@@ -83,7 +85,8 @@ module FIFO(
                         (ex_packet3.mem_size     == 0) &&
                         (ex_packet3.take_branch  == 0) &&
                         (ex_packet3.alu_result   == 0) &&
-                        (ex_packet3.is_ZEROREG   == 1)) ? 1 : 0;
+                        (ex_packet3.is_ZEROREG   == 1) &&
+                        (ex_packet3.uncond_branch == 0)) ? 1: 0;
     
     
 
@@ -179,20 +182,21 @@ module FIFO(
             //no input and the FIFO is empty
             if (is_empty1 && is_empty2 && is_empty3) begin
                 no_output = 1;
-                ex_packet_out.NPC          = 0;
-                ex_packet_out.PC           = 0;
-                ex_packet_out.rs2_value    = 0;
-                ex_packet_out.rd_mem       = 0;
-                ex_packet_out.wr_mem       = 0;
-                ex_packet_out.dest_reg_idx = 0;
-                ex_packet_out.halt         = 0;
-                ex_packet_out.illegal      = 0;
-                ex_packet_out.csr_op       = 0;
-                ex_packet_out.valid        = 0;
-                ex_packet_out.mem_size     = 0;
-                ex_packet_out.take_branch  = 0;
-                ex_packet_out.alu_result   = 0;
-                ex_packet_out.is_ZEROREG   = 1;
+                ex_packet_out.NPC           = 0;
+                ex_packet_out.PC            = 0;
+                ex_packet_out.rs2_value     = 0;
+                ex_packet_out.rd_mem        = 0;
+                ex_packet_out.wr_mem        = 0;
+                ex_packet_out.dest_reg_idx  = 0;
+                ex_packet_out.halt          = 0;
+                ex_packet_out.illegal       = 0;
+                ex_packet_out.csr_op        = 0;
+                ex_packet_out.valid         = 0;
+                ex_packet_out.mem_size      = 0;
+                ex_packet_out.take_branch   = 0;
+                ex_packet_out.alu_result    = 0;
+                ex_packet_out.is_ZEROREG    = 1;
+                ex_packet_out.uncond_branch = 0;
             end
             //packet1 is not empty and others are empty
             else if (!is_empty1 && is_empty2 && is_empty3) begin
@@ -243,20 +247,21 @@ module FIFO(
         if (reset) begin
             pointer <= `SD `FIFO_LEN; // empty
             for (int i = 0; i < `FIFO_LEN; i++) begin
-                fifo_storage[i].NPC          <= `SD 0;
-                fifo_storage[i].PC           <= `SD 0;
-                fifo_storage[i].rs2_value    <= `SD 0;
-                fifo_storage[i].rd_mem       <= `SD 0;
-                fifo_storage[i].wr_mem       <= `SD 0;
-                fifo_storage[i].dest_reg_idx <= `SD 0;
-                fifo_storage[i].halt         <= `SD 0;
-                fifo_storage[i].illegal      <= `SD 0;
-                fifo_storage[i].csr_op       <= `SD 0;
-                fifo_storage[i].valid        <= `SD 0;
-                fifo_storage[i].mem_size     <= `SD 0;
-                fifo_storage[i].take_branch  <= `SD 0;
-                fifo_storage[i].alu_result   <= `SD 0;
-                fifo_storage[i].is_ZEROREG   <= `SD 1;
+                fifo_storage[i].NPC             <= `SD 0;
+                fifo_storage[i].PC              <= `SD 0;
+                fifo_storage[i].rs2_value       <= `SD 0;
+                fifo_storage[i].rd_mem          <= `SD 0;
+                fifo_storage[i].wr_mem          <= `SD 0;
+                fifo_storage[i].dest_reg_idx    <= `SD 0;
+                fifo_storage[i].halt            <= `SD 0;
+                fifo_storage[i].illegal         <= `SD 0;
+                fifo_storage[i].csr_op          <= `SD 0;
+                fifo_storage[i].valid           <= `SD 0;
+                fifo_storage[i].mem_size        <= `SD 0;
+                fifo_storage[i].take_branch     <= `SD 0;
+                fifo_storage[i].alu_result      <= `SD 0;
+                fifo_storage[i].is_ZEROREG      <= `SD 1;
+                fifo_storage[i].uncond_branch   <= `SD 0;
             end
         end
         else begin

@@ -33,6 +33,7 @@ module MAP_TABLE(
     
     always_comb begin
         next_map_table_entry_cdb_idx = 0;
+        next_map_table_entry_retire_idx = 0;
         cdb_found = 0;
         retire_found = 0;
         for (int i = 0; i < `MAP_TABLE_LEN; i++) begin

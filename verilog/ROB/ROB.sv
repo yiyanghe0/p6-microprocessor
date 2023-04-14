@@ -171,6 +171,7 @@ always_comb begin
     rob2reg_packet_out.illegal = 0;
     rob2reg_packet_out.PC = 0;
     rob2reg_packet_out.inst_valid = 0;
+    rob2reg_packet_out.wb_en = 0;
 
     if(retire) begin
             rob2reg_packet_out.dest_reg_value = rob_entry_packet_out[head_idx].dest_reg_value;
