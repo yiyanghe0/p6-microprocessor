@@ -361,11 +361,11 @@ module testbench;
 
 
 
-		// // // $fdisplay(pipe_output, "\n -------------------REG------------------------");	
-		// // // $fdisplay(pipe_output, "        Index | Data |");
-		// // // for(int i=0; i<32; i=i+1) begin
-		// // // 	$fdisplay(pipe_output, " %d |  %h |", i,  core.DP_IS_0.id_stage_0.regf_0.registers[i]);
-		// // // end
+		// $fdisplay(pipe_output, "\n -------------------REG------------------------");	
+		// $fdisplay(pipe_output, "        Index | Data |");
+		// for(int i=0; i<32; i=i+1) begin
+		// 	$fdisplay(pipe_output, " %d |  %h |", i,  core.DP_IS_0.id_stage_0.regf_0.registers[i]);
+		// end
 	endfunction
 
 
@@ -526,7 +526,7 @@ module testbench;
 			end
 
 			// deal with any halting conditions
-			if(pipeline_error_status != NO_ERROR || debug_counter > 50000) begin
+			if(pipeline_error_status != NO_ERROR || debug_counter > 500000) begin
 				$display("@@@ Unified Memory contents hex on left, decimal on right: ");
 				show_mem_with_decimal(0,`MEM_64BIT_LINES - 1);
 				// 8Bytes per line, 16kB total

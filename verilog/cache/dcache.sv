@@ -79,8 +79,9 @@ module dcache(
 	logic got_mem_data;
 	assign got_mem_data = (current_mem_tag == Dmem2proc_tag) && (current_mem_tag != 0);
 
-	logic changed_addr;
-	assign changed_addr = (current_index != last_index) || (current_tag != last_tag);
+	logic 		changed_addr;
+	logic [1:0] last_command;
+	assign changed_addr = (current_index != last_index) || (current_tag != last_tag) || (proc2Dcache_command != last_command);
 
 	logic update_mem_tag;
 	assign update_mem_tag = changed_addr || miss_outstanding || got_mem_data;
@@ -193,10 +194,13 @@ module dcache(
 			current_mem_tag  <= `SD 0;
 			miss_outstanding <= `SD 0;
 			dcache_data      <= `SD 0; // set all cache data to 0 (including valid bits)
+			last_command     <= `SD 0;
 		end else begin
 			last_index       <= `SD current_index;
 			last_tag         <= `SD current_tag;
 			miss_outstanding <= `SD unanswered_miss;
+			last_command     <= `SD proc2Dcache_command;
+
 
 			if (update_mem_tag) begin
 				current_mem_tag <= `SD Dmem2proc_response;
