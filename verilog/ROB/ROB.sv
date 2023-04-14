@@ -55,6 +55,10 @@ logic			 [3:0]					next_is_init;
 logic [$clog2(`ROB_LEN)-1:0] index_rs1;
 logic [$clog2(`ROB_LEN)-1:0] index_rs2;
 
+// rt halt
+logic rt_halt;
+logic next_rt_halt;
+
 
 // To store unit 
 assign rob2store_start = rob_entry_packet_out[head_idx].is_store;
@@ -164,7 +168,6 @@ end
 always_comb begin
     rob2reg_packet_out.dest_reg_value = 0;
     rob2reg_packet_out.dest_reg_idx = 0;
-    rob2reg_packet_out.halt = 0;
     rob2reg_packet_out.illegal = 0;
     rob2reg_packet_out.PC = 0;
     rob2reg_packet_out.inst_valid = 0;
@@ -172,13 +175,26 @@ always_comb begin
     if(retire) begin
             rob2reg_packet_out.dest_reg_value = rob_entry_packet_out[head_idx].dest_reg_value;
             rob2reg_packet_out.dest_reg_idx = rob_entry_packet_out[head_idx].dest_reg_idx;
-            rob2reg_packet_out.halt = squash ? 1'b0 : rob_entry_packet_out[head_idx].is_halt;
             rob2reg_packet_out.illegal = rob_entry_packet_out[head_idx].is_illegal;
             rob2reg_packet_out.PC = rob_entry_packet_out[head_idx].PC;
             rob2reg_packet_out.inst_valid = rob_entry_packet_out[head_idx].inst_valid;
             rob2reg_packet_out.wb_en = rob_entry_packet_out[head_idx].wb_en;
 
         end
+end
+
+always_comb begin
+    if (rob_entry_packet_out[head_idx].is_halt)
+        rob2reg_packet_out.halt = 1;
+    else
+        rob2reg_packet_out.halt = rt_halt;
+end
+
+always_comb begin
+    if (rob_entry_packet_out[head_idx].is_halt)
+        next_rt_halt = 1;
+    else
+        next_rt_halt = rt_halt;
 end
 
 //flip flop
@@ -190,6 +206,7 @@ always_ff @(posedge clock) begin
         rob_entry_mispredict <= `SD 0;
         is_init <= `SD 1;
         rob_struc_hazard <= `SD 0;
+        rt_halt <= `SD 0;
 	end	 
     else begin
         tail_idx <= `SD next_tail;
@@ -197,6 +214,7 @@ always_ff @(posedge clock) begin
         rob_entry_mispredict <= `SD next_rob_entry_mispredict;
         is_init <= `SD next_is_init;
         rob_struc_hazard <= `SD next_rob_struc_hazard;
+        rt_halt <= `SD next_rt_halt;
     end
 end
 

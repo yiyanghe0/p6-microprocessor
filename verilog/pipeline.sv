@@ -196,7 +196,7 @@ module pipeline (
 	assign pipeline_completed_insts = {3'b0, rob_retire_packet.inst_valid};
 	// !!!Need to change
 	assign pipeline_error_status = rob_retire_packet.illegal            ? ILLEGAL_INST :
-	                               rob_retire_packet.halt               ? HALTED_ON_WFI :
+	                               rob_retire_packet.halt && Dcache_finish ? HALTED_ON_WFI :
 	                            //    (mem2proc_response==4'h0) ? LOAD_ACCESS_FAULT :
 	                               NO_ERROR;
 
@@ -264,6 +264,7 @@ dcache dcache_0 (
     .proc2Dcache_data(proc2Dcache_data), //!!! Store not finished !!!//------------------------------------------------
     .proc2Dcache_command(proc2Dcache_command), // 0: None, 1: Load, 2: Store
 	.mem_size(proc2Dcache_mem_size), // BYTE = 2'h0, HALF = 2'h1, WORD = 2'h2, DOUBLE = 3'h4
+    .clear(rob_retire_packet.halt),
 
 	.proc2Dmem_command(Dcache2ctrl_command),
 	.proc2Dmem_addr(Dcache2ctrl_addr),

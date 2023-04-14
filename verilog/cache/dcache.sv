@@ -15,7 +15,7 @@ module dcache(
     input [63:0]      proc2Dcache_data,
     input [1:0]       proc2Dcache_command, // 0: None, 1: Load, 2: Store
 	input [2:0]		  mem_size, // BYTE = 2'h0, HALF = 2'h1, WORD = 2'h2, DOUBLE = 3'h4
-	input 			  clear;  // clear dcache when program is ending
+	input 			  clear,  // clear dcache when program is ending
 
 	// to memory
 	output logic [1:0]       proc2Dmem_command,
@@ -62,7 +62,7 @@ module dcache(
 
 	logic clear_finished;
 	logic clear_all_finished;
-	logic clear_index;
+	logic [`DCACHE_LINE_BITS-1:0] clear_index;
 
 	// control signals
 	assign hit 					 = dcache_data[current_index].valid && (dcache_data[current_index].tags == current_tag); // valid && tag match
@@ -156,9 +156,9 @@ module dcache(
 			for (int i = 0; i < `DCACHE_LINES; i++) begin
 				if (dcache_data[i].dirty) begin
 					proc2Dmem_command = BUS_STORE;
-					proc2Dmem_addr = {dcache_data[i].tags,i,3'b0};;
 					proc2Dmem_data = dcache_data[i].data;
 					clear_index = i;
+					proc2Dmem_addr = {dcache_data[i].tags,clear_index,3'b0};
 					break;
 				end
 				clear_all_finished = 1;

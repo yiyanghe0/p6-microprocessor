@@ -143,13 +143,13 @@ module testbench;
 
 	function pipeline_output;
 
-		// $fdisplay(pipe_output, "\n ---------------------------Cycle %d---------------------------", clock_count);
-		// $fdisplay(pipe_output, "\n System Halt is: %b", core.rob_retire_packet.halt);
-		// $fdisplay(pipe_output, "\n squash is: %b", core.squash);
+		//$fdisplay(pipe_output, "\n ---------------------------Cycle %d---------------------------", clock_count);
+		//$fdisplay(pipe_output, "\n System Halt is: %b", core.rob_retire_packet.halt);
+		//$fdisplay(pipe_output, "\n squash is: %b", core.squash);
 
-		// $fdisplay(pipe_output, "\n ----------------------PC----------------------");
-		// $fdisplay(pipe_output, "IF_PC: %h, DP_PC: %h, IS_PC: %h, IS_EX_PC: %h, EX_PC: %h, CP_PC: %h, RT_PC: %h",
-		// 		  core.if_packet.PC, core.DP_IS_0.id_packet.PC, core.is_packet.PC, core.is_ex_packet.PC, core.ex_packet.PC, core.cp_packet.PC , pipeline_commit_PC);
+		//$fdisplay(pipe_output, "\n ----------------------PC----------------------");
+		//$fdisplay(pipe_output, "IF_PC: %h, DP_PC: %h, IS_PC: %h, IS_EX_PC: %h, EX_PC: %h, CP_PC: %h, RT_PC: %h",
+				  // core.if_packet.PC, core.DP_IS_0.id_packet.PC, core.is_packet.PC, core.is_ex_packet.PC, core.ex_packet.PC, core.cp_packet.PC , pipeline_commit_PC);
 
 		// $fdisplay(pipe_output, "\n ----------------------I cache----------------------");
 		// $fdisplay(pipe_output, "icache unanswer miss: %b, missed outstanding: %b, current tag: %b, last tag: %b, current index: %b, last index: %b, drequest: %b, changed addr: %b", core.icache_0.unanswered_miss, core.icache_0.miss_outstanding, core.icache_0.current_tag, core.icache_0.last_tag, core.icache_0.current_index, core.icache_0.last_index, core.cache_controller_0.d_request, core.icache_0.changed_addr);
@@ -166,6 +166,8 @@ module testbench;
 
 
 		// $fdisplay(pipe_output, "\n ----------------------D cache----------------------");
+        // $fdisplay(pipe_output, "Dcache clear index: %h", core.dcache_0.clear_index);
+        // $fdisplay(pipe_output, "Dcache data tag: %h", core.dcache_0.dcache_data[0].tags);
 		// $fdisplay(pipe_output, "Dcache miss outstanding: %b, unswered miss: %b, changed addr: %b", core.dcache_0.miss_outstanding, core.dcache_0.unanswered_miss, core.dcache_0.changed_addr); 
 		// $fdisplay(pipe_output, "Dcache writeback: %b, finish write back: %b", core.dcache_0.writeback, core.dcache_0.writeback_finished_reg);
 		// $fdisplay(pipe_output, "update mem tag: %b, current mem tag: %b, got mem data: %b", core.dcache_0.update_mem_tag, core.dcache_0.current_mem_tag, core.dcache_0.got_mem_data);
