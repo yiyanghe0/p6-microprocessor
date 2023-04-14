@@ -184,14 +184,14 @@ always_comb begin
 end
 
 always_comb begin
-    if (rob_entry_packet_out[head_idx].is_halt)
+    if (rob_entry_packet_out[head_idx].is_halt && retire)
         rob2reg_packet_out.halt = 1;
     else
         rob2reg_packet_out.halt = rt_halt;
 end
 
 always_comb begin
-    if (rob_entry_packet_out[head_idx].is_halt)
+    if (rob_entry_packet_out[head_idx].is_halt && retire)
         next_rt_halt = 1;
     else
         next_rt_halt = rt_halt;
@@ -272,8 +272,17 @@ assign next_wb_en          = (retire) ? 0 : cp_sig ? cdb_valid_bit : wb_en;
 assign next_is_halt        = (wr_en && !stall) ? halt_in : is_halt;
 assign next_is_illegal     = (wr_en && !stall) ? illegal_in : is_illegal;
 assign next_PC             = (wr_en && !stall) ? PC_in : PC_value;
-assign next_inst_valid     = (wr_en && !stall) ? id_inst_valid : inst_valid;
 
+always_comb begin
+    if (wr_en && !stall) begin
+        if (halt_in)
+            next_inst_valid = 0;
+        else
+            next_inst_valid = id_inst_valid;
+    end
+    else
+        next_inst_valid = inst_valid;
+end
 
 assign rob_entry_packet_out.dest_reg_value = dest_reg_value;
 assign rob_entry_packet_out.dest_reg_idx   = dest_reg_idx;

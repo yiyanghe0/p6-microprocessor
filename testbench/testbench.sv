@@ -143,13 +143,13 @@ module testbench;
 
 	function pipeline_output;
 
-		//$fdisplay(pipe_output, "\n ---------------------------Cycle %d---------------------------", clock_count);
-		//$fdisplay(pipe_output, "\n System Halt is: %b", core.rob_retire_packet.halt);
-		//$fdisplay(pipe_output, "\n squash is: %b", core.squash);
+		$fdisplay(pipe_output, "\n ---------------------------Cycle %d---------------------------", clock_count);
+		$fdisplay(pipe_output, "\n System Halt is: %b", core.rob_retire_packet.halt);
+		$fdisplay(pipe_output, "\n squash is: %b", core.squash);
 
-		//$fdisplay(pipe_output, "\n ----------------------PC----------------------");
-		//$fdisplay(pipe_output, "IF_PC: %h, DP_PC: %h, IS_PC: %h, IS_EX_PC: %h, EX_PC: %h, CP_PC: %h, RT_PC: %h",
-				  // core.if_packet.PC, core.DP_IS_0.id_packet.PC, core.is_packet.PC, core.is_ex_packet.PC, core.ex_packet.PC, core.cp_packet.PC , pipeline_commit_PC);
+		$fdisplay(pipe_output, "\n ----------------------PC----------------------");
+		$fdisplay(pipe_output, "IF_PC: %h, DP_PC: %h, IS_PC: %h, IS_EX_PC: %h, EX_PC: %h, CP_PC: %h, RT_PC: %h",
+				 core.if_packet.PC, core.DP_IS_0.id_packet.PC, core.is_packet.PC, core.is_ex_packet.PC, core.ex_packet.PC, core.cp_packet.PC , pipeline_commit_PC);
 
 		// $fdisplay(pipe_output, "\n ----------------------I cache----------------------");
 		// $fdisplay(pipe_output, "icache unanswer miss: %b, missed outstanding: %b, current tag: %b, last tag: %b, current index: %b, last index: %b, drequest: %b, changed addr: %b", core.icache_0.unanswered_miss, core.icache_0.miss_outstanding, core.icache_0.current_tag, core.icache_0.last_tag, core.icache_0.current_index, core.icache_0.last_index, core.cache_controller_0.d_request, core.icache_0.changed_addr);
@@ -165,16 +165,16 @@ module testbench;
 		// $fdisplay(pipe_output, "controller => Memory  command: %b, data: %h, addr: %h, ", proc2mem_command, proc2mem_data, proc2mem_addr);
 
 
-		// $fdisplay(pipe_output, "\n ----------------------D cache----------------------");
-        // $fdisplay(pipe_output, "Dcache clear index: %h", core.dcache_0.clear_index);
-        // $fdisplay(pipe_output, "Dcache data tag: %h", core.dcache_0.dcache_data[0].tags);
-		// $fdisplay(pipe_output, "Dcache miss outstanding: %b, unswered miss: %b, changed addr: %b", core.dcache_0.miss_outstanding, core.dcache_0.unanswered_miss, core.dcache_0.changed_addr); 
-		// $fdisplay(pipe_output, "Dcache writeback: %b, finish write back: %b", core.dcache_0.writeback, core.dcache_0.writeback_finished_reg);
-		// $fdisplay(pipe_output, "update mem tag: %b, current mem tag: %b, got mem data: %b", core.dcache_0.update_mem_tag, core.dcache_0.current_mem_tag, core.dcache_0.got_mem_data);
-		// $fdisplay(pipe_output, "core => Dcache address: %h, data: %h, command: %b, mem_size: %b", core.proc2Dcache_addr, core.proc2Dcache_data, core.proc2Dcache_command, core.proc2Dcache_mem_size); 
-		// $fdisplay(pipe_output, "Dcache => core data: %h, finish: %b", core.Icache_data_out, core.Dcache_finish); 
-		// $fdisplay(pipe_output, "Dcache => controller  command: %b, addr: %h, data: %h", core.Dcache2ctrl_command, core.Dcache2ctrl_addr, core.Dcache2ctrl_data);
-		// $fdisplay(pipe_output, "controller => Dcache  response: %b, data: %h, tag: %b, ", core.ctrl2Dcache_response, core.ctrl2Dcache_data, core.ctrl2Dcache_tag);
+		$fdisplay(pipe_output, "\n ----------------------D cache----------------------");
+        $fdisplay(pipe_output, "Dcache clear index: %h", core.dcache_0.clear_index);
+        $fdisplay(pipe_output, "Dcache data tag: %h", core.dcache_0.dcache_data[0].tags);
+		$fdisplay(pipe_output, "Dcache miss outstanding: %b, unswered miss: %b, changed addr: %b", core.dcache_0.miss_outstanding, core.dcache_0.unanswered_miss, core.dcache_0.changed_addr); 
+		$fdisplay(pipe_output, "Dcache writeback: %b, finish write back: %b", core.dcache_0.writeback, core.dcache_0.writeback_finished_reg);
+		$fdisplay(pipe_output, "update mem tag: %b, current mem tag: %b, got mem data: %b", core.dcache_0.update_mem_tag, core.dcache_0.current_mem_tag, core.dcache_0.got_mem_data);
+		$fdisplay(pipe_output, "core => Dcache address: %h, data: %h, command: %b, mem_size: %b", core.proc2Dcache_addr, core.proc2Dcache_data, core.proc2Dcache_command, core.proc2Dcache_mem_size); 
+		$fdisplay(pipe_output, "Dcache => core data: %h, finish: %b", core.Icache_data_out, core.Dcache_finish); 
+		$fdisplay(pipe_output, "Dcache => controller  command: %b, addr: %h, data: %h", core.Dcache2ctrl_command, core.Dcache2ctrl_addr, core.Dcache2ctrl_data);
+		$fdisplay(pipe_output, "controller => Dcache  response: %b, data: %h, tag: %b, ", core.ctrl2Dcache_response, core.ctrl2Dcache_data, core.ctrl2Dcache_tag);
 
 		// $fdisplay(pipe_output, "\n ----------------------IF_PACKET------------------------");
 		// $fdisplay(pipe_output, "|   inst    |    PC    |    NPC    |   valid   |");
@@ -216,20 +216,20 @@ module testbench;
 		// $fdisplay(pipe_output, "DP_IS_Structural_Hazard: %b", core.dp_is_structural_hazard);
 		// $fdisplay(pipe_output, "mem_flag: %b", core.mem_flag);
 
-		// $fdisplay(pipe_output, "\n ----------------------ROB-----------------------");
-		// $fdisplay(pipe_output, "ROB_head: %d, ROB_tail: %d ROB Structural Hazard: %b, next ROB Structural Hazard: %b", core.DP_IS_0.ROB_0.head_idx, core.DP_IS_0.ROB_0.tail_idx, core.DP_IS_0.rob_struc_hazard, core.DP_IS_0.next_rob_struc_hazard);  
-		// // $fdisplay(pipe_output, "is_init: %d", core.DP_IS_0.ROB_0.is_init);
-		// $fdisplay(pipe_output, "ROB Index | REG ID | Value |  PC   |  Complete | Halt | Illegal");
-		// for(int i=0; i<`ROB_LEN; i=i+1) begin
-		// 	$fdisplay(pipe_output, "%d | %d | %h |   %h   |  %b   |   %b   |   %b | ",
-		// 		i,
-		// 		core.DP_IS_0.ROB_0.rob_entry_packet_out[i].dest_reg_idx,
-		// 		core.DP_IS_0.ROB_0.rob_entry_packet_out[i].dest_reg_value,
-		// 		core.DP_IS_0.ROB_0.rob_entry_packet_out[i].PC,
-		// 		core.DP_IS_0.ROB_0.rob_entry_packet_out[i].valid,
-		// 		core.DP_IS_0.ROB_0.rob_entry_packet_out[i].is_halt,
-		// 		core.DP_IS_0.ROB_0.rob_entry_packet_out[i].is_illegal);
-		// end
+		$fdisplay(pipe_output, "\n ----------------------ROB-----------------------");
+		$fdisplay(pipe_output, "ROB_head: %d, ROB_tail: %d ROB Structural Hazard: %b, next ROB Structural Hazard: %b", core.DP_IS_0.ROB_0.head_idx, core.DP_IS_0.ROB_0.tail_idx, core.DP_IS_0.rob_struc_hazard, core.DP_IS_0.next_rob_struc_hazard);  
+		// $fdisplay(pipe_output, "is_init: %d", core.DP_IS_0.ROB_0.is_init);
+		$fdisplay(pipe_output, "ROB Index | REG ID | Value |  PC   |  Complete | Halt | Illegal");
+		for(int i=0; i<`ROB_LEN; i=i+1) begin
+			$fdisplay(pipe_output, "%d | %d | %h |   %h   |  %b   |   %b   |   %b | ",
+				i,
+				core.DP_IS_0.ROB_0.rob_entry_packet_out[i].dest_reg_idx,
+				core.DP_IS_0.ROB_0.rob_entry_packet_out[i].dest_reg_value,
+				core.DP_IS_0.ROB_0.rob_entry_packet_out[i].PC,
+				core.DP_IS_0.ROB_0.rob_entry_packet_out[i].valid,
+				core.DP_IS_0.ROB_0.rob_entry_packet_out[i].is_halt,
+				core.DP_IS_0.ROB_0.rob_entry_packet_out[i].is_illegal);
+		end
 
 		// $fdisplay(pipe_output, "\n ----------------------RS------------------------");	
 		// $fdisplay(pipe_output, "RS dispatch stall: %b, RS issue stall: %b", core.DP_IS_0.dispatch_stall, core.DP_IS_0.is_stall);
@@ -342,12 +342,12 @@ module testbench;
 		// 				core.cp_packet.halt,
 		// 				core.cp_packet.illegal);
 
-		// $fdisplay(pipe_output,"=====   Cache ram   =====");
-        // $fdisplay(pipe_output,"|Entry(idx)|valid|dirty|      Tag |             data |");
-        // for (int i=0; i<32; ++i) begin
-        //     $fdisplay(pipe_output,"| %d | %b | %b | %d | %h |", i, core.dcache_0.dcache_data[i].valid, core.dcache_0.dcache_data[i].dirty, core.dcache_0.dcache_data[i].tags, core.dcache_0.dcache_data[i].data);
-        // end
-        // $fdisplay(pipe_output,"-------------------------------------------------");
+		$fdisplay(pipe_output,"=====   Cache ram   =====");
+        $fdisplay(pipe_output,"|Entry(idx)|valid|dirty|      Tag |             data |");
+        for (int i=0; i<32; ++i) begin
+            $fdisplay(pipe_output,"| %d | %b | %b | %d | %h |", i, core.dcache_0.dcache_data[i].valid, core.dcache_0.dcache_data[i].dirty, core.dcache_0.dcache_data[i].tags, core.dcache_0.dcache_data[i].data);
+        end
+        $fdisplay(pipe_output,"-------------------------------------------------");
     
 
 		// $fdisplay(pipe_output, "\n ----------------------RETIRE------------------------");	

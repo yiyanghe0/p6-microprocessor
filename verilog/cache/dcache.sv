@@ -88,7 +88,7 @@ module dcache(
 	logic unanswered_miss; // if we have a new miss or still waiting for the response tag
 	assign unanswered_miss = (proc2Dcache_command == BUS_NONE) ? 0 : (changed_addr ? !hit : (miss_outstanding && (Dmem2proc_response == 0) || writeback_finished_reg));
 
-	assign finished = hit || clear_all_finished;
+	assign finished = (hit && !clear) || clear_all_finished;
 
 
 	// case 1
@@ -161,7 +161,8 @@ module dcache(
 					proc2Dmem_addr = {dcache_data[i].tags,clear_index,3'b0};
 					break;
 				end
-				clear_all_finished = 1;
+                if (i == `DCACHE_LINES - 1)
+				    clear_all_finished = 1;
 			end
 		end
 		
