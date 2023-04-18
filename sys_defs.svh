@@ -656,4 +656,15 @@ typedef struct packed {
 	logic [`XLEN-1:0] target_pc;
 } BTB_ENTRY;
 
+// prefetch
+`define PREFETCH_LINES 4
+`define PREFETCH_LINE_BITS $clog2(`PREFETCH_LINES)
+
+typedef struct packed {
+	logic [`XLEN-1:0] addr; // initialized to 0, updated to NPC, NPC+8 etc.
+    logic [3:0] mem_tag; // initialized to 0
+	logic response_received; // initialized to 0
+	// logic valid;
+} PREFETCH_PACKET;
+
 `endif // __SYS_DEFS_SVH__

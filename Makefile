@@ -76,7 +76,7 @@
 
 # this is a built-in Make variable that lets Make search folders to find dependencies and targets
 # it can greatly simplify make rules and increase readability
-VPATH = synth:testbench:test_progs:verilog:output:verilog/RS:verilog/ROB:verilog/MAP_TABLE:verilog/EX:verilog/cache
+VPATH = synth:testbench:test_progs:verilog:output:verilog/RS:verilog/ROB:verilog/MAP_TABLE:verilog/EX:verilog/cache:verilog/IF
 
 ###############################################
 # ---- Compilation Commands and Variables ----
@@ -241,6 +241,8 @@ synth/EX.vg: FIFO.sv MULTIPLIER.sv Branch.sv ALU.sv
 dcache_simv: ../testbench/mem.sv
 dcache_coverage_simv: ../testbench/mem.sv
 synth/dcache.vg: ../testbench/mem.sv
+
+icache_simv: prefetch.sv ../testbench/mem.sv icache.sv ../verilog/cache/dcache.sv ../verilog/cache/cache_controller.sv 
 
 # ROB_simv: ROB.sv
 # MAP_TABLE_simv: MAP_TABLE.sv

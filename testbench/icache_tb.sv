@@ -10,7 +10,6 @@ module prefetch_testbench;
 
     logic clock;
     logic reseti;
-    logic resetd;
     logic reset;
     logic [10:0] cycle_count;
 
@@ -40,7 +39,7 @@ module prefetch_testbench;
     logic [1:0]       proc2mem_command;
     logic [`XLEN-1:0] proc2mem_addr;
     logic [1:0]       Icache2ctrl_command;
-    logic [`XLEN-1]   Icache2ctrl_addr;
+    logic [`XLEN-1:0]   Icache2ctrl_addr;
     logic [3:0]       ctrl2Icache_response;
     logic [63:0]      ctrl2Icache_data;
     logic [3:0]       ctrl2Icache_tag;
@@ -50,10 +49,13 @@ module prefetch_testbench;
     logic [3:0]       ctrl2Dcache_response;
     logic [63:0]      ctrl2Dcache_data;
     logic [3:0]       ctrl2Dcache_tag;
+    logic [63:0]      proc2mem_data;
 
 
     `ifdef TEST_MODE
 		ICACHE_PACKET [`CACHE_LINES-1:0] show_icache_data;
+        DCACHE_PACKET [`DCACHE_LINES-1:0] show_dcache_data;
+        PREFETCH_PACKET [3:0] show_prefetch_data;
 	`endif	
 
 
@@ -71,9 +73,9 @@ module prefetch_testbench;
 		.mem2proc_tag      (mem2proc_tag)
 	);
 
-    ichache icahce(
+    icache icache(
         .clock(clock),
-        .reset(reseti),
+        .reset(reset),
         .Imem2proc_response(ctrl2Icache_response),
         .Imem2proc_data(ctrl2Icache_data),
         .Imem2proc_tag(ctrl2Icache_tag),
@@ -82,38 +84,48 @@ module prefetch_testbench;
         .proc2Imem_addr(Icache2ctrl_addr),
         `ifdef TEST_MODE
 		    .show_icache_data(show_icache_data),
+            .show_prefetch_data(show_prefetch_data),
         `endif
         .Icache_data_out(Icache_data_out),
         .Icache_valid_out(Icache_valid_out)
     );
 
    dcache dcache(
-         .clock(clock),
-         .reset(resetd),
-	     .Dmem2proc_response(ctrl2Dcache_response),
-	     .Dmem2proc_data(ctrl2Dcache_data),
-	     .Dmem2proc_tag(ctrl2Dcache_tag),
-	     .proc2Dcache_addr(proc2Dcache_addr),
-         .proc2Dcache_data(proc2Dcache_data),
-         .proc2Dcache_command(proc2Dcache_command), 
-	     .mem_size(proc2Dcache_size), 
-	     .proc2Dmem_command(Dcache2ctrl_command),
-	     .proc2Dmem_addr(Dcache2ctrl_addr),
-         .proc2Dmem_data(Dcache2ctrl_data),
-	     .Dcache_data_out(Dcache_data_out), 
-	     .Dcache_valid_out(Dcache_valid_out), 
-	     .finished(finished)		
+        .clock(clock),
+        .reset(reset),
+        // from memory
+        .Dmem2proc_response(ctrl2Dcache_response),
+        .Dmem2proc_data(ctrl2Dcache_data),
+        .Dmem2proc_tag(ctrl2Dcache_tag),
+        // from ex stage
+        .proc2Dcache_addr(proc2Dcache_addr),
+        .proc2Dcache_data(proc2Dcache_data),
+        .proc2Dcache_command(proc2Dcache_command), 
+        .mem_size(proc2Dcache_size), 
+        .clear(0),
+        // to memory
+        .proc2Dmem_command(Dcache2ctrl_command),
+        .proc2Dmem_addr(Dcache2ctrl_addr),
+        .proc2Dmem_data(Dcache2ctrl_data),
+
+        `ifdef TEST_MODE
+        .show_dcache_data(show_dcache_data),
+        `endif	
+        // to ex stage
+        .Dcache_data_out(Dcache_data_out), 
+        .Dcache_valid_out(Dcache_valid_out), 
+        .finished(finished)	
     );
  
     cache_controller cache_controller(
          .clock(clock), 
-         .rest(reset),
+         .reset(reset),
          .mem2proc_response(mem2proc_response), // this should be zero unless we got a response
          .mem2proc_data(mem2proc_data),
          .mem2proc_tag(mem2proc_tag),
          .proc2mem_command(proc2mem_command),
          .proc2mem_addr(proc2mem_addr),
-         .proc2Dmem_data(proc2Dmem_data),
+         .proc2Dmem_data(proc2mem_data),
          .Icache2ctrl_command(Icache2ctrl_command),
          .Icache2ctrl_addr(Icache2ctrl_addr),
          .ctrl2Icache_response(ctrl2Icache_response),
@@ -156,9 +168,9 @@ module prefetch_testbench;
 
      task wait_until_icache_finish;
 		forever begin : wait_loop
-			@(posedge Icache_valid_out);
+			//@(posedge Icache_valid_out);
 			@(negedge clock);
-			if(finished) begin
+			if(Icache_valid_out) begin
                 $fdisplay(pipe_output,"-------------------------------------------------");
                 $fdisplay(pipe_output,"-------------------------------------------------");
 				$fdisplay(pipe_output, "@@@Finish one icache calculation");
@@ -173,7 +185,7 @@ module prefetch_testbench;
 //////////////                  DISPLAY
 /////////////////////////////////////////////////////////////
 
-task show_cache;
+task show_icache;
     begin
         $fdisplay(pipe_output,"=====   Cache ram   =====");
         $fdisplay(pipe_output,"|Entry(idx)|valid|     Tag |             data |");
@@ -184,10 +196,32 @@ task show_cache;
     end
 endtask
 
+task show_dcache;
+    begin
+        $fdisplay(pipe_output,"=====   Cache ram   =====");
+        $fdisplay(pipe_output,"|Entry(idx)|valid|dirty|      Tag |             data |");
+        for (int i=0; i<32; ++i) begin
+            $fdisplay(pipe_output,"| %h | %b | %b | %h | %h |", i, show_dcache_data[i].valid, show_dcache_data[i].dirty, show_dcache_data[i].tags, show_dcache_data[i].data);
+        end
+        $fdisplay(pipe_output,"-------------------------------------------------");
+    end
+endtask
+
+task show_prefetch;
+    begin
+        $fdisplay(pipe_output,"=====   Prefetch   =====");
+        $fdisplay(pipe_output,"|Addr|mem_tag|response_received|");
+        for (int i=0; i<4; ++i) begin
+            $fdisplay(pipe_output,"| %h | %h | %h | %h |", i, show_prefetch_data[i].addr, show_prefetch_data[i].mem_tag, show_prefetch_data[i].response_received);
+        end
+        $fdisplay(pipe_output,"-------------------------------------------------");
+    end
+endtask
+
 task show_input;
     begin
         $fdisplay(pipe_output,"=====   Mem Input   =====");
-        $fdisplay(pipe_output,"response: %d,  tag: %d,  data: %h", proc2mem_command, proc2mem_addr, proc2mem_data);
+        $fdisplay(pipe_output,"command: %d,  addr: %d,  data: %h", proc2mem_command, proc2mem_addr, proc2mem_data);
         $fdisplay(pipe_output,"----------------------------------------------------------------- ");
         $fdisplay(pipe_output,"=====   IF Input   =====");
         $fdisplay(pipe_output,"addr: %d", proc2Icache_addr);
@@ -203,33 +237,62 @@ task show_output;
         $fdisplay(pipe_output,"=====  Memory Output   =====");
         $fdisplay(pipe_output,"response: %d,  tag: %d,  data: %h", mem2proc_response, mem2proc_tag, mem2proc_data);
         $fdisplay(pipe_output,"---------------------");
+        $fdisplay(pipe_output,"=====  Controller Input   =====");
+        $fdisplay(pipe_output,"Icache2ctrl_command: %h, Icache2ctrl_addr: %h", Icache2ctrl_command, Icache2ctrl_addr);
+        $fdisplay(pipe_output,"Dcache2ctrl_command: %h, Dcache2ctrl_addr: %h, Dcache2ctrl_data: %h", Dcache2ctrl_command, Dcache2ctrl_addr, Dcache2ctrl_data);
+        $fdisplay(pipe_output,"=====  Controller Output   =====");
+        $fdisplay(pipe_output,"proc2mem_command: %h, proc2mem_addr: %h, proc2mem_data: %h", proc2mem_command, proc2mem_addr, proc2mem_data);
+        $fdisplay(pipe_output,"ctrl2Icache_response: %h, ctrl2Icache_data: %h, ctrl2Icache_tag: %h", ctrl2Icache_response, ctrl2Icache_data, ctrl2Icache_tag);
+        $fdisplay(pipe_output,"ctrl2Dcache_response: %h, ctrl2Dcache_data: %h, ctrl2Dcache_tag: %h", ctrl2Dcache_response, ctrl2Dcache_data, ctrl2Dcache_tag);
+        $fdisplay(pipe_output,"=====  Prefetch Input   =====");
+        $fdisplay(pipe_output,"Prefetch_response: %h, Prefetch_data: %h, Prefetch_tag: %h", icache.prefetch_0.Imem2proc_response, icache.prefetch_0.Imem2proc_data, icache.prefetch_0.Imem2proc_tag);
+        $fdisplay(pipe_output,"enable: %h, changed_addr: %h, update_mem_tag: %h", icache.prefetch_0.enable, icache.prefetch_0.changed_addr, icache.prefetch_0.update_mem_tag);
+        $fdisplay(pipe_output,"prefetch_index: %h, prefetch_tag: %h", icache.prefetch_index, icache.prefetch_tag);
+        $fdisplay(pipe_output,"---------------------");
         $fdisplay(pipe_output,"=====  ICache Output   =====");
         $fdisplay(pipe_output,"valid: %b , data: %h", Icache_valid_out, Icache_data_out);
         $fdisplay(pipe_output,"---------------------");
     end
 endtask
 
-// task show_cache_controls;
-//     begin
-//         $fdisplay(pipe_output,"=====  Cache Controls   =====");
-//         $fdisplay(pipe_output,"clock: %d,  reset: %d", cache.clock, cache.reset);
-//         $fdisplay(pipe_output,"hit: %d,  writeback: %d,  writeback_finished: %d", cache.hit, cache.writeback, cache.writeback_finished);
-//         $fdisplay(pipe_output,"current_index: %d,  current_tag: %d,  last_index: %d, last_tag: %d", cache.current_index, cache.current_tag, cache.last_index, cache.last_tag);
-//         $fdisplay(pipe_output,"changed_addr: %d,  current_mem_tag: %d,  update_mem_tag: %d", cache.changed_addr, cache.current_mem_tag, cache.update_mem_tag);
-//         $fdisplay(pipe_output,"got_mem_data: %d,  unanswered_miss: %d,  miss_outstanding: %d", cache.got_mem_data, cache.unanswered_miss, cache.miss_outstanding);
-//         $fdisplay(pipe_output,"command: %d,  addr: %d,  data: %h, mem_size: %d", cache.proc2Dcache_command, cache.proc2Dcache_addr, cache.proc2Dcache_data, cache.mem_size);
-//         $fdisplay(pipe_output,"---------------------");
+
+task show_cache_controls;
+    begin
+        $fdisplay(pipe_output,"=====  Cache Controls   =====");
+        $fdisplay(pipe_output,"clock: %d,  reset: %d", dcache.clock, dcache.reset);
+        $fdisplay(pipe_output,"hit: %d,  writeback: %d,  writeback_finished: %d", dcache.hit, dcache.writeback, dcache.writeback_finished);
+        $fdisplay(pipe_output,"current_index: %d,  current_tag: %d,  last_index: %d, last_tag: %d", dcache.current_index, dcache.current_tag, dcache.last_index, dcache.last_tag);
+        $fdisplay(pipe_output,"changed_addr: %d,  current_mem_tag: %d,  update_mem_tag: %d", dcache.changed_addr, dcache.current_mem_tag, dcache.update_mem_tag);
+        $fdisplay(pipe_output,"got_mem_data: %d,  unanswered_miss: %d,  miss_outstanding: %d", dcache.got_mem_data, dcache.unanswered_miss, dcache.miss_outstanding);
+        $fdisplay(pipe_output,"command: %d,  addr: %d,  data: %h, mem_size: %d", dcache.proc2Dcache_command, dcache.proc2Dcache_addr, dcache.proc2Dcache_data, dcache.mem_size);
+        $fdisplay(pipe_output,"---------------------");
+    end
+endtask
+
+// always @(posedge clock) begin
+//     #1;
+//     if (!reset)  begin
+//         $fdisplay(pipe_output,"====  Cycle  %4d Pos  ====", cycle_count);
+//         show_input();
+//         show_output();
+//         show_cache_controls();
+//         show_icache();
+//         show_dcache();
+//         show_prefetch();
+//         $fdisplay(pipe_output,"--------------------------------------------------------------------------------");
 //     end
-// endtask
+// end
 
 always @(negedge clock) begin
     #1;
     if (!reset)  begin
-        $fdisplay(pipe_output,"====  Cycle  %4d  ====", cycle_count);
+        $fdisplay(pipe_output,"====  Cycle  %4d Neg ====", cycle_count);
         show_input();
         show_output();
         show_cache_controls();
-        show_cache();
+        show_icache();
+        show_dcache();
+        show_prefetch();
         $fdisplay(pipe_output,"--------------------------------------------------------------------------------");
     end
 end
@@ -294,12 +357,12 @@ initial begin
 
     clock = 0;
     reset = 1;
-    resetd = 1;
-    reseti = 1;
     @(negedge clock);
     reset = 0;
-    resetd = 0;
-
+    Fetch_PC(16'h0010);
+    NONE();
+    @(negedge clock);
+    @(negedge clock);
     // testcase 1, store with writeback
     ST(16'h0040,3'b100, 64'hFFFF_1234_4321_FFFF);
     wait_until_dcache_finish();
@@ -309,39 +372,37 @@ initial begin
     @(negedge clock);
 
     // testcase 2, store with writeback
-    ST(16'h0044,3'b100, 64'habcd_0110_1001_abcd);
+    ST(16'h0048,3'b100, 64'habcd_0110_1001_abcd);
     wait_until_dcache_finish();
     @(negedge clock);
-    ST(16'h8044,3'b100, 64'habcd_0110_1001_abcd);
+    ST(16'h8048,3'b100, 64'habcd_0110_1001_abcd);
     wait_until_dcache_finish();
     @(negedge clock);
 
     // testcase 3, store with writeback
-    ST(16'h0048,3'b010, 64'hab00_0110_1001_abcd);
+    ST(16'h0050,3'b100, 64'hab00_0110_1001_abcd);
     wait_until_dcache_finish();
     @(negedge clock);
-    ST(16'h8048,3'b010, 64'hab00_0110_1001_abcd);
+    ST(16'h8050,3'b100, 64'hab00_0110_1001_abcd);
     wait_until_dcache_finish();
     @(negedge clock);
 
-    resetd = 1;
-    reseti = 0;
     Fetch_PC(16'h0040);
     wait_until_icache_finish();
     #1;
-    assert(Icache_data_out == FFFF_1234_4321_FFFF) else begin
-        $fdisplay("ERROR: wrong 0040 data");
+    assert(Icache_data_out == 64'hFFFF_1234_4321_FFFF) else begin
+        $fdisplay(pipe_output,"ERROR: wrong 0040 data");
         $finish;
     end
     @(negedge clock);
     Fetch_PC(16'h0044);
     #1;
     assert(Icache_valid_out == 1) else begin
-        $fdisplay("ERROR: 0044 not hit");
+        $display("ERROR: 0044 not hit");
         $finish;
     end 
-    assert(Icache_data_out == abcd_0110_1001_abcd) else begin
-        $fdisplay("wrong 0044 data");
+    assert(Icache_data_out == 64'hFFFF_1234_4321_FFFF) else begin
+        $display("wrong 0044 data");
         $finish;
     end
     wait_until_icache_finish();
@@ -349,11 +410,35 @@ initial begin
     Fetch_PC(16'h0048);
     #1;
     assert(Icache_valid_out == 1) else begin
-        $fdisplay("ERROR: 0048 not hit");
+        $display("ERROR: 0048 not hit");
         $finish;
     end 
-    assert(Icache_data_out == ab00_0110_1001_abcd) else begin
-        $fdisplay("wrong 0048 data");
+    assert(Icache_data_out == 64'habcd_0110_1001_abcd) else begin
+        $display("wrong 0048 data");
+        $finish;
+    end
+    wait_until_icache_finish();
+    @(negedge clock);
+    Fetch_PC(16'h004c);
+    #1;
+    assert(Icache_valid_out == 1) else begin
+        $display("ERROR: 004c not hit");
+        $finish;
+    end 
+    assert(Icache_data_out == 64'habcd_0110_1001_abcd) else begin
+        $display("wrong 004c data");
+        $finish;
+    end
+    wait_until_icache_finish();
+    @(negedge clock);
+    Fetch_PC(16'h0050);
+    #1;
+    assert(Icache_valid_out == 1) else begin
+        $display("ERROR: 0050 not hit");
+        $finish;
+    end 
+    assert(Icache_data_out == 64'hab00_0110_1001_abcd) else begin
+        $display("wrong 0050 data");
         $finish;
     end
     wait_until_icache_finish();

@@ -58,7 +58,7 @@ module cache_controller(
             proc2Dmem_data = 0;
         end
 
-        if (last_d_request) begin
+        if (last_d_request || d_request) begin
             ctrl2Icache_response = 0;
             ctrl2Dcache_response = mem2proc_response;
         end else begin

@@ -11,6 +11,7 @@
 `define __ICACHE_SV__
 
 `include "sys_defs.svh"
+//`define TEST_MODE
 
 
 
@@ -49,6 +50,7 @@ module icache (
 
 	`ifdef TEST_MODE
 		output ICACHE_PACKET [`CACHE_LINES-1:0] show_icache_data,
+		output PREFETCH_PACKET [3:0] show_prefetch_data,
 	`endif	
 
 	// to fetch stage
@@ -91,9 +93,51 @@ module icache (
 	assign unanswered_miss = changed_addr ? !Icache_valid_out
 	                                      : miss_outstanding && (Imem2proc_response == 0);
 
+
+	// prefetch related
+	logic [`XLEN-1:0] 	prefetch_icache_addr;
+	logic 				prefetch_valid_out;
+
+	logic [1:0] 		prefetch2Imem_command;
+	logic [`XLEN-1:0] 	prefetch2Imem_addr;
+
+	logic [`CACHE_LINE_BITS - 1:0] prefetch_index;
+	logic [12-`CACHE_LINE_BITS:0] prefetch_tag;
+	assign {prefetch_tag, prefetch_index} = prefetch_icache_addr[15:3];
+
+	prefetch prefetch_0(
+		.clock(clock),
+		.reset(reset),
+
+		// from memory
+		.Imem2proc_response(Imem2proc_response), // passed through from icache
+		.Imem2proc_data(Imem2proc_data),
+		.Imem2proc_tag(Imem2proc_tag),
+
+		// from icache
+		.NPC(proc2Icache_addr + 8),
+		.enable(!changed_addr && !miss_outstanding), // high when prefetch enabled from icache
+		.changed_addr(changed_addr && unanswered_miss), // should be (change_addr && miss) from icache
+						// when change_addr, clear all bits in prefetcher
+
+		// to memory
+		.proc2Imem_command(prefetch2Imem_command),
+		.proc2Imem_addr(prefetch2Imem_addr),
+
+		`ifdef TEST_MODE
+			.show_prefetch_data(show_prefetch_data),
+		`endif	
+
+		// to icache
+		.prefetch_icache_addr(prefetch_icache_addr),
+		.prefetch_valid_out(prefetch_valid_out) // when this is high
+	);
+
+
 	// keep sending memory requests until we receive a response tag or change addresses
-	assign proc2Imem_command = (miss_outstanding && !changed_addr) ? BUS_LOAD : BUS_NONE;
-	assign proc2Imem_addr    = {proc2Icache_addr[31:3],3'b0};
+	assign proc2Imem_command = (miss_outstanding && !changed_addr) ? BUS_LOAD : prefetch2Imem_command;
+	assign proc2Imem_addr    = (miss_outstanding && !changed_addr) ? {proc2Icache_addr[31:3],3'b0} : {prefetch2Imem_addr[31:3],3'b0};
+
 
 	// synopsys sync_set_reset "reset"
 	always_ff @(posedge clock) begin
@@ -113,7 +157,13 @@ module icache (
 			if (got_mem_data) begin // If data came from memory, meaning tag matches
 				icache_data[current_index].data   <= `SD Imem2proc_data;
 				icache_data[current_index].tags   <= `SD current_tag;
-				icache_data[current_index].valid <= `SD 1;
+				icache_data[current_index].valid  <= `SD 1;
+			end
+
+			if (prefetch_valid_out) begin
+				icache_data[prefetch_index].data   <= `SD Imem2proc_data;
+				icache_data[prefetch_index].tags   <= `SD prefetch_tag;
+				icache_data[prefetch_index].valid  <= `SD 1;
 			end
 		end
 	end
